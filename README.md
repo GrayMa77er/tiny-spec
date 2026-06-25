@@ -17,14 +17,22 @@ builds the work one task at a time. Every task is implemented by one agent and
 graded by an independent reviewer that runs the real tests before anything is
 committed.
 
-It is four skills and two agents. No orchestrator, no config file, no build step.
+It is four skills and two agents — plus an optional Phase-0 on-ramp,
+`tiny-spec-breakdown`, for carving a PRD into stories. No orchestrator, no config
+file, no build step.
 
 ```
-tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-tasks  →  tiny-spec-build
-   intent               design             tasks            per-task loop
-   SPEC.md              PLAN.md +          tasks.md         plan → implement → review → commit
-                        constitution
+tiny-spec-breakdown  ⇢   tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-tasks  →  tiny-spec-build
+   (optional)               intent               design             tasks            per-task loop
+   PRD → stories            SPEC.md              PLAN.md +          tasks.md         plan → implement → review → commit
+   BREAKDOWN.md                                  constitution
 ```
+
+`tiny-spec-breakdown` is optional: skip it and start at `tiny-spec-create` for a
+single known piece of work; reach for it when a PRD needs carving into many stories.
+It reads a PRD plus wireframes/notes and writes a `BREAKDOWN.md` at your project root
+— a flat list of Features → Stories with draft acceptance criteria — which
+`tiny-spec-create` then reads one story at a time.
 
 ## New to spec-driven development?
 
@@ -48,10 +56,11 @@ uvx tiny-spec install
 Restart Claude Code so it picks up the new skills, then run the flow in your project:
 
 ```
-/tiny-spec-create   # capture intent and requirements (binds a ticket, optional)
-/tiny-spec-plan     # turn the spec into a design and harden the constitution
-/tiny-spec-tasks    # slice the plan into an ordered checklist
-/tiny-spec-build    # build each task: implement, review, commit
+/tiny-spec-breakdown # optional: carve a PRD + wireframes into stories (BREAKDOWN.md)
+/tiny-spec-create    # capture intent and requirements (binds a ticket, optional)
+/tiny-spec-plan      # turn the spec into a design and harden the constitution
+/tiny-spec-tasks     # slice the plan into an ordered checklist
+/tiny-spec-build     # build each task: implement, review, commit
 ```
 
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
@@ -69,7 +78,7 @@ git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+for s in tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
@@ -172,7 +181,6 @@ It is namespaced per ticket, with a shared spine at the root:
 
 ```
 .spec/
-  ACTIVE                    the active ticket directory name (resolution pointer)
   constitution.md           project-wide, shared across tickets
   memory.md                 operational lessons, shared across tickets
   <ticket-id>/              one directory per ticket (PROJ-123/, gh-42/, …)
