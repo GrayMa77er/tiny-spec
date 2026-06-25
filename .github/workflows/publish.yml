@@ -1,0 +1,41 @@
+name: Publish to PyPI
+
+# Publishes tiny-spec to PyPI when you cut a GitHub Release.
+# Uses PyPI Trusted Publishing (OIDC) — no API tokens or secrets to manage.
+#
+# One-time setup on PyPI (https://pypi.org/manage/account/publishing/):
+#   PyPI project name: tiny-spec
+#   Owner:             GrayMa77er
+#   Repository:        tiny-spec
+#   Workflow name:     publish.yml
+#   Environment:       pypi
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build sdist and wheel
+        run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # required for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

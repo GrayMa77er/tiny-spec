@@ -4,8 +4,8 @@ Guidance for any agent (Claude Code or otherwise) editing this folder.
 
 ## What this is
 
-A lean spec-driven flow: `spec-create` → `spec-plan` → `spec-tasks` →
-`spec-build`, anchored by a strong **constitution** (`constitution.md`) and a
+A lean spec-driven flow: `tiny-spec-create` → `tiny-spec-plan` → `tiny-spec-tasks` →
+`tiny-spec-build`, anchored by a strong **constitution** (`constitution.md`) and a
 per-task loop of **plan → implement → review → commit** with an *independent*
 reviewer. See [README.md](README.md) for the shape and [CONTRACTS.md](CONTRACTS.md)
 for the formats and rules of record.
@@ -42,28 +42,28 @@ silent (no compiler, no test will catch a misleading instruction). So:
    `tasks.md`, `decisions.md` live under `.spec/<ticket-id>/`, resolved via the
    `.spec/ACTIVE` pointer. `decisions.md` has no template on purpose — it's an
    append-only log with a fixed inline skeleton (`CONTRACTS.md` §3.6). Each template
-   has exactly one owning skill that copies it: `spec-create` (SPEC + constitution),
-   `spec-plan` (PLAN), `spec-tasks` (tasks), `spec-build` (memory). **Commits are
-   Conventional Commits** (`CONTRACTS.md` §4.1) — the format lives in `spec-build`
+   has exactly one owning skill that copies it: `tiny-spec-create` (SPEC + constitution),
+   `tiny-spec-plan` (PLAN), `tiny-spec-tasks` (tasks), `tiny-spec-build` (memory). **Commits are
+   Conventional Commits** (`CONTRACTS.md` §4.1) — the format lives in `tiny-spec-build`
    and `CONTRACTS.md`; reconcile both if you change it.
 2. **Dry-run in a throwaway sandbox** (`/tmp/...`, `git init`). A **new** skill or
    agent can't be invoked the session it's added (both load at startup). Validate
    one of three ways: follow the `SKILL.md` **verbatim** yourself; dispatch a
    built-in stand-in (`Explore` for read-only, `general-purpose` for writing) with
    the same prompt; or — once installed — dispatch the real agents
-   (`spec-build-executor`, `spec-build-reviewer`) directly. Confirm the
+   (`tiny-spec-build-executor`, `tiny-spec-build-reviewer`) directly. Confirm the
    instructions, followed exactly, produce contract-conforming output.
 3. **Runtime-verify — never static-only.** The core belief here: **unit-green ≠
    working.** A passing test suite is necessary, not sufficient. The whole reason
-   `spec-build-reviewer` runs the real gate end-to-end and exercises the
+   `tiny-spec-build-reviewer` runs the real gate end-to-end and exercises the
    acceptance is to catch this — so when you change the build loop, prove it on a
    real task, don't infer it from the prose reading correctly.
 4. **Trip the safeguards on purpose** when you touch the build/executor/reviewer
    machinery. These must stay caught:
    - a task that **passes a narrow self-check but fails the gate / acceptance** →
-     the reviewer must return `FAIL`, and `spec-build` must loop back (not tick);
+     the reviewer must return `FAIL`, and `tiny-spec-build` must loop back (not tick);
    - an executor that hits a real **blocker** → it must STOP and report
-     `blocked` (never hack past), and `spec-build` must leave the task `[ ]` and
+     `blocked` (never hack past), and `tiny-spec-build` must leave the task `[ ]` and
      route upstream;
    - **convergence bound:** a task that stays red past 2 fix attempts must become
      a blocker, not an infinite grind;
@@ -87,9 +87,9 @@ This suite must run for **anyone on any machine**. So:
   reference only — the skills do not read it when they run; each `SKILL.md` is
   self-sufficient. Keep it that way: if you add a rule a skill needs, inline it in
   the skill, don't make the skill depend on reading `CONTRACTS.md`.
-- **The two agents are referenced by name** (`spec-build-executor`,
-  `spec-build-reviewer`), not by path — they must be installed in
-  `~/.claude/agents/` for `spec-build` to dispatch them.
+- **The two agents are referenced by name** (`tiny-spec-build-executor`,
+  `tiny-spec-build-reviewer`), not by path — they must be installed in
+  `~/.claude/agents/` for `tiny-spec-build` to dispatch them.
 - **Project root vs skill** — `.spec/` and the user's code live in the user's cwd
   (the project root); it is **never** created inside a skill's directory.
 
