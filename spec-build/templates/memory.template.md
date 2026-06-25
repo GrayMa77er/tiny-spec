@@ -1,9 +1,10 @@
 # Memory — operational lessons
 
 > Curated, forward-acting lessons that should survive across runs so the blind
-> executor and reviewer don't re-learn them. NOT a changelog. Prune superseded
-> entries. Code-style rules belong in `conventions.md`; one-off history in
-> `decisions.md`.
+> executor and reviewer don't re-learn them. **Project-wide** — lives at the
+> `.spec/` root and is shared across every ticket. NOT a changelog. Prune superseded
+> entries. Code-style rules belong in `constitution.md`; one-off history in the
+> ticket's `decisions.md`.
 
 <!-- Each entry:
 - type: environment | pitfall | tried-rejected | hotspot

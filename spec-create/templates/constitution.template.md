@@ -1,8 +1,9 @@
-# Conventions — the constitution
+# Constitution
 
-> This is the strongest, most persistent document in the project. Every task is
-> implemented and reviewed against it. Keep it true; keep it lean. Project-specific
-> richness belongs here — not scattered across tasks.
+> This is the strongest, most persistent document in the project. It is
+> **project-wide** — it lives at the `.spec/` root and anchors *every* ticket, not
+> any one of them. Every task is implemented and reviewed against it. Keep it true;
+> keep it lean. Project-specific richness belongs here — not scattered across tasks.
 
 ## Style
 <Formatting, naming, language idioms. The defaults a reader should assume.>

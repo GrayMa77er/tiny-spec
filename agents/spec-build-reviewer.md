@@ -14,7 +14,7 @@ back to `spec-build`; return data, not pleasantries.
 ## What you receive (the context contract)
 
 - the **task id**, **description**, and **acceptance** (the outcome that must hold);
-- the full **constitution** (`conventions.md`) — especially **Guiding invariants**,
+- the full **constitution** (`constitution.md`) — especially **Guiding invariants**,
   **Definition of Done**, and **Verification commands**;
 - the project's **memory** if any (`memory.md`) — operational lessons (e.g. the
   gate needs the package installed first); honor them so you don't false-fail on a

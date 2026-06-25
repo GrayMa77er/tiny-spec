@@ -1,6 +1,6 @@
 ---
 name: spec-tasks
-description: Slice .spec/PLAN.md into tasks.md — a flat, ordered checklist of small tasks, each with an acceptance outcome. Executed sequentially by spec-build. Re-run in update mode to reconcile after a plan change.
+description: Slice the active ticket's PLAN.md into tasks.md — a flat, ordered checklist of small tasks, each with an acceptance outcome. Executed sequentially by spec-build. Re-run in update mode to reconcile after a plan change.
 ---
 
 # spec-tasks
@@ -9,9 +9,10 @@ Turns the plan into `tasks.md`: a **flat, ordered checklist** of small, concrete
 tasks. No waves, no parallelism, no `owns:` contracts — tasks run one at a time,
 top to bottom.
 
-All artifacts live under `.spec/` in the **project root**. The template ships in
-this skill's own `templates/` folder (alongside this file). Requires
-`.spec/PLAN.md`.
+Artifacts live under `.spec/`; `PLAN.md` and `tasks.md` are per-ticket. **Resolve
+the active ticket dir** from `.spec/ACTIVE` (if absent and exactly one ticket dir
+exists, use it; if several exist, ask which). The template ships in this skill's own
+`templates/` folder (alongside this file). Requires `.spec/<active>/PLAN.md`.
 
 ## Slice the plan into tasks
 
@@ -32,13 +33,19 @@ For each task, write:
 ```
 - [ ] T<n> — <imperative description>
   - acceptance: <one user-observable outcome that proves it's done>
+  - type: feat            # optional; Conventional Commit type (defaults to feat)
+  - req: REQ-n            # optional; the REQ-N this task delivers
   - files: <comma-separated hint of files it will touch>
 ```
 
 The **acceptance** is what the reviewer checks against — make it observable
 ("`spec --version` prints the version and exits 0"), not internal ("version logic
-added"). The **files** line is a hint to focus the executor and reviewer; it is
-not enforced, so approximate paths are fine.
+added"). **type** picks the Conventional Commit type `spec-build` uses for this
+task's code commit (`feat | fix | docs | refactor | test | chore | build | ci | perf | style`);
+set it when the task is clearly not a feature (e.g. `fix`, `docs`, `refactor`),
+otherwise omit and it defaults to `feat`. **req** ties the task to the requirement
+it satisfies (traceability). The **files** line is a hint to focus the executor and
+reviewer; it is not enforced, so approximate paths are fine.
 
 Cover **every** part of the approach — together the tasks must deliver all
 `REQ-N`. Don't leave a requirement with no task.
@@ -46,19 +53,28 @@ Cover **every** part of the approach — together the tasks must deliver all
 ## Write `tasks.md`
 
 Copy this skill's `templates/tasks.template.md` to
-`.spec/tasks.md`, fill in the `## Tasks` checklist with all tasks `[ ]`
+`.spec/<active>/tasks.md`, fill in the `## Tasks` checklist with all tasks `[ ]`
 unchecked, set frontmatter `status: current`, `updated: <today>`.
 
 ## Update mode (PLAN changed → tasks are stale)
 
 When `tasks.md` is `status: stale`:
 
-1. Read the latest `decisions.md` change entry.
+1. Read the latest `.spec/<active>/decisions.md` change entry.
 2. Reconcile — add/alter/remove tasks to match the new plan, preserving existing
    `T<n>` ids where the task still exists; new tasks get the next free id.
 3. **Completed-work guardrail:** if a change touches a task already `[x]`,
-   **uncheck it** (`[ ]`) and record the unchecked ids in `decisions.md`
-   (`type: change`) for human review. Never assume built work survived.
+   **uncheck it** (`[ ]`) and record the unchecked ids in
+   `.spec/<active>/decisions.md` for human review, using the fixed skeleton. Never
+   assume built work survived.
+
+   ```
+   ## D-NNN — <short title>
+   - type: change
+   - date: <ISO date>
+   - affects: T<n>, T<m>
+   - note: <which tasks were unchecked and why>
+   ```
 4. Set `status: current`, bump `updated`.
 
 ## When done

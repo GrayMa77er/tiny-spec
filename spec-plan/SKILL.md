@@ -1,22 +1,26 @@
 ---
 name: spec-plan
-description: Turn .spec/SPEC.md into a technical design — produce PLAN.md and harden conventions.md (the constitution). Re-run in update mode to reconcile after a SPEC change.
+description: Turn the active ticket's SPEC.md into a technical design — produce PLAN.md and harden the shared constitution.md (the constitution). Re-run in update mode to reconcile after a SPEC change.
 ---
 
 # spec-plan
 
 Decides **how** the requirements get built, and — just as important — hardens the
-**constitution** (`conventions.md`) that every task will be implemented and
+**constitution** (`constitution.md`) that every task will be implemented and
 reviewed against.
 
-All artifacts live under `.spec/` in the **project root**. The template ships in
-this skill's own `templates/` folder (alongside this file). Requires
-`.spec/SPEC.md`.
+Artifacts live under `.spec/`: the **shared** constitution at the root
+(`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md` under
+`.spec/<ticket-id>/`. **Resolve the active ticket dir** from `.spec/ACTIVE` (if it's
+absent and exactly one ticket dir exists, use it; if several exist, ask which). The
+template ships in this skill's own `templates/` folder (alongside this file).
+Requires `.spec/<active>/SPEC.md`.
 
-## Harden the constitution (`conventions.md`) — do this first
+## Harden the constitution (`constitution.md`) — do this first
 
-The constitution is the spine of the whole flow: it is injected whole into
-every executor and reviewer. Make it strong and specific to *this* project, not
+The constitution is the spine of the whole flow and **project-wide** — it lives at
+`.spec/constitution.md` (the root, shared across every ticket), and is injected whole
+into every executor and reviewer. Make it strong and specific to *this* project, not
 generic boilerplate. Fill in / sharpen all seven sections:
 
 1. **Style** · 2. **Engineering standards** · 3. **Guiding invariants** ·
@@ -35,14 +39,16 @@ Two sections carry the most weight — get them right:
 ## Write `PLAN.md`
 
 Copy this skill's `templates/PLAN.template.md` to
-`.spec/PLAN.md` and fill it in:
+`.spec/<active>/PLAN.md` and fill it in:
 
-- `## Approach` — the design narrative: the shape of the solution, key decisions,
-  trade-offs. Detailed enough that `spec-tasks` can derive a task list from it.
-  Optional `### Phase` headings are allowed for readability only.
-- `## Requirement coverage` — map **every** `REQ-N` to where it's addressed. A
-  requirement with no home is a gap: fix the approach or route back to
+- `## Approach` *(required)* — the design narrative: the shape of the solution, key
+  decisions, trade-offs. Detailed enough that `spec-tasks` can derive a task list
+  from it. Optional `### Phase` headings are allowed for readability only.
+- `## Requirement coverage` *(required)* — map **every** `REQ-N` to where it's
+  addressed. A requirement with no home is a gap: fix the approach or route back to
   `spec-create`.
+- Optional sections (`Architecture`, `Risks & mitigations`, `Test strategy`,
+  `Open questions`) where they add value — omit any that don't apply.
 
 Keep it proportional: a small change is a few paragraphs, not a phased epic.
 
@@ -50,10 +56,10 @@ Keep it proportional: a small change is a few paragraphs, not a phased epic.
 
 When `PLAN.md` is `status: stale`:
 
-1. Read the latest `decisions.md` change entry to see what moved.
-2. Reconcile `PLAN.md` and `conventions.md` — adjust only what the change
-   requires; preserve the rest.
-3. Flip `tasks.md` to `status: stale` (if it exists) and extend the
+1. Read the latest `.spec/<active>/decisions.md` change entry to see what moved.
+2. Reconcile `.spec/<active>/PLAN.md` and the shared `.spec/constitution.md` — adjust
+   only what the change requires; preserve the rest.
+3. Flip `.spec/<active>/tasks.md` to `status: stale` (if it exists) and extend the
    `decisions.md` entry.
 4. Set `PLAN.md` `status: current`, bump `updated`.
 

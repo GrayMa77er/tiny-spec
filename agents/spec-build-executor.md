@@ -17,7 +17,7 @@ Everything you need and nothing you don't:
 
 - the **task id**, **description**, and **acceptance** (the outcome that proves it done);
 - a **`files:` hint** — likely paths to touch (guidance, not a hard boundary);
-- the full **constitution** (`conventions.md`): Style, Engineering standards,
+- the full **constitution** (`constitution.md`): Style, Engineering standards,
   Guiding invariants, Glossary, Layout, Definition of Done, Verification commands;
 - the project's **memory** if any (`memory.md`) — operational lessons; honor them
   so you don't re-learn a pitfall a past run already paid for;

@@ -5,25 +5,29 @@ description: Build the spec — run the per-task loop plan→implement→review�
 
 # spec-build
 
-The heart of the flow. Walks `.spec/tasks.md` top to bottom and runs each task through a
+The heart of the flow. Walks the active ticket's `tasks.md` top to bottom and runs each task through a
 tight loop: **plan → implement → review → commit**. The constitution
-(`conventions.md`) anchors every step; the thing that writes the code is never the
+(`constitution.md`) anchors every step; the thing that writes the code is never the
 thing that grades it.
 
-All artifacts live under `.spec/` in the **project root**. The memory template
-ships in this skill's own `templates/` folder (alongside this file). Requires
-`.spec/tasks.md` and `.spec/conventions.md`. The two subagents dispatched below
-(`spec-build-executor`, `spec-build-reviewer`) are referenced by name — install
-them alongside this skill (see the suite README).
+Artifacts live under `.spec/`: the **shared** constitution and memory at the root
+(`.spec/constitution.md`, `.spec/memory.md`), the per-ticket `tasks.md`/`SPEC.md`/
+`decisions.md` under `.spec/<ticket-id>/`. The memory template ships in this skill's
+own `templates/` folder (alongside this file). The two subagents dispatched below
+(`spec-build-executor`, `spec-build-reviewer`) are referenced by name — install them
+alongside this skill (see the suite README).
 
 ## Inputs
 
-1. Read `.spec/conventions.md` (**the constitution**), `.spec/tasks.md`, and
-   `.spec/memory.md` if it exists. The constitution + memory get injected
-   **whole** into every executor and reviewer.
-2. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
+1. **Resolve the active ticket dir** from `.spec/ACTIVE` (if absent and exactly one
+   ticket dir exists, use it; if several exist, ask which). Call it `<active>`.
+2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
+   it exists (**shared**), and `.spec/<active>/tasks.md`. The constitution + memory
+   get injected **whole** into every executor and reviewer. Also note the `ticket`
+   binding in `.spec/<active>/SPEC.md` — it supplies the commit `Refs:` footer.
+3. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
    `spec-tasks` to reconcile first.
-3. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
+4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
 
 ## The per-task loop
 
@@ -41,7 +45,7 @@ Spawn one **`spec-build-executor`** with a fresh, self-contained prompt:
 
 - the task id, description, and **acceptance**;
 - the `files:` hint;
-- the **whole** `.spec/conventions.md`;
+- the **whole** `.spec/constitution.md`;
 - the **whole** `.spec/memory.md` if it exists;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind).
@@ -54,7 +58,7 @@ report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
 Spawn one **`spec-build-reviewer`**, **blind to step 2**, with:
 
 - the task id, description, and **acceptance**;
-- the **whole** `.spec/conventions.md`;
+- the **whole** `.spec/constitution.md`;
 - the list of changed files (from the executor's `CHANGES`) to read;
 - the **Verification commands** from the constitution to run.
 
@@ -72,21 +76,42 @@ Bound this to **2 fix attempts**. If it still fails after that, stop and treat i
 as a **blocker** (below) — don't keep grinding or hand-fix past the loop silently.
 
 ### 5. COMMIT + TICK (on PASS)
-Two commits, in order (keeps code history clean of planning churn):
+Two commits, in order (keeps code history clean of planning churn), both in
+**Conventional Commits** format:
+
 1. **Code commit** — stage only the source/test files the executor produced;
-   message `T<n>: <description>`.
-2. **Bookkeeping commit** — tick the task `[x]` in `tasks.md` (bump `updated`),
-   add any `decisions.md` entry; message `spec: tick T<n>`.
+   message `<type>(<scope>): <task description>`. The **type** is the task's `type:`
+   field, defaulting to `feat`; **scope** is optional (a component, or the ticket
+   id). A breaking change uses `!` and/or a `BREAKING CHANGE:` footer.
+2. **Bookkeeping commit** — tick the task `[x]` in `.spec/<active>/tasks.md` (bump
+   `updated`), add any `decisions.md` entry; message `chore(spec): tick T<n>`.
+
+**`Refs:` footer (ticket linking).** If `.spec/<active>/SPEC.md` has a `ticket`
+binding, append a `Refs:` footer to **both** commits so the platform auto-links the
+work (omit it entirely if there's no ticket). Always end with the `Co-Authored-By`
+trailer:
+
+```
+<type>(<scope>): <description>
+
+Refs: <ticket-ref>
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+```
+
+Build `<ticket-ref>` from the binding's provider: Jira → `PROJ-123`,
+GitHub → `#123`, ADO → `AB#123`, Monday → the item URL. The **closing** keyword
+(`Closes #123`, `Fixes AB#123`) is reserved for the final / PR commit, **not** the
+per-task commits.
 
 Never commit a red gate. Never tick a task the reviewer did not pass.
 
 ### 6. DISTILL (memory)
 If steps 2–4 surfaced a **forward-acting operational lesson** (a toolchain quirk,
 a flaky/precondition gate, an abandoned approach, a fragile area), append a curated
-entry to `.spec/memory.md` — creating it from this skill's
-`templates/memory.template.md` on first use,
-and pruning any entry the new one supersedes. Skip code-style rules (→
-`conventions.md`) and one-off history (→ `decisions.md`). Keep it lean.
+entry to the **shared** `.spec/memory.md` (the root — lessons are project-wide) —
+creating it from this skill's `templates/memory.template.md` on first use, and
+pruning any entry the new one supersedes. Skip code-style rules (→ shared
+`constitution.md`) and one-off history (→ the ticket's `decisions.md`). Keep it lean.
 
 ### 7. NEXT
 Report the task outcome (built, reviewed, committed). Then:
@@ -104,8 +129,17 @@ branch, create it once up front — that's their call, not a knob here.)
 When the executor reports `BLOCKER`, or convergence (step 4) exhausts its attempts:
 
 1. Leave the task `[ ]`.
-2. Log it to `decisions.md` (`type: blocker`, naming the upstream doc to fix and
-   the affected `REQ-N`/`T<n>`). Create `decisions.md` if absent.
+2. Log it to `.spec/<active>/decisions.md` using the fixed skeleton (`type: blocker`,
+   naming the upstream doc to fix in `note:`, and the affected `REQ-N`/`T<n>` in
+   `affects:`). Create the file if absent:
+
+   ```
+   ## D-NNN — <short title>
+   - type: blocker
+   - date: <ISO date>
+   - affects: REQ-N, T<n>
+   - note: <what stopped you; which upstream doc must change>
+   ```
 3. **Surface and route upstream:** `spec-plan` (a design gap) or `spec-create` (a
    requirement is wrong/impossible), in update mode. After the upstream fix and a
    `spec-tasks` reconcile, re-run `spec-build` — it resumes from the checkbox state.
@@ -126,3 +160,8 @@ When every task in `tasks.md` is `[x]`:
    `decisions.md` items (blockers, tasks unchecked by a reconcile). If the final
    smoke reveals a gap, it's a bug to fix now (new/edited task) or a blocker to
    route upstream — not a pass.
+3. **Close the ticket (reference-only).** If a ticket is bound, this is where the
+   **closing** keyword belongs — on the final / PR commit, not the per-task ones:
+   GitHub `Closes #123`, ADO `Fixes AB#123`. Jira/Monday have no closing keyword,
+   so move the ticket's status manually (active auto-transitions are an opt-in layer
+   — see [INTEGRATIONS.md](INTEGRATIONS.md)). The suite makes **no API calls**.

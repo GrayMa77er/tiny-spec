@@ -10,11 +10,11 @@ independent reviewer.
 spec-create  →  spec-plan  →  spec-tasks  →  spec-build
   intent          design        task list      per-task loop
   (SPEC.md)     (PLAN.md +     (tasks.md)     plan → implement → review → commit
-                conventions.md                       (one task at a time)
+                constitution.md                       (one task at a time)
                 = constitution)
 ```
 
-The **constitution** (`conventions.md`) is the spine — produced by `spec-create`,
+The **constitution** (`constitution.md`) is the spine — produced by `spec-create`,
 hardened by `spec-plan`, and injected whole into every task's executor and
 reviewer. `spec-build` walks the task list top to bottom and runs each task
 through a tight loop:
@@ -28,6 +28,14 @@ through a tight loop:
 
 A lean **`memory.md`** carries operational lessons run-to-run so the blind
 executor/reviewer don't re-learn them.
+
+The suite works **one ticket at a time** against an external platform (Jira, GitHub
+Issues, Azure DevOps, Monday). Each ticket's artifacts are namespaced under
+`.spec/<ticket-id>/`, while the constitution and memory stay shared at the `.spec/`
+root. The binding is **reference-only** — a `ticket` block in `SPEC.md` frontmatter
+plus a `Refs:` footer on each [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/)
+so the platform auto-links the work. No API calls; see
+[INTEGRATIONS.md](INTEGRATIONS.md) for deeper, opt-in layers.
 
 ## Design north star — earned ceremony
 
@@ -59,11 +67,12 @@ folder works wherever it's dropped.
 .
   README.md                 this file
   CONTRACTS.md              maintainer reference — the formats + the build loop
+  INTEGRATIONS.md           task-platform binding: reference-only today + deeper opt-in layers
   spec-create/
     SKILL.md                intent → SPEC.md (+ scaffold + constitution seed)
-    templates/              SPEC.template.md, conventions.template.md
+    templates/              SPEC.template.md, constitution.template.md
   spec-plan/
-    SKILL.md                SPEC → PLAN.md + hardened conventions.md
+    SKILL.md                SPEC → PLAN.md + hardened constitution.md
     templates/              PLAN.template.md
   spec-tasks/
     SKILL.md                PLAN → tasks.md (flat ordered checklist)
@@ -76,7 +85,18 @@ folder works wherever it's dropped.
     spec-build-reviewer.md  independently reviews one task (runs the gate)
 ```
 
-`.spec/` is created in the **user's project root**, never inside a skill.
+`.spec/` is created in the **user's project root**, never inside a skill. It is
+namespaced per ticket, with a shared spine at the root:
+
+```
+.spec/
+  ACTIVE                     one line: the active ticket dir name (resolution pointer)
+  constitution.md            THE CONSTITUTION — project-wide, shared across tickets
+  memory.md                  operational lessons — project-wide, shared
+  <ticket-id>/               one dir per ticket (PROJ-123/, gh-42/, ado-77/, …)
+    SPEC.md  PLAN.md  tasks.md  decisions.md
+```
+
 `CONTRACTS.md` is a reference for maintainers — the skills do not read it at
 runtime; each is self-sufficient.
 

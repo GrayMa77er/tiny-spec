@@ -5,7 +5,7 @@ Guidance for any agent (Claude Code or otherwise) editing this folder.
 ## What this is
 
 A lean spec-driven flow: `spec-create` → `spec-plan` → `spec-tasks` →
-`spec-build`, anchored by a strong **constitution** (`conventions.md`) and a
+`spec-build`, anchored by a strong **constitution** (`constitution.md`) and a
 per-task loop of **plan → implement → review → commit** with an *independent*
 reviewer. See [README.md](README.md) for the shape and [CONTRACTS.md](CONTRACTS.md)
 for the formats and rules of record.
@@ -19,6 +19,14 @@ is: *does it clearly pay for itself, or is it ceremony?* When in doubt, leave it
 out. A change that makes this bigger needs a strong reason; a change that makes it
 smaller usually doesn't.
 
+Two structural choices are **intended**, not drift — don't "simplify" them away:
+the **per-ticket namespacing** under `.spec/<ticket-id>/` with a shared
+`constitution.md`/`memory.md` spine (the suite works one ticket at a time against an
+external platform), and the **richer SPEC/PLAN templates** whose extra sections are
+all marked optional (`<!-- optional -->`) so they add shape without forcing
+ceremony. Keep new template sections optional unless a section truly must always be
+filled.
+
 ## ⚠️ After making changes — validate (don't skip)
 
 Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs are
@@ -29,11 +37,15 @@ silent (no compiler, no test will catch a misleading instruction). So:
    (rules of record), the matching skeleton in the **owning skill's** `templates/`
    folder, and **every** skill or agent that reads/writes that artifact. Grep for
    the artifact name and the token you changed; reconcile every hit. The artifacts
-   are: `SPEC.md`, `PLAN.md`, `conventions.md`, `tasks.md`, `memory.md`,
-   `decisions.md` (`decisions.md` has no template on purpose — it's an
-   append-only log). Each template has exactly one owning skill that copies it:
-   `spec-create` (SPEC + conventions), `spec-plan` (PLAN), `spec-tasks` (tasks),
-   `spec-build` (memory).
+   split **project-wide vs per-ticket** (see `CONTRACTS.md` §3): `constitution.md`
+   and `memory.md` are **shared** at the `.spec/` root; `SPEC.md`, `PLAN.md`,
+   `tasks.md`, `decisions.md` live under `.spec/<ticket-id>/`, resolved via the
+   `.spec/ACTIVE` pointer. `decisions.md` has no template on purpose — it's an
+   append-only log with a fixed inline skeleton (`CONTRACTS.md` §3.6). Each template
+   has exactly one owning skill that copies it: `spec-create` (SPEC + constitution),
+   `spec-plan` (PLAN), `spec-tasks` (tasks), `spec-build` (memory). **Commits are
+   Conventional Commits** (`CONTRACTS.md` §4.1) — the format lives in `spec-build`
+   and `CONTRACTS.md`; reconcile both if you change it.
 2. **Dry-run in a throwaway sandbox** (`/tmp/...`, `git init`). A **new** skill or
    agent can't be invoked the session it's added (both load at startup). Validate
    one of three ways: follow the `SKILL.md` **verbatim** yourself; dispatch a
@@ -91,11 +103,14 @@ installing.
 
 ## Commits
 
-One commit per logical change, clear message, end with the trailer (matches this
-repo's history):
+One commit per logical change, in **Conventional Commits** format
+(`<type>(<scope>): <description>`), ending with the trailer:
 
 ```
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 ```
 
-Only commit work once it's validated per the checklist above.
+This is the same format the suite itself now emits (`CONTRACTS.md` §4.1) — use it
+for work *on* the suite too (e.g. `feat(commits): adopt conventional commits`,
+`docs: add INTEGRATIONS.md`). Only commit work once it's validated per the checklist
+above.
