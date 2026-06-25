@@ -1,9 +1,9 @@
 ---
-name: spec-create
+name: tiny-spec-create
 description: Start or update a spec — capture intent and requirements into .spec/<slug>/SPEC.md, optionally bound to a ticket (or ad-hoc). On first run, scaffolds .spec/ and seeds the shared constitution (constitution.md) from a short interview. Re-run to update an existing spec in place.
 ---
 
-# spec-create
+# tiny-spec-create
 
 Captures **what** the user wants and **why**, as testable `REQ-N` requirements.
 This is the front door of the flow. A spec can be bound to a ticket or worked
@@ -48,7 +48,7 @@ If `.spec/` does not exist:
    `templates/constitution.template.md` to `.spec/constitution.md` (the **root**, not
    the ticket dir — it is project-wide) and fill in what the interview already told
    you (Style, Layout, Verification commands at minimum). Leave the rest for
-   `spec-plan` to harden — but never leave a section empty of intent. If
+   `tiny-spec-plan` to harden — but never leave a section empty of intent. If
    `constitution.md` already exists (a prior ticket created it), **reuse it** — do
    not overwrite the project's constitution.
 
@@ -88,7 +88,7 @@ requirements (resolve the active dir from `.spec/ACTIVE`):
    - note: <what changed + why>
    ```
 
-Tell the user which downstream docs went stale and to re-run `spec-plan` to
+Tell the user which downstream docs went stale and to re-run `tiny-spec-plan` to
 reconcile.
 
 > **New spec?** To start a different piece of work (a new ticket or an ad-hoc
@@ -98,4 +98,4 @@ reconcile.
 
 ## When done
 
-Report the requirements captured and point the user at `spec-plan`.
+Report the requirements captured and point the user at `tiny-spec-plan`.

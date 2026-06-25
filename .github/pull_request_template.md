@@ -4,10 +4,10 @@ Briefly describe the change and why.
 
 ## Skills / agents touched
 
-- [ ] spec-create
-- [ ] spec-plan
-- [ ] spec-tasks
-- [ ] spec-build
+- [ ] tiny-spec-create
+- [ ] tiny-spec-plan
+- [ ] tiny-spec-tasks
+- [ ] tiny-spec-build
 - [ ] agents (executor / reviewer)
 - [ ] docs only
 
