@@ -1,9 +1,9 @@
 ---
-name: spec-plan
+name: tiny-spec-plan
 description: Turn the active ticket's SPEC.md into a technical design — produce PLAN.md and harden the shared constitution.md (the constitution). Re-run in update mode to reconcile after a SPEC change.
 ---
 
-# spec-plan
+# tiny-spec-plan
 
 Decides **how** the requirements get built, and — just as important — hardens the
 **constitution** (`constitution.md`) that every task will be implemented and
@@ -42,11 +42,11 @@ Copy this skill's `templates/PLAN.template.md` to
 `.spec/<active>/PLAN.md` and fill it in:
 
 - `## Approach` *(required)* — the design narrative: the shape of the solution, key
-  decisions, trade-offs. Detailed enough that `spec-tasks` can derive a task list
+  decisions, trade-offs. Detailed enough that `tiny-spec-tasks` can derive a task list
   from it. Optional `### Phase` headings are allowed for readability only.
 - `## Requirement coverage` *(required)* — map **every** `REQ-N` to where it's
   addressed. A requirement with no home is a gap: fix the approach or route back to
-  `spec-create`.
+  `tiny-spec-create`.
 - Optional sections (`Architecture`, `Risks & mitigations`, `Test strategy`,
   `Open questions`) where they add value — omit any that don't apply.
 
@@ -66,4 +66,4 @@ When `PLAN.md` is `status: stale`:
 ## When done
 
 Confirm the constitution is hardened and every `REQ-N` is covered, then point the
-user at `spec-tasks`.
+user at `tiny-spec-tasks`.

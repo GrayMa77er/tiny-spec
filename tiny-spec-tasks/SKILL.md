@@ -1,9 +1,9 @@
 ---
-name: spec-tasks
-description: Slice the active ticket's PLAN.md into tasks.md — a flat, ordered checklist of small tasks, each with an acceptance outcome. Executed sequentially by spec-build. Re-run in update mode to reconcile after a plan change.
+name: tiny-spec-tasks
+description: Slice the active ticket's PLAN.md into tasks.md — a flat, ordered checklist of small tasks, each with an acceptance outcome. Executed sequentially by tiny-spec-build. Re-run in update mode to reconcile after a plan change.
 ---
 
-# spec-tasks
+# tiny-spec-tasks
 
 Turns the plan into `tasks.md`: a **flat, ordered checklist** of small, concrete
 tasks. No waves, no parallelism, no `owns:` contracts — tasks run one at a time,
@@ -40,7 +40,7 @@ For each task, write:
 
 The **acceptance** is what the reviewer checks against — make it observable
 ("`spec --version` prints the version and exits 0"), not internal ("version logic
-added"). **type** picks the Conventional Commit type `spec-build` uses for this
+added"). **type** picks the Conventional Commit type `tiny-spec-build` uses for this
 task's code commit (`feat | fix | docs | refactor | test | chore | build | ci | perf | style`);
 set it when the task is clearly not a feature (e.g. `fix`, `docs`, `refactor`),
 otherwise omit and it defaults to `feat`. **req** ties the task to the requirement
@@ -79,5 +79,5 @@ When `tasks.md` is `status: stale`:
 
 ## When done
 
-Report the task count and point the user at `spec-build` (one task at a time) or
+Report the task count and point the user at `tiny-spec-build` (one task at a time) or
 note they can run it straight through.

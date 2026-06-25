@@ -1,9 +1,9 @@
 ---
-name: spec-build
+name: tiny-spec-build
 description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Resumes from the checkbox state.
 ---
 
-# spec-build
+# tiny-spec-build
 
 The heart of the flow. Walks the active ticket's `tasks.md` top to bottom and runs each task through a
 tight loop: **plan → implement → review → commit**. The constitution
@@ -14,7 +14,7 @@ Artifacts live under `.spec/`: the **shared** constitution and memory at the roo
 (`.spec/constitution.md`, `.spec/memory.md`), the per-ticket `tasks.md`/`SPEC.md`/
 `decisions.md` under `.spec/<ticket-id>/`. The memory template ships in this skill's
 own `templates/` folder (alongside this file). The two subagents dispatched below
-(`spec-build-executor`, `spec-build-reviewer`) are referenced by name — install them
+(`tiny-spec-build-executor`, `tiny-spec-build-reviewer`) are referenced by name — install them
 alongside this skill (see the suite README).
 
 ## Inputs
@@ -26,7 +26,7 @@ alongside this skill (see the suite README).
    get injected **whole** into every executor and reviewer. Also note the `ticket`
    binding in `.spec/<active>/SPEC.md` — it supplies the commit `Refs:` footer.
 3. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
-   `spec-tasks` to reconcile first.
+   `tiny-spec-tasks` to reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
 
 ## The per-task loop
@@ -40,8 +40,8 @@ Restate the task as a 2–4 step micro-plan against the constitution: which
 and **Verification commands** it must satisfy. This is the executor's brief — keep
 it short and concrete.
 
-### 2. IMPLEMENT (dispatch `spec-build-executor`)
-Spawn one **`spec-build-executor`** with a fresh, self-contained prompt:
+### 2. IMPLEMENT (dispatch `tiny-spec-build-executor`)
+Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
 
 - the task id, description, and **acceptance**;
 - the `files:` hint;
@@ -54,8 +54,8 @@ Do **not** pass the plan, sibling tasks, or other chatter. It returns a structur
 report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
 **Blockers** below; do not proceed with this task.
 
-### 3. REVIEW (dispatch `spec-build-reviewer` — independent)
-Spawn one **`spec-build-reviewer`**, **blind to step 2**, with:
+### 3. REVIEW (dispatch `tiny-spec-build-reviewer` — independent)
+Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with:
 
 - the task id, description, and **acceptance**;
 - the **whole** `.spec/constitution.md`;
@@ -140,9 +140,9 @@ When the executor reports `BLOCKER`, or convergence (step 4) exhausts its attemp
    - affects: REQ-N, T<n>
    - note: <what stopped you; which upstream doc must change>
    ```
-3. **Surface and route upstream:** `spec-plan` (a design gap) or `spec-create` (a
+3. **Surface and route upstream:** `tiny-spec-plan` (a design gap) or `tiny-spec-create` (a
    requirement is wrong/impossible), in update mode. After the upstream fix and a
-   `spec-tasks` reconcile, re-run `spec-build` — it resumes from the checkbox state.
+   `tiny-spec-tasks` reconcile, re-run `tiny-spec-build` — it resumes from the checkbox state.
 
 A genuine fork the plan doesn't pin down → don't guess: present the options + your
 recommendation, get the user's call, record it in `decisions.md`, then continue.

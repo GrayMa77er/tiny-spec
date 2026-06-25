@@ -42,4 +42,4 @@ what level, and any fixtures/data needed.>
 ## Open questions
 
 <Design questions still unresolved. A question that blocks tasks must be answered
-here or routed back to spec-create before spec-tasks runs.>
+here or routed back to tiny-spec-create before tiny-spec-tasks runs.>
