@@ -16,3 +16,10 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+### Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.venv/
