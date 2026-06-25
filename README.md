@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="tiny-spec" width="200">
+  <img src="images/logo.png" alt="tiny-spec" width="200">
 </p>
 
 <h1 align="center">tiny-spec</h1>
@@ -20,100 +20,152 @@ committed.
 It is four skills and two agents. No orchestrator, no config file, no build step.
 
 ```
-spec-create  →  spec-plan  →  spec-tasks  →  spec-build
-   intent         design        tasks          per-task loop
-  SPEC.md      PLAN.md +       tasks.md       plan → implement → review → commit
-              constitution
+tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-tasks  →  tiny-spec-build
+   intent               design             tasks            per-task loop
+   SPEC.md              PLAN.md +          tasks.md         plan → implement → review → commit
+                        constitution
 ```
+
+## New to spec-driven development?
+
+Spec-driven development (SDD) means writing down *what* you want and *why* before
+any code exists, then letting that spec drive the build. Instead of prompting an
+agent and hoping, you hand it a small, explicit contract — the intent, a design,
+and an ordered list of tasks — and it implements against that. The payoff: the
+agent stops guessing. It knows what "done" looks like, you can review the plan
+before a single line is written, and the result is checked against the spec
+rather than vibes. tiny-spec is one small take on that idea.
 
 ## Quickstart
 
-Claude Code loads skills from `~/.claude/skills/` and agents from `~/.claude/agents/`.
-Clone the repo and copy them in:
+Install the skills and agents into your Claude Code config with
+[uv](https://docs.astral.sh/uv/):
+
+```sh
+uvx tiny-spec install
+```
+
+Restart Claude Code so it picks up the new skills, then run the flow in your project:
+
+```
+/tiny-spec-create   # capture intent and requirements (binds a ticket, optional)
+/tiny-spec-plan     # turn the spec into a design and harden the constitution
+/tiny-spec-tasks    # slice the plan into an ordered checklist
+/tiny-spec-build    # build each task: implement, review, commit
+```
+
+Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
+installed. Each skill is copied (not symlinked) so every install is
+self-contained.
+
+<details>
+<summary>Manual install (no uv)</summary>
+
+The skills and agents are plain markdown — copy them in by hand. Claude Code
+loads skills from `~/.claude/skills/` and agents from `~/.claude/agents/`:
 
 ```sh
 git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in spec-create spec-plan spec-tasks spec-build; do
+for s in tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
 ```
 
-Restart Claude Code so it picks up the new skills, then run the flow in your project:
+If a skill name collides with one you already have, rename these before copying,
+or install one set at a time.
 
-```
-/spec-create   # capture intent and requirements (binds a ticket, optional)
-/spec-plan     # turn the spec into a design and harden the constitution
-/spec-tasks    # slice the plan into an ordered checklist
-/spec-build    # build each task: implement, review, commit
-```
-
-Copying (not symlinking) keeps each install self-contained. If a skill name
-collides with one you already have, rename these before copying, or install one
-set at a time.
+</details>
 
 ## How it works
 
-The constitution (`constitution.md`) is the spine. `spec-create` seeds it from a
-short interview, `spec-plan` hardens it with concrete engineering rules, and
-`spec-build` injects it whole into every task. It holds your style, standards,
+The constitution (`constitution.md`) is the spine. `tiny-spec-create` seeds it from a
+short interview, `tiny-spec-plan` hardens it with concrete engineering rules, and
+`tiny-spec-build` injects it whole into every task. It holds your style, standards,
 invariants, definition of done, and verification commands.
 
-`spec-build` walks the task list top to bottom. Each task runs through one loop:
+`tiny-spec-build` walks the task list top to bottom. Each task runs through one loop:
 
 1. Plan the task against the constitution (inline, brief).
-2. Implement it with a fresh `spec-build-executor` agent.
-3. Review it with an independent `spec-build-reviewer` agent that runs the gate
+2. Implement it with a fresh `tiny-spec-build-executor` agent.
+3. Review it with an independent `tiny-spec-build-reviewer` agent that runs the gate
    end to end and grades against the constitution and the task's acceptance.
 4. On pass, commit the code plus a checklist tick. On fail, loop back to the
    executor with the findings. After two failed attempts it becomes a blocker.
+
+```mermaid
+flowchart TB
+    SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[tasks.md<br/>checklist]
+
+    TASKS --> P[Plan task]
+    P --> I[Implement<br/>executor]
+    I --> R[Review + run gate<br/>reviewer]
+    R -->|pass| C[Commit + tick]
+    C --> TASKS
+    R -->|fail| I
+    R -->|fail twice| B[Blocker logged to decisions.md]
+
+    CON([constitution.md]) -.-> P & I & R
+    MEM([memory.md]) -.-> I & R
+```
+
+Solid arrows are the flow. Dotted arrows show the persistent context injected into
+a step: the `constitution.md` goes into planning, implementation, and review, while
+`memory.md` is handed to the executor and reviewer.
 
 A small `memory.md` carries operational lessons between runs, so the executor and
 reviewer (which start fresh each time) don't relearn the same pitfalls.
 
 When a task can't pass because of a gap in the design or spec, the executor stops
 and logs a blocker instead of hacking around it. You fix the gap upstream in
-`spec-plan` or `spec-create`, then resume. Work runs one ticket at a time and
+`tiny-spec-plan` or `tiny-spec-create`, then resume. Work runs one ticket at a time and
 resumes from the checklist state.
 
 ## Why it's small
 
-A unit-green test suite is not the same as working software, so the reviewer
+Most spec frameworks are generous by default:
+many phases, many agents, many generated documents. tiny-spec makes the opposite
+bet. Keep one safeguard, drop the rest.
+
+A green unit test suite is not the same as working software, so the reviewer
 exercises acceptance criteria end to end and a final smoke test confirms the whole
-spec. That independent review is the safeguard. It replaces the parallel-execution
-machinery, ownership contracts, and scope config that larger kits carry. One task,
-one commit, an external reviewer. Nothing gets added unless it earns its place.
+spec. That independent review is the safeguard — not the volume of planning
+artifacts. One task, one commit, an external reviewer. Nothing gets added unless
+it earns its place.
+
+The case for staying small:
+
+- **Documents are context, and context isn't free.** Generating large `spec.md`,
+  `plan.md`, `research.md`, and `data-model.md` files costs tokens to write, then
+  costs context to carry. Every paragraph the agent has to hold is room it no
+  longer has for your actual code. tiny-spec keeps the spine small — a
+  constitution and a short memory — and injects only what each task needs.
+- **Real work is a ticket inside a system, not a greenfield repo.** Bigger kits
+  assume you're bootstrapping a project from a blank page. Day to day, you pick up
+  a ticket and change part of a system that already exists. tiny-spec binds to a
+  ticket, works one at a time, and references your task platform instead of
+  re-describing the world.
+- **Rigid pipelines fight the user.** Mandatory phases and required sections
+  impose ceremony on work that doesn't need it. tiny-spec's extra structure is
+  optional by design — add shape where it pays, skip it where it doesn't.
+- **More moving parts is more to maintain.** Orchestrators, ownership contracts,
+  checkpoint matrices, and config files are themselves a system you have to learn
+  and keep in sync. Four skills and two agents are not.
+- **Generated docs can fake rigor.** A folder of polished planning artifacts looks
+  like progress, but it isn't proof. The proof is the reviewer running your real
+  tests before each commit.
+
+That's the whole trade: where larger kits add machinery, tiny-spec adds one
+independent reviewer and stops.
 
 ## Project layout
 
 Each skill is self-contained. It carries its own templates and refers to them by
 relative path, with no absolute paths and no shared parent required at runtime, so
 a skill folder works wherever you drop it.
-
-```
-.
-  README.md                 this file
-  CONTRACTS.md              maintainer reference: formats and the build loop
-  CONTRIBUTING.md           how to work on the suite
-  spec-create/
-    SKILL.md                intent → SPEC.md (scaffold + constitution seed)
-    templates/              SPEC.template.md, constitution.template.md
-  spec-plan/
-    SKILL.md                SPEC → PLAN.md + hardened constitution.md
-    templates/              PLAN.template.md
-  spec-tasks/
-    SKILL.md                PLAN → tasks.md (flat ordered checklist)
-    templates/              tasks.template.md
-  spec-build/
-    SKILL.md                the per-task plan → implement → review loop
-    templates/              memory.template.md
-  agents/
-    spec-build-executor.md  implements one task
-    spec-build-reviewer.md  reviews one task and runs the gate
-```
 
 tiny-spec creates a `.spec/` directory in your project root, never inside a skill.
 It is namespaced per ticket, with a shared spine at the root:
