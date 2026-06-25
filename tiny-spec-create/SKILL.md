@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-create
-description: Start or update a spec — capture intent and requirements into .spec/<slug>/SPEC.md, optionally bound to a ticket (or ad-hoc). On first run, scaffolds .spec/ and seeds the shared constitution (constitution.md) from a short interview. Re-run to update an existing spec in place.
+description: Start or update a spec — capture intent and requirements into .spec/<slug>/SPEC.md, optionally bound to a ticket (or ad-hoc). On first run, scaffolds .spec/ and seeds the shared constitution (constitution.md) from a short interview. If a BREAKDOWN.md (from tiny-spec-breakdown) is present, seeds the spec from a chosen story instead of a full interview. Re-run to update an existing spec in place.
 ---
 
 # tiny-spec-create
@@ -15,6 +15,31 @@ directory. Two are **project-wide** and shared at the `.spec/` root
 (`constitution.md`, `memory.md`); the per-spec ones (`SPEC.md`, `PLAN.md`,
 `tasks.md`, `decisions.md`) live under `.spec/<slug>/`. Templates ship in this
 skill's own `templates/` folder (alongside this file); read them from there.
+
+## Seeded mode (`BREAKDOWN.md` present)
+
+Before interviewing, check for **`BREAKDOWN.md`** at the project root (written by the
+optional `tiny-spec-breakdown` skill). If it exists and the user is creating one of
+its stories, **seed from it instead of running the full interview** — confirm, don't
+re-ask:
+
+1. **Pick the story.** Ask which story (or infer from the user's request); match it
+   to its `## Feature:` → `Story:` entry by slug or title.
+2. **Slug + binding.** Use the story's **slug** for `.spec/<slug>/`. Take the ticket
+   provider from the Decisions **Platform** and the **id** from the story's tracker
+   parent or the user (ask for the id if the placeholder is still blank; omit the
+   `ticket:` block entirely if the platform is ad-hoc).
+3. **Requirements.** Promote the story's **`AC:` lines into `REQ-N`** — verbatim where
+   already atomic; split any that hide two capabilities behind an "and".
+4. **Constitution (first run only).** Seed `constitution.md` from the **`## Decisions`**
+   block instead of interviewing stack/layout: Stack + Code-lives → **Style** and
+   **Layout**; any verification hints → **Verification commands**; cross-cutting
+   concerns → **Guiding invariants**. If `constitution.md` already exists, reuse it.
+5. Confirm the captured `REQ-N` with the user, then write `SPEC.md` as below.
+
+Only the **project-wide** questions collapse — still confirm this story's binding and
+requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **full
+interview** below unchanged.
 
 ## Pick the slug (resolve the active dir)
 
@@ -31,14 +56,20 @@ establish the slug. There are two paths — both are first-class:
   footer (everything else — namespacing, the constitution, the build loop — is
   identical). You can bind a ticket later by adding the block to `SPEC.md`.
 
-Create `.spec/<slug>/` and write the slug as the single line of `.spec/ACTIVE` (the
-pointer every downstream skill reads to find the active spec).
+Create `.spec/<slug>/`.
+
+**One branch per ticket — how the active ticket is resolved.** Work for a ticket
+lives on a branch named after the slug (e.g. `PROJ-123` or
+`feature/PROJ-123-dark-mode`); downstream skills resolve the active ticket from the
+branch name, so several tickets can be in flight on separate branches at once. If the
+user isn't already on such a branch, create one (e.g. `git switch -c <slug>`) so the
+new spec resolves by branch match.
 
 ## First run — scaffold
 
 If `.spec/` does not exist:
 
-1. Create `.spec/` and the active ticket dir `.spec/<slug>/`, and write `.spec/ACTIVE`.
+1. Create `.spec/` and the active ticket dir `.spec/<slug>/` (on the ticket branch — see above).
 2. **Short interview** (keep it short — earned ceremony):
    - the ticket binding (above);
    - the intent in one paragraph;
@@ -71,7 +102,8 @@ that hides two capabilities, split it.
 ## Update mode (re-run on an existing spec)
 
 When the active ticket's `SPEC.md` already exists and the user wants a change to
-requirements (resolve the active dir from `.spec/ACTIVE`):
+requirements (resolve the active dir by branch match — see the resolution order
+downstream skills use):
 
 1. Edit `.spec/<active>/SPEC.md` in place — add/alter/remove `REQ-N`, preserving
    existing ids where the requirement still exists.
@@ -92,9 +124,9 @@ Tell the user which downstream docs went stale and to re-run `tiny-spec-plan` to
 reconcile.
 
 > **New spec?** To start a different piece of work (a new ticket or an ad-hoc
-> change), re-run this skill — it creates a new `.spec/<slug>/` and repoints
-> `.spec/ACTIVE`. The shared `constitution.md` and `memory.md` carry over; the
-> previous spec's artifacts stay untouched on disk.
+> change), re-run this skill on a new branch — it creates a new `.spec/<slug>/` that
+> resolves by branch match. The shared `constitution.md` and `memory.md` carry over;
+> the previous spec's artifacts stay untouched on disk.
 
 ## When done
 

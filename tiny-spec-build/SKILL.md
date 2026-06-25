@@ -19,8 +19,9 @@ alongside this skill (see the suite README).
 
 ## Inputs
 
-1. **Resolve the active ticket dir** from `.spec/ACTIVE` (if absent and exactly one
-   ticket dir exists, use it; if several exist, ask which). Call it `<active>`.
+1. **Resolve the active ticket dir** from the current git branch: the `.spec/<slug>/`
+   whose slug matches the branch name (one branch per ticket). If none matches, use
+   the sole ticket dir if there's exactly one; else ask which. Call it `<active>`.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
    it exists (**shared**), and `.spec/<active>/tasks.md`. The constitution + memory
    get injected **whole** into every executor and reviewer. Also note the `ticket`
