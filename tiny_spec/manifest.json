@@ -1,0 +1,12 @@
+{
+  "skills": [
+    "tiny-spec-create",
+    "tiny-spec-plan",
+    "tiny-spec-tasks",
+    "tiny-spec-build"
+  ],
+  "agents": [
+    "tiny-spec-build-executor.md",
+    "tiny-spec-build-reviewer.md"
+  ]
+}
