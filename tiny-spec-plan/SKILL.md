@@ -11,8 +11,9 @@ reviewed against.
 
 Artifacts live under `.spec/`: the **shared** constitution at the root
 (`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md` under
-`.spec/<ticket-id>/`. **Resolve the active ticket dir** from `.spec/ACTIVE` (if it's
-absent and exactly one ticket dir exists, use it; if several exist, ask which). The
+`.spec/<ticket-id>/`. **Resolve the active ticket dir** from the current git branch:
+the `.spec/<slug>/` whose slug matches the branch name (one branch per ticket). If
+none matches, use the sole ticket dir if there's exactly one; else ask which. The
 template ships in this skill's own `templates/` folder (alongside this file).
 Requires `.spec/<active>/SPEC.md`.
 

@@ -7,7 +7,9 @@ Guidance for any agent (Claude Code or otherwise) editing this folder.
 A lean spec-driven flow: `tiny-spec-create` → `tiny-spec-plan` → `tiny-spec-tasks` →
 `tiny-spec-build`, anchored by a strong **constitution** (`constitution.md`) and a
 per-task loop of **plan → implement → review → commit** with an *independent*
-reviewer. See [README.md](README.md) for the shape and [CONTRACTS.md](CONTRACTS.md)
+reviewer. An **optional** Phase-0 on-ramp, `tiny-spec-breakdown`, sits in front for
+carving a PRD into stories (it writes a project-root `BREAKDOWN.md`, not a `.spec/`
+artifact). See [README.md](README.md) for the shape and [CONTRACTS.md](CONTRACTS.md)
 for the formats and rules of record.
 
 ## North star — earned ceremony
@@ -39,11 +41,12 @@ silent (no compiler, no test will catch a misleading instruction). So:
    the artifact name and the token you changed; reconcile every hit. The artifacts
    split **project-wide vs per-ticket** (see `CONTRACTS.md` §3): `constitution.md`
    and `memory.md` are **shared** at the `.spec/` root; `SPEC.md`, `PLAN.md`,
-   `tasks.md`, `decisions.md` live under `.spec/<ticket-id>/`, resolved via the
-   `.spec/ACTIVE` pointer. `decisions.md` has no template on purpose — it's an
+   `tasks.md`, `decisions.md` live under `.spec/<ticket-id>/`, resolved by branch
+   match — the dir whose slug matches the current git branch (`CONTRACTS.md` §1). `decisions.md` has no template on purpose — it's an
    append-only log with a fixed inline skeleton (`CONTRACTS.md` §3.6). Each template
-   has exactly one owning skill that copies it: `tiny-spec-create` (SPEC + constitution),
-   `tiny-spec-plan` (PLAN), `tiny-spec-tasks` (tasks), `tiny-spec-build` (memory). **Commits are
+   has exactly one owning skill that copies it: `tiny-spec-breakdown` (BREAKDOWN),
+   `tiny-spec-create` (SPEC + constitution), `tiny-spec-plan` (PLAN),
+   `tiny-spec-tasks` (tasks), `tiny-spec-build` (memory). **Commits are
    Conventional Commits** (`CONTRACTS.md` §4.1) — the format lives in `tiny-spec-build`
    and `CONTRACTS.md`; reconcile both if you change it.
 2. **Dry-run in a throwaway sandbox** (`/tmp/...`, `git init`). A **new** skill or
