@@ -21,25 +21,25 @@ change a format here, also change the matching skeleton in the **owning skill's*
 
 | Skill | Reads | Writes | Job |
 |-------|-------|--------|-----|
-| `spec-create` | user intent | `<ticket>/SPEC.md` (+ scaffolds `.spec/`, shared `constitution.md` seed, `ACTIVE` pointer) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
-| `spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
-| `spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
-| `spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
+| `tiny-spec-create` | user intent | `<ticket>/SPEC.md` (+ scaffolds `.spec/`, shared `constitution.md` seed, `ACTIVE` pointer) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
+| `tiny-spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
+| `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
+| `tiny-spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
 
 `<ticket>` is the **active ticket directory** under `.spec/` — see §3. Every skill
 resolves it the same way: read `.spec/ACTIVE` (a one-line pointer); if absent and
 exactly one ticket dir exists, use it; if several exist and no `ACTIVE`, ask the user.
 
 There is **no orchestrator and no separate verify skill** — review happens
-per-task inside `spec-build`. To make a change, re-run the owning upstream skill
-in update mode, then re-run `spec-build`; it resumes from the checkbox state.
+per-task inside `tiny-spec-build`. To make a change, re-run the owning upstream skill
+in update mode, then re-run `tiny-spec-build`; it resumes from the checkbox state.
 
 ## §2 — Two agents (both restricted: `Read, Write, Edit, Bash, Grep, Glob` — no `Agent`)
 
-- **`spec-build-executor`** — implements **one task**. Blind to the workflow, free
+- **`tiny-spec-build-executor`** — implements **one task**. Blind to the workflow, free
   to read the whole codebase. Returns a structured report. Never spawns agents,
   never hacks past a blocker.
-- **`spec-build-reviewer`** — independently reviews **one finished task** against
+- **`tiny-spec-build-reviewer`** — independently reviews **one finished task** against
   the constitution + the task's acceptance, **running the real gate** end-to-end.
   Blind to how the code was written. Returns `PASS`/`FAIL` + findings. Read-only
   on the source (it may run commands, not edit code).
@@ -107,8 +107,8 @@ Body sections (required unless marked optional): `## Context` *(optional)*,
 
 ### §3.2 `constitution.md` — the constitution (project-wide, shared)
 The **strongest, most persistent** artifact — and **project-wide**: it lives at the
-`.spec/` root and anchors every ticket. Seeded by `spec-create`, hardened by
-`spec-plan`, and injected **whole** into every executor and reviewer. Seven fixed
+`.spec/` root and anchors every ticket. Seeded by `tiny-spec-create`, hardened by
+`tiny-spec-plan`, and injected **whole** into every executor and reviewer. Seven fixed
 sections (keep all, even if short):
 
 1. **Style** — formatting, naming, language idioms.
@@ -181,16 +181,16 @@ change/update path (§6).
 
 ## §4 — The build loop (the heart of the flow)
 
-`spec-build` processes `tasks.md` top to bottom. For the **first unchecked** task:
+`tiny-spec-build` processes `tasks.md` top to bottom. For the **first unchecked** task:
 
 1. **PLAN** *(inline, brief).* Restate the task as a 2–4 step micro-plan against
    the constitution: which invariants apply, which files, which Definition-of-Done
    items and Verification commands it must satisfy. This is the executor's brief.
-2. **IMPLEMENT.** Dispatch one **`spec-build-executor`** with a fresh,
+2. **IMPLEMENT.** Dispatch one **`tiny-spec-build-executor`** with a fresh,
    self-contained prompt (§7): the task + acceptance, the `files:` hint, the
    **whole** `constitution.md`, and the **whole** `memory.md`. It writes the code
    and returns its report. A `BLOCKER` → go to §5 (do not continue this task).
-3. **REVIEW.** Dispatch one **`spec-build-reviewer`** — blind to step 2 — with the
+3. **REVIEW.** Dispatch one **`tiny-spec-build-reviewer`** — blind to step 2 — with the
    task + acceptance, the **whole** `constitution.md`, the changed files, and the
    Verification commands. It **runs the gate end-to-end** and checks the
    Definition of Done. Returns `PASS` or `FAIL` + findings.
@@ -256,14 +256,14 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
 If the executor cannot proceed correctly — a design gap, an impossible
 requirement, a contradiction with the constitution, a missing dependency — it
-**stops and reports a `BLOCKER`**, leaving the tree clean. `spec-build` then:
+**stops and reports a `BLOCKER`**, leaving the tree clean. `tiny-spec-build` then:
 
 1. Leaves the task `[ ]`.
 2. Logs it to `decisions.md` (`type: blocker`, naming the upstream doc to fix).
-3. Surfaces it to the user and routes upstream: `spec-plan` (design gap) or
-   `spec-create` (a requirement itself is wrong/impossible), in update mode.
+3. Surfaces it to the user and routes upstream: `tiny-spec-plan` (design gap) or
+   `tiny-spec-create` (a requirement itself is wrong/impossible), in update mode.
 
-After the upstream fix, re-run `spec-build`; it resumes from the checkbox state.
+After the upstream fix, re-run `tiny-spec-build`; it resumes from the checkbox state.
 A genuine fork the plan doesn't pin down → don't guess: surface it with the
 options + your recommendation, record the resolution in `decisions.md`.
 
@@ -281,7 +281,7 @@ mode, which flips downstream `status: stale` and logs a `decisions.md` entry:
 **Completed-work guardrail:** if a change touches a task already `[x]`, **uncheck
 it** and log it (`type: change`) for human review — never assume built work
 survived the change. Reconcile stale artifacts (re-run the owning skill in update
-mode) before re-running `spec-build`.
+mode) before re-running `tiny-spec-build`.
 
 ## §7 — The executor/reviewer context contract
 
