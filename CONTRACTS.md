@@ -21,14 +21,25 @@ change a format here, also change the matching skeleton in the **owning skill's*
 
 | Skill | Reads | Writes | Job |
 |-------|-------|--------|-----|
-| `tiny-spec-create` | user intent | `<ticket>/SPEC.md` (+ scaffolds `.spec/`, shared `constitution.md` seed, `ACTIVE` pointer) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
+| `tiny-spec-breakdown` *(optional)* | PRD, wireframes, notes | `BREAKDOWN.md` (project root — **not** a `.spec/` artifact) | Phase-0 on-ramp: decompose inputs into Features → Stories with draft ACs. Feeds `tiny-spec-create`. |
+| `tiny-spec-create` | user intent (+ optional `BREAKDOWN.md`) | `<ticket>/SPEC.md` (+ scaffolds `.spec/` and the shared `constitution.md` seed) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
 | `tiny-spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
 | `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
 | `tiny-spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
 
 `<ticket>` is the **active ticket directory** under `.spec/` — see §3. Every skill
-resolves it the same way: read `.spec/ACTIVE` (a one-line pointer); if absent and
-exactly one ticket dir exists, use it; if several exist and no `ACTIVE`, ask the user.
+resolves it the **same way**, from the current git branch:
+
+1. **Branch match** — the `.spec/<slug>/` whose `<slug>` appears as a token in the
+   current git branch name (case-insensitive, bounded by the start/end or a `/`,
+   `-`, or `_` separator). One branch per ticket, so `feature/PROJ-123-dark-mode`,
+   `PROJ-123`, and `snir/gh-42-fix` resolve to `PROJ-123`, `PROJ-123`, `gh-42`.
+2. **Sole dir** — if no dir matches, use the only ticket dir, if exactly one exists.
+3. **Ask** — else ask the user which.
+
+The branch is the single source of truth for which ticket is active: parallel work
+on separate branches each resolves to its own ticket, with no shared pointer file to
+fall out of sync.
 
 There is **no orchestrator and no separate verify skill** — review happens
 per-task inside `tiny-spec-build`. To make a change, re-run the owning upstream skill
@@ -61,7 +72,6 @@ rest are **per-ticket** and live under `.spec/<ticket-id>/`:
 
 ```
 .spec/
-  ACTIVE             one line: the active ticket dir name (the resolution pointer)
   constitution.md    THE CONSTITUTION — project-wide, the spine of every task (shared)
   memory.md          operational lessons carried run-to-run, project-wide (shared; optional until first lesson)
   <ticket-id>/       one dir per ticket — e.g. PROJ-123/, gh-42/, ado-77/, monday-88/
@@ -70,6 +80,10 @@ rest are **per-ticket** and live under `.spec/<ticket-id>/`:
     tasks.md         flat ordered task checklist (the execution state)
     decisions.md     log of decisions + blockers (optional until first entry)
 ```
+
+> `BREAKDOWN.md` (optional, from `tiny-spec-breakdown`) is **not** shown above on
+> purpose — it is a pre-spec worksheet at the **project root**, not a `.spec/`
+> artifact. See §3.0.
 
 **Why shared vs per-ticket:** the constitution and operational memory are
 properties of the *project*, not of any one ticket (a "never X" rule or a toolchain
@@ -83,6 +97,24 @@ the platform key — verbatim when filesystem-safe (`PROJ-123`), else normalize
 **Ad-hoc work (no ticket) is fully supported:** use a short kebab-case feature slug
 (`dark-mode`) instead — the `SPEC.md` `ticket:` block is omitted and the commit
 `Refs:` footer is dropped (§4.1); nothing else changes.
+
+### §3.0 `BREAKDOWN.md` — pre-spec worksheet (project root, **not** a `.spec/` artifact)
+Written by the **optional** `tiny-spec-breakdown` skill from a PRD + wireframes/notes.
+It lives at the **project root**, **not** under `.spec/`, and is **not** part of the
+tree above — it is pre-spec planning the tracker owns: regenerable, read by
+`tiny-spec-create` in seeded mode and **never** by the build loop. Shape:
+
+- a `## Decisions` block — Stack, Code lives, Platform, Structure lens, Scope,
+  Cross-cutting — which seeds `constitution.md` (§3.2) on a story's first `create`;
+- one `## Feature: <name>` heading per feature (a grouping only — features never
+  become `.spec/` dirs), each with a tracker-parent id to fill in after creation;
+- under each, `- Story: <title>   slug: <ado-77 | kebab>` entries with `- AC:` lines,
+  each a single user-observable, testable capability (draft `REQ-N`).
+
+`tiny-spec-create` maps a chosen story's `AC:` lines → `REQ-N` and the Decisions block
+→ the constitution. The skeleton is owned by `tiny-spec-breakdown`
+(`templates/BREAKDOWN.template.md`). Being optional and pre-spec, it has no `status`
+frontmatter and is not subject to the staleness rules (§6).
 
 ### §3.1 `SPEC.md` (per-ticket)
 Frontmatter `status: current | stale`, `updated: <ISO date>`, and an optional
@@ -303,7 +335,11 @@ The suite is used **one ticket at a time** against an external platform (Jira,
 GitHub Issues, Azure DevOps, Monday). The binding is **reference-only**: a `ticket`
 block in `SPEC.md` frontmatter (§3.1) records the id/url/provider, the per-ticket
 namespacing (§3) keeps each ticket's artifacts separate, and the `Refs:` commit
-footer (§4.1) lets the platform auto-link the work. There are **no API calls, no
+footer (§4.1) lets the platform auto-link the work. **One branch per ticket** is the
+team convention: name the branch after the ticket slug (e.g. `PROJ-123` or
+`feature/PROJ-123-dark-mode`) so the active-ticket resolution (§1) picks it up from
+the branch — letting several tickets be in flight on separate branches at once, each
+resolving to its own artifacts. There are **no API calls, no
 credentials, and no config** — status is moved manually. Deeper, opt-in integration
 layers (active MCP/CLI sync, PR automation, full API) are documented in
 [INTEGRATIONS.md](INTEGRATIONS.md) — none are part of the core suite.

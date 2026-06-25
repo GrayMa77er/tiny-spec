@@ -6,7 +6,7 @@ labels: bug
 ---
 
 **Which skill or agent**
-tiny-spec-create / tiny-spec-plan / tiny-spec-tasks / tiny-spec-build / tiny-spec-build-executor / tiny-spec-build-reviewer
+tiny-spec-breakdown / tiny-spec-create / tiny-spec-plan / tiny-spec-tasks / tiny-spec-build / tiny-spec-build-executor / tiny-spec-build-reviewer
 
 **What happened**
 A clear description of the behavior you saw.
