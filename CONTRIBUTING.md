@@ -18,11 +18,45 @@ of truth for how to work on this suite. A few things worth knowing up front:
 - **Stay portable.** No absolute paths. Each skill carries its own `templates/` and
   works wherever it is dropped.
 
+## Running the evals
+
+The suite ships with maintainer-only evaluations under [`docs/eval/`](docs/eval/).
+**They do not run in CI** — each spins up throwaway sandboxes and drives the real
+flow with the `claude` CLI, so they cost tokens and minutes. You have to run them
+**by hand** when your change touches the stage they cover. Prereqs: `claude`,
+`python3`, `git` (no global install needed — the harnesses vendor the repo's skills
+into each sandbox).
+
+- **Execution loop** (`create → plan → tasks → build`) — held-out grade of produced
+  code:
+
+  ```sh
+  docs/eval/harness/run.sh                 # all benchmark tasks
+  docs/eval/harness/run.sh roman duration  # a subset while iterating
+  ```
+
+- **Planning stage** (`tiny-spec-prd → tiny-spec-breakdown`) — structural checks +
+  an LLM judge on the produced `PRD.md`/`BREAKDOWN.md`:
+
+  ```sh
+  docs/eval/harness/run-planning.sh        # all planning cases
+  docs/eval/harness/run-planning.sh snip   # a subset while iterating
+  ```
+
+- **Static design review** — no tokens, scores the design against the rubric:
+  run the `/eval-suite` skill.
+
+Start with a single task/case while iterating (the full run is slow). See
+[`docs/eval/README.md`](docs/eval/README.md) for what each measures, the env knobs
+(`CLAUDE_MODEL`, `JUDGE_MODEL`, `KEEP_SANDBOX`, …), and how scores are recorded.
+
 ## Pull requests
 
 1. Branch off `main`.
 2. Make the change and dry-run it (see [AGENTS.md](AGENTS.md) for how).
-3. Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for
+3. If you touched the build loop or the planning skills, **run the matching eval
+   harness manually** (above) and note the result in the PR.
+4. Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for
    commit messages.
-4. Open a PR describing what changed, which skills or agents you touched, and how
+5. Open a PR describing what changed, which skills or agents you touched, and how
    you verified it.

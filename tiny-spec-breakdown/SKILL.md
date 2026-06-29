@@ -23,9 +23,11 @@ state; the breakdown is pre-spec planning the tracker owns.
 
 ## Inputs
 
-Take one or more file paths from the user (a PRD is the usual anchor; wireframes,
-design notes, an API sketch are common companions). **Read them all.** If two
-sources disagree, ask which wins and note it — don't silently pick.
+A PRD is the usual anchor. If a **`PRD.md`** (from the optional `tiny-spec-prd` skill)
+is present at the project root, use it as the anchor — its **Core capabilities** are
+what you carve into stories. Otherwise take one or more file paths from the user (a
+PRD, wireframes, design notes, an API sketch). **Read them all.** If two sources
+disagree, ask which wins and note it — don't silently pick.
 
 ## Interview — short, five groups
 

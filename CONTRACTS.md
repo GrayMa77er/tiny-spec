@@ -21,7 +21,8 @@ change a format here, also change the matching skeleton in the **owning skill's*
 
 | Skill | Reads | Writes | Job |
 |-------|-------|--------|-----|
-| `tiny-spec-breakdown` *(optional)* | PRD, wireframes, notes | `BREAKDOWN.md` (project root — **not** a `.spec/` artifact) | Phase-0 on-ramp: decompose inputs into Features → Stories with draft ACs. Feeds `tiny-spec-create`. |
+| `tiny-spec-prd` *(optional)* | a rough idea (+ optional notes/sketches) | `PRD.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: interview an idea into a short PRD. Feeds `tiny-spec-breakdown`. |
+| `tiny-spec-breakdown` *(optional)* | PRD (`PRD.md` if present), wireframes, notes | `BREAKDOWN.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: decompose inputs into Features → Stories with draft ACs. Feeds `tiny-spec-create`. |
 | `tiny-spec-create` | user intent (+ optional `BREAKDOWN.md`) | `<ticket>/SPEC.md` (+ scaffolds `.spec/` and the shared `constitution.md` seed) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
 | `tiny-spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
 | `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
@@ -81,9 +82,9 @@ rest are **per-ticket** and live under `.spec/<ticket-id>/`:
     decisions.md     log of decisions + blockers (optional until first entry)
 ```
 
-> `BREAKDOWN.md` (optional, from `tiny-spec-breakdown`) is **not** shown above on
-> purpose — it is a pre-spec worksheet at the **project root**, not a `.spec/`
-> artifact. See §3.0.
+> `PRD.md` (from `tiny-spec-prd`) and `BREAKDOWN.md` (from `tiny-spec-breakdown`) are
+> **not** shown above on purpose — both are optional pre-spec planning files at the
+> **project root**, not `.spec/` artifacts. See §3.0.
 
 **Why shared vs per-ticket:** the constitution and operational memory are
 properties of the *project*, not of any one ticket (a "never X" rule or a toolchain
@@ -98,11 +99,27 @@ the platform key — verbatim when filesystem-safe (`PROJ-123`), else normalize
 (`dark-mode`) instead — the `SPEC.md` `ticket:` block is omitted and the commit
 `Refs:` footer is dropped (§4.1); nothing else changes.
 
-### §3.0 `BREAKDOWN.md` — pre-spec worksheet (project root, **not** a `.spec/` artifact)
-Written by the **optional** `tiny-spec-breakdown` skill from a PRD + wireframes/notes.
-It lives at the **project root**, **not** under `.spec/`, and is **not** part of the
-tree above — it is pre-spec planning the tracker owns: regenerable, read by
-`tiny-spec-create` in seeded mode and **never** by the build loop. Shape:
+### §3.0 Pre-spec planning files — `PRD.md`, `BREAKDOWN.md` (project root, **not** `.spec/` artifacts)
+Both are optional, regenerable, and live at the **project root** — pre-spec planning
+the tracker owns, never read by the build loop and not subject to the staleness rules
+(§6). They have no `status` frontmatter. They stack: `PRD.md` → `BREAKDOWN.md` → the
+per-story flow.
+
+**`PRD.md`** — written by the **optional** `tiny-spec-prd` skill from a rough idea via
+a short interview. The shortest PRD that lets `tiny-spec-breakdown` carve good stories:
+
+- **Problem / context** and **Goal & non-goals** (required) — the *why* and the
+  boundary; optional `Users / personas`, `Constraints & cross-cutting`,
+  `Success signals`, `Open questions`;
+- a required **Core capabilities** list — each a single user-observable, testable
+  capability (no implementation detail, atomic), which `tiny-spec-breakdown` carves
+  into Features → Stories.
+
+The skeleton is owned by `tiny-spec-prd` (`templates/PRD.template.md`).
+
+**`BREAKDOWN.md`** — written by the **optional** `tiny-spec-breakdown` skill from a PRD
+(`PRD.md` if present) + wireframes/notes. Read by `tiny-spec-create` in seeded mode.
+Shape:
 
 - a `## Decisions` block — Stack, Code lives, Platform, Structure lens, Scope,
   Cross-cutting — which seeds `constitution.md` (§3.2) on a story's first `create`;
@@ -113,8 +130,7 @@ tree above — it is pre-spec planning the tracker owns: regenerable, read by
 
 `tiny-spec-create` maps a chosen story's `AC:` lines → `REQ-N` and the Decisions block
 → the constitution. The skeleton is owned by `tiny-spec-breakdown`
-(`templates/BREAKDOWN.template.md`). Being optional and pre-spec, it has no `status`
-frontmatter and is not subject to the staleness rules (§6).
+(`templates/BREAKDOWN.template.md`).
 
 ### §3.1 `SPEC.md` (per-ticket)
 Frontmatter `status: current | stale`, `updated: <ISO date>`, and an optional
