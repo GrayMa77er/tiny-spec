@@ -17,22 +17,26 @@ builds the work one task at a time. Every task is implemented by one agent and
 graded by an independent reviewer that runs the real tests before anything is
 committed.
 
-It is four skills and two agents — plus an optional Phase-0 on-ramp,
-`tiny-spec-breakdown`, for carving a PRD into stories. No orchestrator, no config
-file, no build step.
+That core is **four skills and two agents**. In front of it sit **two optional
+planning on-ramps** — `tiny-spec-prd` (idea → PRD) and `tiny-spec-breakdown`
+(PRD → stories) — for when you're starting from an idea rather than a ready ticket.
+No orchestrator, no config file, no build step.
 
 ```
-tiny-spec-breakdown  ⇢   tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-tasks  →  tiny-spec-build
-   (optional)               intent               design             tasks            per-task loop
-   PRD → stories            SPEC.md              PLAN.md +          tasks.md         plan → implement → review → commit
-   BREAKDOWN.md                                  constitution
+PLANNING (optional on-ramps)              EXECUTION (the core loop, one story at a time)
+  tiny-spec-prd  ⇢  tiny-spec-breakdown ⇢  tiny-spec-create → tiny-spec-plan → tiny-spec-tasks → tiny-spec-build
+  idea → PRD        PRD → stories           intent             design           tasks            per-task loop
+  PRD.md            BREAKDOWN.md            SPEC.md            PLAN.md +        tasks.md         plan → implement → review → commit
+                                                              constitution
 ```
 
-`tiny-spec-breakdown` is optional: skip it and start at `tiny-spec-create` for a
-single known piece of work; reach for it when a PRD needs carving into many stories.
-It reads a PRD plus wireframes/notes and writes a `BREAKDOWN.md` at your project root
-— a flat list of Features → Stories with draft acceptance criteria — which
-`tiny-spec-create` then reads one story at a time.
+The two on-ramps are **optional** and stack. Have nothing written down? Run
+`tiny-spec-prd` to interview your idea into a `PRD.md`. Have a PRD already? Run
+`tiny-spec-breakdown` to carve it into a `BREAKDOWN.md` — a flat list of
+Features → Stories with draft acceptance criteria. Have a single known piece of
+work? Skip both and start at `tiny-spec-create`. Both on-ramps write a regenerable
+file at your project root (not under `.spec/`); `tiny-spec-create` then reads the
+breakdown one story at a time.
 
 ## New to spec-driven development?
 
@@ -56,6 +60,7 @@ uvx tiny-spec install
 Restart Claude Code so it picks up the new skills, then run the flow in your project:
 
 ```
+/tiny-spec-prd       # optional: interview a rough idea into a PRD (PRD.md)
 /tiny-spec-breakdown # optional: carve a PRD + wireframes into stories (BREAKDOWN.md)
 /tiny-spec-create    # capture intent and requirements (binds a ticket, optional)
 /tiny-spec-plan      # turn the spec into a design and harden the constitution
@@ -78,7 +83,7 @@ git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
@@ -162,7 +167,7 @@ The case for staying small:
   optional by design — add shape where it pays, skip it where it doesn't.
 - **More moving parts is more to maintain.** Orchestrators, ownership contracts,
   checkpoint matrices, and config files are themselves a system you have to learn
-  and keep in sync. Four skills and two agents are not.
+  and keep in sync. A few small skills and two agents are not.
 - **Generated docs can fake rigor.** A folder of polished planning artifacts looks
   like progress, but it isn't proof. The proof is the reviewer running your real
   tests before each commit.

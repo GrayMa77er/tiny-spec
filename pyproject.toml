@@ -34,6 +34,7 @@ packages = ["tiny_spec"]
 # expects them). Bundle them into the wheel under tiny_spec/_bundle/ so the
 # installer can copy them at runtime, without restructuring the repo.
 [tool.hatch.build.targets.wheel.force-include]
+"tiny-spec-prd" = "tiny_spec/_bundle/tiny-spec-prd"
 "tiny-spec-breakdown" = "tiny_spec/_bundle/tiny-spec-breakdown"
 "tiny-spec-create" = "tiny_spec/_bundle/tiny-spec-create"
 "tiny-spec-plan" = "tiny_spec/_bundle/tiny-spec-plan"
@@ -44,6 +45,7 @@ packages = ["tiny_spec"]
 [tool.hatch.build.targets.sdist]
 include = [
   "tiny_spec",
+  "tiny-spec-prd",
   "tiny-spec-breakdown",
   "tiny-spec-create",
   "tiny-spec-plan",
