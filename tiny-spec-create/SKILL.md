@@ -192,6 +192,17 @@ downstream skills use):
    - note: <what changed + why>
    ```
 
+4. **Completed-work guardrail.** If a changed `REQ-N` is delivered by a task already
+   `[x]` in `tasks.md` (follow its `req:` field), **uncheck it** and name the
+   unchecked ids in the same `decisions.md` entry. `tiny-spec-build` resumes from the
+   checkbox state, so a task left `[x]` is a task it will never revisit — never assume
+   built work survived a requirement change.
+5. Set `SPEC.md` `status: current` and bump `updated`. **Do this even if it was
+   already `current`.** `SPEC.md` is the root of the chain and no other skill in the
+   suite writes that flag, so a hand-edited `stale` SPEC is otherwise unclearable and
+   the chain jams at the root — `tiny-spec-plan` and `tiny-spec-tasks` both clear their
+   own flag this way; this one was the gap.
+
 Tell the user which downstream docs went stale and to re-run `tiny-spec-plan` to
 reconcile.
 
