@@ -32,8 +32,15 @@ state; the PRD is pre-spec planning, regenerable, the same tier as `BREAKDOWN.md
 
 Anything the user has, or nothing at all. A one-line idea is enough; loose notes,
 competitor links, or a rough sketch are welcome companions. **Read any files they
-point at.** Where the idea is silent, the interview fills the gaps — don't invent
-scope the user hasn't asked for.
+point at** — and a sketch means *look at it*, since `Read` renders images. Where the
+idea is silent, the interview fills the gaps — don't invent scope the user hasn't
+asked for.
+
+**Don't describe screens here.** A sketch at this stage tells you what the product
+*is*; it is far too early to pin down layout or spacing, and the token system it
+would be written against does not exist yet. Note the surfaces the idea implies and
+move on — `tiny-spec-create` anchors screens properly, once there is a constitution
+to anchor them to.
 
 ## Interview — short, four groups
 

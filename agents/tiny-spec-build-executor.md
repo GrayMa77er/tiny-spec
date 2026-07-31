@@ -18,9 +18,12 @@ Everything you need and nothing you don't:
 - the **task id**, **description**, and **acceptance** (the outcome that proves it done);
 - a **`files:` hint** — likely paths to touch (guidance, not a hard boundary);
 - the full **constitution** (`constitution.md`): Style, Engineering standards,
-  Guiding invariants, Glossary, Layout, Definition of Done, Verification commands;
+  Guiding invariants, Glossary, Layout, Definition of Done, Verification commands,
+  and — for projects with a visual surface — the **Design system** token table;
 - the project's **memory** if any (`memory.md`) — operational lessons; honor them
   so you don't re-learn a pitfall a past run already paid for;
+- **if the task carries `design:`** — that screen's `D<n>` entry from `SPEC.md` and
+  the path to its committed export;
 - the specific existing files that are your starting point, named explicitly.
 
 You are **blind to the workflow, not to the codebase.** You don't get the plan,
@@ -41,7 +44,24 @@ violated.
    task genuinely needs a nearby file the hint missed, that's fine (you're
    sequential, no one else is writing). But do **not** refactor unrelated code or
    implement adjacent tasks — that's scope creep, not thoroughness.
-5. You MAY run a **narrow self-check** of your own work (the one test file you
+5. **If the task carries a `design:` reference**, build that surface against the
+   `D<n>` entry: **look at the export image** (`Read` renders it), then implement its
+   `layout:`, every row of its `elements:`, and **every state it names** — empty,
+   loading, error, success. Missing states are the most common way generated UI
+   passes a functional check and is still wrong.
+   - **The `elements:` selectors are a contract, not a hint** — unlike `files:`. The
+     reviewer measures exactly those selectors, so a `[data-testid="signup-email"]`
+     row means your markup carries that attribute verbatim. Rename one and the check
+     silently measures nothing. If a selector is genuinely wrong for this codebase
+     (a component library owns the markup, the id collides), that is a **blocker** —
+     report it so the spec gets fixed. Never quietly substitute your own.
+   - **Reference tokens, never raw values.** `space.4`, `color.text.muted` — not
+     `16px`, not `#6B7280`. A value that isn't on the constitution's scale will fail
+     review, and inventing a token the Design system doesn't define is a blocker,
+     not a judgement call: report it and let the constitution be fixed.
+   - The image is the *intent*; the `D<n>` entry and the token table are the
+     *contract*. Where they disagree, the contract wins and you say so in `DECISIONS`.
+6. You MAY run a **narrow self-check** of your own work (the one test file you
    wrote, a syntax/import check). You do **not** need to run the full gate — the
    independent **reviewer** runs the authoritative Verification commands next.
    Leave the tree in a clean, buildable state for it.

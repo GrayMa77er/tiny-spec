@@ -101,6 +101,28 @@ short interview, `tiny-spec-plan` hardens it with concrete engineering rules, an
 `tiny-spec-build` injects it whole into every task. It holds your style, standards,
 invariants, definition of done, and verification commands.
 
+### Designs, if you have them
+
+Drop your exported wireframes in a `design/` directory and `tiny-spec-create` will
+look at them — actually look, they are read as images. From all of them together it
+proposes one coherent **design system** (spacing scale, type scale, color roles) for
+your approval and writes it into the constitution, then describes each screen as a
+`D<n>` entry in `SPEC.md`: its layout, its elements with a selector each, and the
+states it must render — all in those token names.
+
+The point is what happens at build time. Tag a task with `design: D1` and the
+reviewer renders that surface, measures the selectors the entry names, and **fails the
+task** on a value that isn't on your scale, an element that never got built, or a
+state the design calls for and the code doesn't render. It measures numbers rather
+than diffing screenshots, because pixel diffs go flaky and get muted. Tasks without a
+`design:` tag are graded exactly as before.
+
+No Figma token, no plugin, no design SaaS — a view-only Figma works fine, since the
+committed export is what the agents read and the `source:` link keeps the trail back.
+Change an export and its recorded hash stops matching, which marks the spec stale the
+same way editing a requirement does. Skip the whole thing for a CLI or a library; the
+constitution simply has no design section.
+
 `tiny-spec-build` walks the task list top to bottom. Each task runs through one loop:
 
 1. Plan the task against the constitution (inline, brief).
@@ -191,6 +213,10 @@ It is namespaced per ticket, with a shared spine at the root:
   <ticket-id>/              one directory per ticket (PROJ-123/, gh-42/, …)
     SPEC.md  PLAN.md  tasks.md  decisions.md
 ```
+
+`PRD.md`, `BREAKDOWN.md`, and `design/` sit at your project root rather than inside
+`.spec/`, because they are yours: the first two are regenerable pre-spec planning
+files, and the design exports are project files no skill ever writes.
 
 `CONTRACTS.md` documents the formats for maintainers. The skills do not read it at
 runtime; each is self-sufficient.

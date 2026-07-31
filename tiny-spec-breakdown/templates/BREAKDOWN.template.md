@@ -24,6 +24,7 @@
 - Story: <one user-observable capability>     slug: <ado-__ | kebab>
   - AC: <a single user-observable, testable outcome — becomes REQ-1 in this story's SPEC.md>
   - AC: <another — keep each atomic; no "and" hiding two capabilities>
+  - design: <path(s) to the wireframe(s) covering this story — omit if it has no visual surface>
 - Story: <one user-observable capability>     slug: <ado-__ | kebab>
   - AC: <…>
 

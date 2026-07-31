@@ -35,7 +35,11 @@ re-ask:
    block instead of interviewing stack/layout: Stack + Code-lives → **Style** and
    **Layout**; any verification hints → **Verification commands**; cross-cutting
    concerns → **Guiding invariants**. If `constitution.md` already exists, reuse it.
-5. Confirm the captured `REQ-N` with the user, then write `SPEC.md` as below.
+5. **Designs.** If the story carries `design:` paths, run the **Designs** section
+   below against exactly those files — read them, seed or reuse the constitution's
+   **Design system**, and write this story's `D<n>` entries. The breakdown named the
+   files; it did not describe them, so you still have to open them.
+6. Confirm the captured `REQ-N` with the user, then write `SPEC.md` as below.
 
 Only the **project-wide** questions collapse — still confirm this story's binding and
 requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **full
@@ -83,6 +87,62 @@ If `.spec/` does not exist:
    `constitution.md` already exists (a prior ticket created it), **reuse it** — do
    not overwrite the project's constitution.
 
+## Designs (only if this project has a visual surface)
+
+Wireframes and mockups are worth nothing to a build agent as loose files — they get
+read once and forgotten. This section turns them into two durable things: a
+**project-wide token system** in the constitution, and a **per-screen `D<n>` entry**
+in `SPEC.md`. Skip the whole section for a CLI, library, or headless service.
+
+1. **Find and read them.** Look for a `design/` directory at the project root (also
+   accept paths the user hands you). **Actually read every file** — `Read` renders
+   images, so look at the PNG/JPG/SVG, open the HTML mockup, read the Excalidraw.
+   A design you did not open cannot be described, and a guessed description is worse
+   than none because it reads as authoritative.
+
+2. **First run only — propose the token system, don't measure it.** Read *all* the
+   designs together and infer **one coherent scale** across them: semantic color
+   roles, a single spacing step, a type scale, radii, elevation. Do **not** measure
+   each screen and record its pixels — image-derived per-screen values are unreliable
+   and produce no shared vocabulary. Snapping ragged wireframe values onto a clean
+   scale is the point, not a loss of fidelity. Present the proposed system for
+   approval, note anything you had to round, then fill in the constitution's
+   **Design system** section. If the constitution already has one, **reuse it** —
+   describe this ticket's screens in the existing tokens and flag any screen that
+   genuinely needs a new token rather than inventing one silently.
+
+3. **Ask for the `visual:` command** — how the reviewer boots this UI to read back
+   computed styles (a Playwright script, a dev-server URL plus a snippet). Record it
+   in **Verification commands**. Without it no task can carry a `design:` reference.
+
+4. **Write one `D<n>` entry per screen this ticket touches**, with the source link,
+   the committed export path, and its `sha256` (`shasum -a 256 <file>` — this is the
+   staleness signal, so compute it, never invent it). Describe layout, elements, and
+   states in **token names only**.
+
+   **`elements:` is the part that makes the gate work, so give each one a selector.**
+   The reviewer measures exactly the selectors you name; without them it has to guess
+   which node is "the error line", and a wrong guess measures the wrong element and
+   passes. Prefer a **stable test id** (`[data-testid="signup-email"]`) over a CSS
+   class — classes get renamed by refactors and mangled by CSS-in-JS, and a selector
+   that silently stops matching is the exact failure this is meant to prevent.
+
+   List the elements the design actually constrains — the ones whose spacing, type,
+   or color you'd notice being wrong. A wrapper `<div>` nobody can see does not need
+   a row. Five to ten rows describes most screens; if you're past fifteen, the screen
+   is probably two `D<n>` entries.
+
+   **`layout:` carries the arrangement**, which no per-element row can express: the
+   structure (single column, 3-col grid, sidebar + main), the max width, and the
+   **order** elements appear in. This is what the reviewer compares geometry against.
+
+5. **Link the requirements.** A `REQ-N` that this design bears on names its screen —
+   `REQ-3 — the signup form validates email inline (D1)`. That is what makes
+   `frame → REQ → task → files` greppable in both directions.
+
+If the PRD/intent and a design **disagree**, do not silently pick one. Say what each
+says, ask which wins, and record the answer in the `D` entry or `## Open questions`.
+
 ## Write `SPEC.md`
 
 Copy this skill's `templates/SPEC.template.md` to `.spec/<slug>/SPEC.md` and fill
@@ -93,6 +153,8 @@ it in:
 - a `## Requirements` list — each `REQ-N` a single **user-observable, testable**
   capability with **no implementation detail** ("the CLI accepts a `--json` flag
   and prints valid JSON", not "add a json module");
+- a `## Design` list — one `D<n>` per screen this ticket touches, if it has a visual
+  surface (see **Designs** above). Omit the section entirely if it doesn't;
 - the optional sections (`Context`, `Non-goals`, `Success criteria`,
   `Open questions`, `Links`) where they add value — omit any that don't apply.
 
@@ -107,6 +169,16 @@ downstream skills use):
 
 1. Edit `.spec/<active>/SPEC.md` in place — add/alter/remove `REQ-N`, preserving
    existing ids where the requirement still exists.
+1b. **If there is a `## Design` section, re-hash every export** (`shasum -a 256`) and
+   compare with the recorded `sha256`. A mismatch means the design moved under the
+   spec: re-read that export, update the entry's layout/elements/states and hash, and
+   treat it as a change like any other (steps 2–3 below). A **missing** export file is
+   a broken anchor — say so loudly and stop rather than leaving an entry that points
+   at nothing; a link that fails silently is worse than no link.
+
+   This is also the entry point when designs arrive **after** the spec was written:
+   run this skill in update mode, work through the **Designs** section above, and the
+   screens get anchored without redoing the requirements.
 2. Flip downstream **stale**: set `PLAN.md` and `tasks.md` frontmatter to
    `status: stale` (if they exist).
 3. Log it: append a `decisions.md` entry to `.spec/<active>/decisions.md`, using the

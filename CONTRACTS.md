@@ -21,9 +21,9 @@ change a format here, also change the matching skeleton in the **owning skill's*
 
 | Skill | Reads | Writes | Job |
 |-------|-------|--------|-----|
-| `tiny-spec-prd` *(optional)* | a rough idea (+ optional notes/sketches) | `PRD.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: interview an idea into a short PRD. Feeds `tiny-spec-breakdown`. |
-| `tiny-spec-breakdown` *(optional)* | PRD (`PRD.md` if present), wireframes, notes | `BREAKDOWN.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: decompose inputs into Features → Stories with draft ACs. Feeds `tiny-spec-create`. |
-| `tiny-spec-create` | user intent (+ optional `BREAKDOWN.md`) | `<ticket>/SPEC.md` (+ scaffolds `.spec/` and the shared `constitution.md` seed) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
+| `tiny-spec-prd` *(optional)* | a rough idea (+ optional notes/sketches, read as images) | `PRD.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: interview an idea into a short PRD. Feeds `tiny-spec-breakdown`. |
+| `tiny-spec-breakdown` *(optional)* | PRD (`PRD.md` if present), wireframes (read as images), notes | `BREAKDOWN.md` (project root — **not** a `.spec/` artifact) | Planning on-ramp: decompose inputs into Features → Stories with draft ACs + `design:` refs. Feeds `tiny-spec-create`. |
+| `tiny-spec-create` | user intent (+ optional `BREAKDOWN.md`, `design/` exports) | `<ticket>/SPEC.md` (+ scaffolds `.spec/` and the shared `constitution.md` seed) | Bind a ticket, capture **what** and **why** as `REQ-N` requirements. |
 | `tiny-spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
 | `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
 | `tiny-spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
@@ -54,7 +54,9 @@ in update mode, then re-run `tiny-spec-build`; it resumes from the checkbox stat
 - **`tiny-spec-build-reviewer`** — independently reviews **one finished task** against
   the constitution + the task's acceptance, **running the real gate** end-to-end.
   Blind to how the code was written. Returns `PASS`/`FAIL` + findings. Read-only
-  on the source (it may run commands, not edit code).
+  on the source (it may run commands, not edit code). On a task carrying `design:` it
+  also runs the visual gate (§4.2) — its `Read` tool renders images and its `Bash`
+  runs the browser, so this needs no extra tools.
 
 The split is the point: the thing that writes the code does not grade it.
 
@@ -84,7 +86,9 @@ rest are **per-ticket** and live under `.spec/<ticket-id>/`:
 
 > `PRD.md` (from `tiny-spec-prd`) and `BREAKDOWN.md` (from `tiny-spec-breakdown`) are
 > **not** shown above on purpose — both are optional pre-spec planning files at the
-> **project root**, not `.spec/` artifacts. See §3.0.
+> **project root**, not `.spec/` artifacts. See §3.0. Neither is `design/` — the
+> committed wireframe exports are project files no skill writes, referenced by
+> `SPEC.md` `D<n>` entries. See §3.1.1.
 
 **Why shared vs per-ticket:** the constitution and operational memory are
 properties of the *project*, not of any one ticket (a "never X" rule or a toolchain
@@ -125,7 +129,8 @@ Shape:
   Cross-cutting — which seeds `constitution.md` (§3.2) on a story's first `create`;
 - one `## Feature: <name>` heading per feature (a grouping only — features never
   become `.spec/` dirs), each with a tracker-parent id to fill in after creation;
-- under each, `- Story: <title>   slug: <ado-77 | kebab>` entries with `- AC:` lines,
+- under each, `- Story: <title>   slug: <ado-77 | kebab>` entries with `- AC:` lines
+  and an optional `- design:` line naming the wireframes that cover that story,
   each a single user-observable, testable capability (draft `REQ-N`).
 
 `tiny-spec-create` maps a chosen story's `AC:` lines → `REQ-N` and the Decisions block
@@ -147,26 +152,91 @@ ticket:
 Body sections (required unless marked optional): `## Context` *(optional)*,
 `## Intent` (one paragraph, no implementation detail), `## Requirements` (a list of
 `REQ-N` lines — each a single user-observable, testable capability),
-`## Non-goals` *(optional)*, `## Success criteria` *(optional)*,
-`## Open questions` *(optional)*, `## Links` *(optional)*. The binding is
+`## Design` *(optional)*, `## Non-goals` *(optional)*, `## Success criteria`
+*(optional)*, `## Open questions` *(optional)*, `## Links` *(optional)*. The binding is
 **reference-only** — its sole runtime effect is supplying the commit/PR link footer
 (§4). No API calls; status is moved manually. Deeper layers are documented in
 [INTEGRATIONS.md](INTEGRATIONS.md).
+
+#### §3.1.1 `## Design` — the `D<n>` screen entries *(optional)*
+Present only for tickets with a visual surface. One entry per screen or surface:
+
+```
+- D1 — <screen name>
+  - source: <Figma URL#node-id, or the tool of record>
+  - export: design/<file>.png     # the committed artifact an agent can actually read
+  - sha256: <hash of that export> # the staleness signal
+  - layout: <arrangement, max width, and the ORDER elements appear in>
+  - elements:
+    - <name>  `<selector>`  → <the tokens this element must satisfy>
+  - states: <which of empty / loading / error / success this surface renders>
+```
+
+The **constitution's Design system is the vocabulary; a `D<n>` is one screen's
+sentence in it.** That is the two-level split — a global spec plus a per-screen
+composition whose parts only specialize the global — and it is what keeps screens
+coherent instead of each drifting its own way.
+
+Three rules make it load-bearing rather than decorative:
+
+- **Token names only.** `layout`, `elements`, and `states` may reference only tokens
+  the constitution's **Design system** defines. A raw `24px` or `#3B82F6` in a `D`
+  entry is a violation — it is how per-screen drift starts, and it is cheaply
+  greppable.
+- **Selectors are a contract, not a hint** — the one place a `.spec/` artifact names
+  something the code must match verbatim (contrast `files:` in §3.4, which is
+  guidance). The reviewer measures exactly these selectors; a selector matching
+  nothing is a `FAIL`, never a skip, because a silently-unmatched selector turns the
+  visual gate into theater. Prefer a stable test id over a CSS class: classes are
+  renamed by refactors and mangled by CSS-in-JS. An executor that cannot use a given
+  selector raises a **blocker** rather than substituting its own.
+- **The anchor must fail loudly.** `sha256` is recomputed by `tiny-spec-create` update
+  mode; a mismatch means the design moved under the spec, and a missing `export` file
+  stops the run. A link that 404s silently is worse than no link, because it
+  manufactures false confidence.
+
+A `REQ-N` that a design bears on names its screen inline (`REQ-3 — … (D1)`), which is
+what makes `frame → REQ → task → files` greppable in both directions.
+
+**`design/` is a convention, not an artifact.** Exported wireframes/mockups live in a
+`design/` directory at the **project root**, committed alongside the code — like
+`PRD.md` and `BREAKDOWN.md` (§3.0), it is outside `.spec/` and **no skill writes it**.
+tiny-spec reads what is there and records provenance in `SPEC.md`; it never fetches
+from Figma, requires an API token, or depends on a design SaaS. A view-only design
+tool is fully supported: export, commit, and the `source:` line keeps the trail back.
 
 ### §3.2 `constitution.md` — the constitution (project-wide, shared)
 The **strongest, most persistent** artifact — and **project-wide**: it lives at the
 `.spec/` root and anchors every ticket. Seeded by `tiny-spec-create`, hardened by
 `tiny-spec-plan`, and injected **whole** into every executor and reviewer. Seven fixed
-sections (keep all, even if short):
+sections (keep all, even if short) plus one conditional:
 
 1. **Style** — formatting, naming, language idioms.
-2. **Engineering standards** — error handling, logging, testing approach, deps policy.
-3. **Guiding invariants** — the non-negotiables ("never X", "always Y").
-4. **Glossary** — domain terms with one-line definitions.
-5. **Layout** — where things live (directory map).
-6. **Definition of Done** — the bar a task must clear to be `[x]`.
-7. **Verification commands** — the exact commands that constitute the gate
-   (install, lint, test, build, run). This is what the reviewer executes.
+2. **Design system** *(conditional — the only omittable section)* — the project-wide
+   UI contract as **named tokens** (`color.*`, `space.*`, `type.*`, `radius.*`,
+   `elevation.*`) plus the states every interactive surface must define. Present only
+   when the project has a visual surface; omitted entirely for a CLI, library, or
+   headless service rather than left empty. Seeded by `tiny-spec-create` from the
+   designs (propose a coherent scale, don't measure per screen), hardened by
+   `tiny-spec-plan` into values a reviewer can fail a task on.
+3. **Engineering standards** — error handling, logging, testing approach, deps policy.
+4. **Guiding invariants** — the non-negotiables ("never X", "always Y").
+5. **Glossary** — domain terms with one-line definitions.
+6. **Layout** — where things live (directory map).
+7. **Definition of Done** — the bar a task must clear to be `[x]`.
+8. **Verification commands** — the exact commands that constitute the gate
+   (install, lint, test, build, run). This is what the reviewer executes. Adds an
+   optional **`visual:`** command where there is a Design system: what boots the UI so
+   the reviewer can read back `getComputedStyle`/`getBoundingClientRect`. It is a
+   precondition for the visual gate (§4.2) — a `design:` task with no `visual:`
+   command is a blocker, never a silent pass.
+
+**Why tokens rather than a screenshot or a description.** A token name is the most
+durable anchor available: semantic, diffable, and stable across a visual redesign. An
+image records what a screen looked like once, cannot be asserted against, and rots
+undetectably. Naming tokens DTCG-style also means a Style Dictionary / Tokens Studio
+pipeline can be adopted later at no cost — but none is required, and the suite has no
+dependency on Figma, a token tool, or any design SaaS.
 
 ### §3.3 `PLAN.md` (per-ticket)
 Frontmatter `status`, `updated`. Body sections (required unless marked optional):
@@ -186,6 +256,7 @@ Frontmatter `status`, `updated`. Body is a single `## Tasks` checklist, executed
   - acceptance: <one user-observable outcome that proves this task is done>
   - type: feat            # optional; the Conventional Commit type for this task's commit (defaults to feat)
   - req: REQ-1            # optional; the REQ-N this task delivers (traceability)
+  - design: D1            # optional; the SPEC.md D<n> this task builds — arms the visual gate (§4.2)
   - files: <comma-separated hint of files it will touch> (guidance, not a contract)
 ```
 
@@ -196,6 +267,13 @@ the executor and a focus for the reviewer — **not** an enforced ownership boun
 (execution is sequential, so there are no parallel write conflicts to police). A
 checked `[x]` task is done **and reviewed**; checkboxes are the source of execution
 state.
+
+`design:` is the **only field that changes how a task is graded** — it is the explicit
+opt-in to the visual gate (§4.2). Set it on tasks that build the visible surface, not
+on the API call behind it; the gate is per-task precisely so the blast radius is a
+deliberate choice rather than a project-wide mode. Every `D<n>` in `SPEC.md` should be
+claimed by at least one task, and a task may only carry `design:` if the constitution
+has a `visual:` command.
 
 ### §3.5 `memory.md` — kept, lean (project-wide, shared)
 Curated operational lessons that should survive across runs so the blind executor
@@ -300,6 +378,38 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
 ---
 
+### §4.2 The visual gate (only on tasks carrying `design:`)
+
+A task without `design:` is graded exactly as it always was — steps 1–3 of the
+reviewer, unchanged. With it, the reviewer adds a fourth step:
+
+1. **Precondition.** No `visual:` command in the constitution → **blocker**, routed to
+   `tiny-spec-plan`. Never a silent skip and never resolved by dropping the `design:`
+   field: a checked box would then claim a verification that never ran.
+2. **Measure every named selector, don't diff.** Run `visual:` against each row of the
+   `D<n>`'s `elements:`, read back `getComputedStyle()` / `getBoundingClientRect()`,
+   and compare to the tokens that row names. **A selector matching nothing is a
+   `FAIL`, never a skip** — otherwise the gate measures less and less as the markup
+   drifts, while still reporting green. **Pixel-diffing a screenshot is explicitly not
+   the mechanism** — font antialiasing makes image comparison flaky enough that the
+   check gets muted, which is how visual gates die. Numeric assertions are stable
+   under exactly that noise.
+3. **Check `layout:`** — arrangement, max width, and the order the entry names, from
+   the bounding rectangles. Every token can be right on an element in the wrong place.
+4. **Exercise every state** the `D<n>` names (empty, loading, error, success). Drive
+   the UI into each; a source-text match is not evidence and false-passes routinely.
+   A surface that renders only its happy path is a fail — generated UI passing a
+   functional check while missing its states is the single most common failure mode.
+5. **Read the export image** as a cross-check for what numbers can't catch (a missing
+   element, wrong hierarchy).
+
+**Verdict split — deliberate, and the one place "when torn, fail" does not apply.**
+Measurable violations (an unmatched selector, off-scale value, undefined token,
+hardcoded value where a token exists, contradicted order, a named state that doesn't
+render) **fail**. Subjective impressions are recorded as `flag:` findings and do
+**not** fail the task: convergence is bounded at 2 attempts (§4), so failing on taste
+blocks a task on something no executor can fix.
+
 ## §5 — Blockers (never hack around)
 
 If the executor cannot proceed correctly — a design gap, an impossible
@@ -323,7 +433,9 @@ mode, which flips downstream `status: stale` and logs a `decisions.md` entry:
 | Change | Edit | Effect |
 |--------|------|--------|
 | add/alter a requirement | `SPEC.md` | `PLAN.md`, `tasks.md` → stale |
+| a design export changed (`sha256` mismatch) | `SPEC.md` — re-read the export, update the `D<n>` entry + hash | `PLAN.md`, `tasks.md` → stale (it is a requirement change) |
 | change the design / constitution | `PLAN.md` / `constitution.md` | `tasks.md` → stale |
+| change **Design system** token values | `constitution.md` | **every** ticket's `tasks.md` with `[x]` visual work → stale (it is project-wide) |
 | rework specific tasks | `tasks.md` | uncheck affected `[x]`, log it |
 
 **Completed-work guardrail:** if a change touches a task already `[x]`, **uncheck
@@ -341,9 +453,14 @@ everything needed and nothing else:
 - the **whole** `constitution.md` (the constitution)
 - the **whole** `memory.md` if it exists
 - (reviewer only) the **Verification commands** to run
+- **only if the task carries `design:`** — that `D<n>` entry verbatim from `SPEC.md`
+  and its `export:` path, to both agents
 
 Do **not** pass the plan, other tasks, or prior agents' chatter. The constitution
-+ memory + the one task is the entire world the agent needs.
++ memory + the one task is the entire world the agent needs. The `D<n>` entry is the
+one conditional addition, and it stays within that rule: it is part of *this* task's
+definition of done, not context about the wider spec — the agents get one screen, not
+the `## Design` section.
 
 ## §8 — Task-platform binding
 

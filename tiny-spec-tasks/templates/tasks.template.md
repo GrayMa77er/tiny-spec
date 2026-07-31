@@ -6,8 +6,9 @@ updated: <ISO date>
 # Tasks — <project / feature name>
 
 > Executed top to bottom, one at a time. A checked `[x]` task is implemented AND
-> reviewed. `type:` and `req:` are optional; `files:` is a hint, not an ownership
-> contract.
+> reviewed. `type:`, `req:`, and `design:` are optional; `files:` is a hint, not an
+> ownership contract. A task with `design:` is also graded against that screen's
+> `D<n>` entry and the constitution's Design system.
 
 ## Tasks
 
@@ -21,6 +22,7 @@ updated: <ISO date>
   - acceptance: <observable outcome>
   - type: feat
   - req: REQ-2
+  - design: D1            # optional; only on tasks that build the visible surface
   - files: <path, path>
 
 - [ ] T3 — <…>

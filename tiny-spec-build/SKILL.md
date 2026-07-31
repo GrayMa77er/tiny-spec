@@ -48,6 +48,9 @@ Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
 - the `files:` hint;
 - the **whole** `.spec/constitution.md`;
 - the **whole** `.spec/memory.md` if it exists;
+- **if the task has a `design:` field** — that `D<n>` entry copied verbatim from
+  `.spec/<active>/SPEC.md` plus its `export:` path, so the executor can look at the
+  design instead of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind).
 
@@ -61,11 +64,16 @@ Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with:
 - the task id, description, and **acceptance**;
 - the **whole** `.spec/constitution.md`;
 - the list of changed files (from the executor's `CHANGES`) to read;
-- the **Verification commands** from the constitution to run.
+- the **Verification commands** from the constitution to run;
+- **if the task has a `design:` field** — the same `D<n>` entry and `export:` path
+  you gave the executor, so it grades against the contract rather than its taste.
 
 It runs the real gate end-to-end, checks the code against the constitution's
 **Definition of Done** and **invariants**, confirms the **acceptance** actually
 holds (exercised, not inferred), and returns `VERDICT: PASS | FAIL` + findings.
+On a `design:` task it also runs the constitution's `visual:` command, measures the
+selectors the `D<n>` names against the Design system tokens, and exercises the states
+it names — failing on measurable deviations and merely flagging subjective ones.
 
 > Why independent: unit-green ≠ working, and the author is the worst judge of its
 > own blind spots. The reviewer running the gate from a clean state is the
@@ -127,7 +135,8 @@ branch, create it once up front — that's their call, not a knob here.)
 
 ## Blockers (never hack around)
 
-When the executor reports `BLOCKER`, or convergence (step 4) exhausts its attempts:
+When the executor reports `BLOCKER`, when the reviewer reports a **missing `visual:`
+command** for a `design:` task, or when convergence (step 4) exhausts its attempts:
 
 1. Leave the task `[ ]`.
 2. Log it to `.spec/<active>/decisions.md` using the fixed skeleton (`type: blocker`,
@@ -141,8 +150,11 @@ When the executor reports `BLOCKER`, or convergence (step 4) exhausts its attemp
    - affects: REQ-N, T<n>
    - note: <what stopped you; which upstream doc must change>
    ```
-3. **Surface and route upstream:** `tiny-spec-plan` (a design gap) or `tiny-spec-create` (a
-   requirement is wrong/impossible), in update mode. After the upstream fix and a
+3. **Surface and route upstream:** `tiny-spec-plan` (a design gap, a missing `visual:`
+   command, or a token the Design system doesn't define) or `tiny-spec-create` (a
+   requirement is wrong/impossible), in update mode. Never resolve a missing `visual:`
+   command by dropping the task's `design:` field — that turns a gap in the gate into
+   a task that quietly claims a check it never got. After the upstream fix and a
    `tiny-spec-tasks` reconcile, re-run `tiny-spec-build` — it resumes from the checkbox state.
 
 A genuine fork the plan doesn't pin down → don't guess: present the options + your

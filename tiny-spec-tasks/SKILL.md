@@ -36,6 +36,7 @@ For each task, write:
   - acceptance: <one user-observable outcome that proves it's done>
   - type: feat            # optional; Conventional Commit type (defaults to feat)
   - req: REQ-n            # optional; the REQ-N this task delivers
+  - design: D-n           # optional; the SPEC.md D<n> screen this task builds — arms the visual gate
   - files: <comma-separated hint of files it will touch>
 ```
 
@@ -48,8 +49,24 @@ otherwise omit and it defaults to `feat`. **req** ties the task to the requireme
 it satisfies (traceability). The **files** line is a hint to focus the executor and
 reviewer; it is not enforced, so approximate paths are fine.
 
+**design** is the explicit opt-in to the **visual gate** — the one field that changes
+how a task is graded. Set it when the task builds a surface described by a `D<n>` in
+`SPEC.md`; the reviewer then renders that surface, measures the selectors the entry
+names against the constitution's Design system tokens, and can **fail** the task on a
+numeric deviation or a missing state. Omit it and the task is graded exactly as any
+other. Two rules:
+
+- Set it only on tasks that actually build the visible surface — not on the API call
+  or the state store behind it. The gate is per-task, so this is how you keep the
+  blast radius where you want it.
+- Only set it if the constitution has a `visual:` verification command. Without one
+  the reviewer cannot render anything and will raise a blocker instead of a verdict.
+
 Cover **every** part of the approach — together the tasks must deliver all
-`REQ-N`. Don't leave a requirement with no task.
+`REQ-N`. Don't leave a requirement with no task. Likewise, if `SPEC.md` has a
+`## Design` section, every `D<n>` in it needs at least one task carrying that
+`design:` reference — a screen nobody is graded against is a screen that will be
+built wrong.
 
 ## Write `tasks.md`
 

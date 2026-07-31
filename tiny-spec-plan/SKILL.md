@@ -22,11 +22,14 @@ Requires `.spec/<active>/SPEC.md`.
 The constitution is the spine of the whole flow and **project-wide** — it lives at
 `.spec/constitution.md` (the root, shared across every ticket), and is injected whole
 into every executor and reviewer. Make it strong and specific to *this* project, not
-generic boilerplate. Fill in / sharpen all seven sections:
+generic boilerplate. Fill in / sharpen all seven fixed sections:
 
 1. **Style** · 2. **Engineering standards** · 3. **Guiding invariants** ·
 4. **Glossary** · 5. **Layout** · 6. **Definition of Done** ·
 7. **Verification commands**.
+
+Plus **Design system** — the one *conditional* section. Present only when the project
+has a visual surface; leave it absent otherwise rather than filling it with filler.
 
 Two sections carry the most weight — get them right:
 - **Guiding invariants** — the non-negotiables a reviewer can *fail a task on*.
@@ -36,6 +39,26 @@ Two sections carry the most weight — get them right:
   build → run). The reviewer executes these literally, so they must actually work
   from a clean checkout. If setup is needed (e.g. install the package first), say
   so explicitly.
+
+**Harden the Design system if there is one.** `tiny-spec-create` seeds it by inferring
+a scale from the wireframes; your job is to make it enforceable:
+
+- **Every token needs a concrete value.** "a consistent spacing scale" fails nothing.
+  `space.1`=4px … `space.8`=32px fails a `padding: 19px`. A token with no value is
+  worse than no token, because it looks like a contract and isn't one.
+- **Check the `SPEC.md` `D<n>` entries resolve.** Every token a screen names must
+  exist here. An entry naming `color.accent.primary` when the system defines no such
+  token is a broken anchor — add the token or fix the entry, don't leave it dangling.
+- **Sanity-check the `elements:` selectors against the codebase you're planning for.**
+  They are a contract the code must match verbatim, so a selector that assumes markup
+  this project can't produce (a class a component library owns and mangles, an id that
+  collides) becomes a build-time blocker. Prefer stable test ids, and say in the
+  `## Approach` where they get added.
+- **Confirm the `visual:` command actually runs.** It is the gate for every task
+  carrying `design:`; an aspirational command means the visual gate silently never
+  fires. If it doesn't work from a clean checkout, fix it or drop the `design:` refs.
+- Add the scale as a **guiding invariant** where it matters ("no raw color or spacing
+  values in UI code — reference a token"), since that is the line a reviewer fails on.
 
 ## Write `PLAN.md`
 

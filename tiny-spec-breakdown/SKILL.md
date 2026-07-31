@@ -26,8 +26,21 @@ state; the breakdown is pre-spec planning the tracker owns.
 A PRD is the usual anchor. If a **`PRD.md`** (from the optional `tiny-spec-prd` skill)
 is present at the project root, use it as the anchor — its **Core capabilities** are
 what you carve into stories. Otherwise take one or more file paths from the user (a
-PRD, wireframes, design notes, an API sketch). **Read them all.** If two sources
-disagree, ask which wins and note it — don't silently pick.
+PRD, wireframes, design notes, an API sketch). Also glob a `design/` directory at the
+project root if one exists — that is where exported wireframes live by convention.
+**Read them all.**
+
+**Visual inputs count as inputs.** `Read` renders images, so *look at* every PNG,
+JPG, and SVG, open every HTML mockup, and read every Excalidraw file. Do not treat a
+wireframe as a filename you acknowledge and move past: it is usually the only place
+the screen inventory, the states, and the real information hierarchy are written
+down, and none of that is recoverable from the PRD prose.
+
+**If two sources disagree, ask which wins and note it — don't silently pick.** This
+bites hardest between a PRD and a wireframe, because the contradiction is quiet: the
+prose says one thing, the picture shows another, and whichever you read last wins by
+accident. Name both readings explicitly when you ask, and record the answer inline
+on the story it affects.
 
 ## Interview — short, five groups
 
@@ -65,7 +78,15 @@ Copy this skill's `templates/BREAKDOWN.template.md` to `BREAKDOWN.md` at the
   folder), with the tracker-parent id left blank for the user to fill after creating
   it;
 - under each feature, the **stories** — each a single user-observable capability,
-  with a proposed **slug** and its **draft acceptance criteria** (`AC:` lines).
+  with a proposed **slug**, its **draft acceptance criteria** (`AC:` lines), and a
+  **`design:`** line naming the wireframes that cover it, where there are any.
+
+**`design:` is a pointer, not a description.** Route each wireframe you read to the
+story it belongs to, so `tiny-spec-create` knows which files to open for that spec
+instead of re-deriving the mapping from filenames. Do not try to describe the screen
+here — that belongs in the spec's `D<n>` entries, written against the constitution's
+token system, which does not exist yet at breakdown time. A wireframe that covers
+several stories is listed on each of them.
 
 **Slugs** mirror `tiny-spec-create`: derive from the platform key when bound —
 ADO `AB#77`→`ado-77`, GitHub `#42`→`gh-42`, Monday item→`monday-<id>`, Jira

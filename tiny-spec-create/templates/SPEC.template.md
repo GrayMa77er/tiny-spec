@@ -29,6 +29,31 @@ If a line hides two capabilities behind an "and", split it.>
 - REQ-2 — <capability>
 - REQ-3 — <capability>
 
+<!-- optional: omit if this ticket has no visual surface -->
+## Design
+
+<One `D<n>` entry per screen or surface this ticket touches. `layout`, `elements`, and
+`states` may reference **only** token names defined in the constitution's Design
+system — a raw value here (`24px`, `#3B82F6`) is a violation, because it is how
+per-screen drift starts. Keep the source and export lines even when a design is
+view-only: they are the provenance, and the sha256 is the staleness signal.
+
+The `elements:` selectors are a **contract the code must match verbatim** — the
+reviewer measures exactly these. Prefer a stable test id over a CSS class; classes get
+renamed by refactors and mangled by CSS-in-JS, and a selector that silently stops
+matching is the exact failure this prevents.>
+
+- D1 — <screen / surface name>
+  - source: <Figma URL#node-id, or the tool of record; "view-only" if you can't export from it>
+  - export: design/<file>.png            # the committed artifact the reviewer can actually read
+  - sha256: <hash of that export>        # changes when the design changes → this SPEC goes stale
+  - layout: <the arrangement and the order — e.g. "single centered column, max 420px;
+    title → field → error → submit". This is what the reviewer checks geometry against.>
+  - elements:
+    - <name>  `<selector>`  → <the tokens this element must satisfy>
+    - <name>  `<selector>`  → <…>
+  - states: <which of empty / loading / error / success this surface must render, and what each shows>
+
 <!-- optional: omit if N/A -->
 ## Non-goals
 
