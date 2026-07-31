@@ -124,25 +124,136 @@ stale, since they were reviewed against a document that wasn't there.
 
 ### Designs, if you have them
 
-Drop your exported wireframes in a `design/` directory and `tiny-spec-create` will
-look at them — actually look, they are read as images. From all of them together it
-proposes one coherent **design system** (spacing scale, type scale, color roles) for
-your approval and writes it into the constitution, then describes each screen as a
-`D<n>` entry in `SPEC.md`: its layout, its elements with a selector each, and the
-states it must render — all in those token names.
+Wireframes usually get read once and forgotten. tiny-spec turns them into two durable
+things — a project-wide token system in the constitution, and a per-screen entry in
+the spec — so "does this look right?" becomes something the reviewer can fail a task
+on. Skip all of it for a CLI or a library; the constitution simply has no design
+section.
 
-The point is what happens at build time. Tag a task with `design: D1` and the
-reviewer renders that surface, measures the selectors the entry names, and **fails the
-task** on a value that isn't on your scale, an element that never got built, or a
-state the design calls for and the code doesn't render. It measures numbers rather
-than diffing screenshots, because pixel diffs go flaky and get muted. Tasks without a
-`design:` tag are graded exactly as before.
+**1. Commit your exports.** Any format an agent can read — a Figma export, an HTML
+mockup, an Excalidraw file, a photo of a whiteboard.
 
-No Figma token, no plugin, no design SaaS — a view-only Figma works fine, since the
-committed export is what the agents read and the `source:` link keeps the trail back.
-Change an export and its recorded hash stops matching, which marks the spec stale the
-same way editing a requirement does. Skip the whole thing for a CLI or a library; the
-constitution simply has no design section.
+```
+your-project/
+  design/
+    signup.png
+    dashboard.png
+```
+
+**2. `tiny-spec-create` looks at them and proposes a design system.** Actually looks —
+they are read as images. It infers *one* coherent scale across all of them rather than
+measuring each screen separately, tells you what it rounded ("your wireframes had 19px
+and 21px — proposing `space.5`=20px for both"), and on your approval writes it into
+`.spec/constitution.md`:
+
+```markdown
+## Design system
+- color:  `color.surface.base` #FFFFFF · `color.text.default` #111111
+          `color.text.muted` #6B7280 · `color.text.danger` #B91C1C
+- space:  `space.1`=4px · `space.2`=8px · `space.4`=16px · `space.6`=24px
+- type:   `type.heading.lg` 24px/600/1.25 · `type.body` 16px/400/1.5
+          `type.caption` 13px/400/1.4
+- states: every interactive surface defines default, focus, disabled, loading, empty, error
+```
+
+Since it is project-wide, every screen from here on speaks this vocabulary — and a
+redesign edits this one table instead of every file.
+
+**3. Each screen becomes a `D<n>` in `SPEC.md`**, written in those token names:
+
+```markdown
+## Design
+
+- D1 — Signup form
+  - source: figma.com/file/abc#node-12:34 (view-only)
+  - export: design/signup.png
+  - sha256: d21d6330648c504edeb924b5398bf7fb6485d3a4c1907e43d800970f39622a1d
+  - layout: single centered column, max 420px; title → field → error → submit
+  - elements:
+    - card    `[data-testid="signup-card"]`   → space.6 padding, color.surface.base
+    - title   `[data-testid="signup-title"]`  → type.heading.lg, space.4 below
+    - field   `[data-testid="signup-email"]`  → type.body, space.2 below
+    - error   `[data-testid="signup-error"]`  → type.caption, color.text.danger
+  - states: error (caption under the field), loading (spinner replaces button label)
+```
+
+The selectors are a **contract**, not a hint — the reviewer measures exactly these, so
+your markup carries them verbatim. Prefer test ids over CSS classes: classes get
+renamed by refactors and mangled by CSS-in-JS, and a selector that silently stops
+matching is the failure this exists to prevent.
+
+**4. Tag the tasks that build the surface** — and only those, not the API call behind
+it. This is your blast radius:
+
+```
+- [ ] T4 — Build the signup form
+  - acceptance: submitting a valid email advances to the verify step
+  - design: D1
+```
+
+**5. The reviewer measures it and fails on what it measured:**
+
+```
+DESIGN: D1 — Signup form
+  [data-testid="signup-card"]  padding 19px — not on the space.* scale (4/8/16/24)
+  [data-testid="signup-email"] MISSING FROM DOM — never built, or renamed
+  [data-testid="signup-error"] rgb(204,0,0) — color.text.danger is #B91C1C
+  state "loading" never renders: button label stays "Continue", no spinner
+FINDINGS:
+- flag: title/field gap feels tight (on-scale — does not fail the task)
+```
+
+Numbers, not screenshot diffs — pixel comparison goes flaky on font antialiasing and
+teams end up muting it. Measurable violations fail; subjective ones come back as
+`flag:` notes so a bounded fix loop can't thrash on taste. A task with no `design:`
+tag is graded exactly as before.
+
+<details>
+<summary>The <code>visual:</code> command (you write this once)</summary>
+
+tiny-spec ships no script — it can't know your stack. Write one, put it in the
+constitution's **Verification commands**, and the reviewer runs it:
+
+```
+## Verification commands
+- test:   `npm test`
+- visual: `node visual.mjs`
+```
+
+```js
+// visual.mjs — node visual.mjs '<selector>' ['<selector>'...]
+import { chromium } from 'playwright';
+
+const b = await chromium.launch({ channel: 'chrome' });   // your Chrome, no download
+const p = await b.newPage({ viewport: { width: 900, height: 700 } });
+await p.goto('http://localhost:3000/signup');             // your dev server + route
+
+for (const sel of process.argv.slice(2)) {
+  const el = await p.$(sel);
+  if (!el) { console.log(`${sel}\n  MISSING FROM DOM`); continue; }   // required
+  console.log(sel, JSON.stringify(await el.evaluate(n => {
+    const c = getComputedStyle(n), r = n.getBoundingClientRect();
+    return { padding: c.padding, margin: c.margin, fontSize: c.fontSize,
+             fontWeight: c.fontWeight, lineHeight: c.lineHeight, color: c.color,
+             background: c.backgroundColor, border: c.border,
+             top: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+  })));
+}
+await b.close();
+```
+
+The missing-selector branch **must print something** — that is what turns a renamed
+element into a failure instead of a silent skip. `top` is what the layout-order check
+reads. Without a `visual:` command, a task tagged `design:` raises a blocker rather
+than passing quietly.
+
+</details>
+
+**No Figma token, plugin, or design SaaS.** A view-only account works fine: the
+committed export is what the agents read, and `source:` keeps the trail back. Change
+an export and its recorded `sha256` stops matching, which marks the spec stale exactly
+like editing a requirement — so a design that moved under finished work can't pass
+unnoticed.
 
 `tiny-spec-build` walks the task list top to bottom. Each task runs through one loop:
 
