@@ -16,7 +16,73 @@ directory. Two are **project-wide** and shared at the `.spec/` root
 `tasks.md`, `decisions.md`) live under `.spec/<slug>/`. Templates ship in this
 skill's own `templates/` folder (alongside this file); read them from there.
 
+## Pick your mode first — before doing anything else
+
+This skill has three modes. **Decide which one you are in before you ask a single
+question, create a directory, or touch git** — each mode forbids side effects the
+others require, so getting here late means the damage is already done.
+
+Check in this order; the first match wins:
+
+| # | If | Mode | Go to |
+|---|----|------|-------|
+| 1 | `.spec/` exists but `.spec/constitution.md` does **not** | **reseed** | [Reseed a missing constitution](#reseed-a-missing-constitution) — repair only, then stop |
+| 2 | `.spec/` does not exist | **fresh** (first run) | Seeded mode if `BREAKDOWN.md` exists, else Pick the slug → First run — scaffold → Write `SPEC.md` |
+| 3 | the active ticket's `SPEC.md` already exists | **update** | [Update mode](#update-mode-re-run-on-an-existing-spec) — edit in place, never overwrite |
+| 4 | otherwise (new ticket in an existing `.spec/`) | **fresh** (new ticket) | Seeded mode if `BREAKDOWN.md` exists, else Pick the slug → Write `SPEC.md` |
+
+Rule 1 outranks everything, including **Seeded mode** — a missing constitution is a
+repair, and repairs don't create work items. Rule 3 outranks rule 4 so that a re-run
+on existing work can never overwrite it.
+
+To evaluate rules 3 and 4 you need the **active ticket dir**. Resolve it **read-only**
+first (see *Pick the slug* for the shared resolution order). Only *create* a dir once
+you know you're in a fresh mode.
+
+**If the user (or `tiny-spec-run`) says this is new work, skip the sole-dir fallback**
+and go to rule 4. That fallback exists to find the ticket you're already on; letting
+it match when someone asked for a *new* spec quietly retargets the run onto an old
+ticket and marks its downstream artifacts stale for no reason.
+
+## Reseed a missing constitution
+
+Check this **before** anything else. The constitution is project-wide, so it can go
+missing — deleted, or never committed — while a perfectly good `.spec/<slug>/` sits
+next to it. Then it is unrecoverable: the scaffold below never fires, `tiny-spec-plan`
+only *hardens* an existing one, and `tiny-spec-build` would inject nothing.
+
+If `.spec/` exists but `.spec/constitution.md` does not, do **only** this:
+
+1. Resolve the active ticket dir **read-only** — you may need its `SPEC.md`. There may
+   be none; that's fine.
+2. Copy `templates/constitution.template.md` to `.spec/constitution.md` and fill it in
+   from whatever already exists, in this order of preference: a `BREAKDOWN.md`
+   `## Decisions` block at the project root if there is one (Stack + Code-lives →
+   **Style** and **Layout**; verification hints → **Verification commands**;
+   cross-cutting → **Guiding invariants**), then `PRD.md`, then the active `SPEC.md`,
+   then the codebase itself (its layout, test setup, and tooling). A *declared* source
+   beats inference. Ask the user only what you genuinely cannot infer.
+3. **Flag downstream work as unverified — across every ticket, not just the active
+   one.** The constitution is project-wide, so *any* `[x]` task in *any* `.spec/*/`
+   was built and reviewed against a document that did not exist. For each ticket dir
+   whose `tasks.md` has checked tasks, set it `status: stale` and log a
+   `decisions.md` entry in that ticket (`type: change`) saying the constitution was
+   reseeded and the completed tasks were never checked against it. A constitution
+   change makes tasks stale — and a reseed is the largest such change there is.
+4. Report what you seeded, say plainly that it was **inferred and needs review** (it
+   gets injected whole into every executor and reviewer, so a wrong Verification
+   commands block silently corrupts every future gate), note that `SPEC.md`/`PLAN.md`
+   and the branch were left untouched, and point the user at `tiny-spec-plan` to
+   harden it. Then stop.
+
+Do **not** run the interview, create a ticket dir, switch branches, or touch
+`SPEC.md`. This is a repair, not a new spec. If the user also wants new work, that's
+a separate run of this skill.
+
 ## Seeded mode (`BREAKDOWN.md` present)
+
+**Fresh modes only** — reseed (rule 1) and update (rule 3) both outrank this.
+
 
 Before interviewing, check for **`BREAKDOWN.md`** at the project root (written by the
 optional `tiny-spec-breakdown` skill). If it exists and the user is creating one of
@@ -46,6 +112,14 @@ requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **
 interview** below unchanged.
 
 ## Pick the slug (resolve the active dir)
+
+**Fresh modes only** — in reseed or update mode the active dir already exists and you
+resolve it read-only, as above. Do not run this section.
+
+**If a ticket dir already resolves for the current branch, reuse it — don't invent a
+new slug.** Asking for a slug when `.spec/PROJ-123/` already matches the branch is how
+you end up with both `PROJ-123/` and `dark-mode/` matching `feature/PROJ-123-dark-mode`,
+which makes the ticket permanently ambiguous for every downstream skill.
 
 Each spec lives in its own directory `.spec/<slug>/`. At the start of the interview,
 establish the slug. There are two paths — both are first-class:
