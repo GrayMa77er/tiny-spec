@@ -38,6 +38,25 @@ resolves it the **same way**, from the current git branch:
 2. **Sole dir** — if no dir matches, use the only ticket dir, if exactly one exists.
 3. **Ask** — else ask the user which.
 
+Three exceptions to that order, all to stop it resolving *confidently and wrongly*:
+
+- **More than one dir matches** the branch (e.g. `feature/PROJ-123-gh-42` matching
+  both `PROJ-123/` and `gh-42/`) — **ask**. There is no defined tie-break, and
+  inventing one in any single skill makes it disagree with the others.
+- **On `main`/`master` with ticket dirs present and no name match** — **ask** before
+  falling through to *sole dir*. The usual cause is a forgotten `git switch`, and the
+  fallback would otherwise silently adopt whatever ticket happens to exist.
+- **When the caller says this is new work** (`tiny-spec-create` only) — skip *sole
+  dir* entirely. It exists to find the ticket you're already on, not to adopt an old
+  one for a new spec.
+
+**Degraded, not an ask case:** detached HEAD or not a git repo. Branch match is simply
+unavailable — fall through to rules 2 and 3 as written.
+
+Every skill implements the same order **and the same exceptions**. A skill that
+resolved differently from the one that invoked it would operate on a different ticket
+than the caller intended, which no artifact would record.
+
 The branch is the single source of truth for which ticket is active: parallel work
 on separate branches each resolves to its own ticket, with no shared pointer file to
 fall out of sync.

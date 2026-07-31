@@ -15,6 +15,14 @@ matches the branch name (one branch per ticket). If none matches, use the sole
 ticket dir if there's exactly one; else ask which. The template ships in this skill's own
 `templates/` folder (alongside this file). Requires `.spec/<active>/PLAN.md`.
 
+**Two cases pre-empt that order — ask instead of applying it:** more than one dir
+matches the branch (there is no defined tie-break, and inventing one here would
+silently disagree with every other skill), or ticket dirs exist while you are on
+`main`/`master` with no name match (the usual cause is a forgotten `git switch`, and
+the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo is a
+**degraded** case, not an ask case — branch match is simply unavailable, so fall
+through to sole-dir and ask as written.
+
 ## Slice the plan into tasks
 
 Walk the `## Approach` in `PLAN.md` and break it into tasks. Each task is:

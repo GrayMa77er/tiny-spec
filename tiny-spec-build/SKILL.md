@@ -22,6 +22,13 @@ alongside this skill (see the suite README).
 1. **Resolve the active ticket dir** from the current git branch: the `.spec/<slug>/`
    whose slug matches the branch name (one branch per ticket). If none matches, use
    the sole ticket dir if there's exactly one; else ask which. Call it `<active>`.
+   **Two cases pre-empt that order — ask instead of applying it:** more than one dir
+   matches the branch (there is no defined tie-break, and inventing one here would
+   silently disagree with every other skill), or ticket dirs exist while you are on
+   `main`/`master` with no name match (the usual cause is a forgotten `git switch`, and
+   the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo is a
+   **degraded** case, not an ask case — branch match is simply unavailable, so fall
+   through to sole-dir and ask as written.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
    it exists (**shared**), and `.spec/<active>/tasks.md`. The constitution + memory
    get injected **whole** into every executor and reviewer. Also note the `ticket`

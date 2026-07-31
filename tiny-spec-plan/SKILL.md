@@ -17,6 +17,14 @@ none matches, use the sole ticket dir if there's exactly one; else ask which. Th
 template ships in this skill's own `templates/` folder (alongside this file).
 Requires `.spec/<active>/SPEC.md`.
 
+**Two cases pre-empt that order — ask instead of applying it:** more than one dir
+matches the branch (there is no defined tie-break, and inventing one here would
+silently disagree with every other skill), or ticket dirs exist while you are on
+`main`/`master` with no name match (the usual cause is a forgotten `git switch`, and
+the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo is a
+**degraded** case, not an ask case — branch match is simply unavailable, so fall
+through to sole-dir and ask as written.
+
 ## Harden the constitution (`constitution.md`) — do this first
 
 The constitution is the spine of the whole flow and **project-wide** — it lives at
