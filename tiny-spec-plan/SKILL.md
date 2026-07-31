@@ -14,7 +14,7 @@ Artifacts live under `.spec/`: the **shared** constitution at the root
 `.spec/<ticket-id>/`. **Resolve the active ticket dir** from the current git branch:
 the `.spec/<slug>/` whose slug matches the branch name (one branch per ticket). If
 none matches, use the sole ticket dir if there's exactly one; else ask which. The
-template ships in this skill's own `templates/` folder (alongside this file).
+`PLAN.md` skeleton is inline below — write it from there, no file to read.
 Requires `.spec/<active>/SPEC.md`.
 
 **Two cases pre-empt that order — ask instead of applying it:** more than one dir
@@ -70,8 +70,55 @@ a scale from the wireframes; your job is to make it enforceable:
 
 ## Write `PLAN.md`
 
-Copy this skill's `templates/PLAN.template.md` to
-`.spec/<active>/PLAN.md` and fill it in:
+Write `.spec/<active>/PLAN.md` with the structure below, filling it in:
+
+```markdown
+---
+status: current
+updated: <ISO date>
+---
+
+# Plan — <project / feature name>
+
+## Approach
+
+<The design narrative: how the requirements will be met. Key decisions, the shape
+of the solution, notable trade-offs. Enough that someone could derive the tasks
+from it. Optional `### Phase` headings are fine for readability — they do NOT
+parallelize or gate anything.>
+
+<!-- optional: omit if N/A -->
+## Architecture
+
+<The moving parts and how they fit: components, data flow, key interfaces or
+modules. A small diagram or bullet map is fine. Skip for changes too small to need it.>
+
+## Requirement coverage
+
+<Every REQ-N maps to where it's addressed. No requirement left unaddressed.>
+
+- REQ-1 — <where/how addressed>
+- REQ-2 — <where/how addressed>
+- REQ-3 — <where/how addressed>
+
+<!-- optional: omit if N/A -->
+## Risks & mitigations
+
+<What could go wrong (technical risk, unknowns, fragile areas) and how the plan
+de-risks it.>
+
+<!-- optional: omit if N/A -->
+## Test strategy
+
+<How the work will be verified beyond the constitution's gate — what to test, at
+what level, and any fixtures/data needed.>
+
+<!-- optional: omit if N/A -->
+## Open questions
+
+<Design questions still unresolved. A question that blocks tasks must be answered
+here or routed back to tiny-spec-create before tiny-spec-tasks runs.>
+```
 
 - `## Approach` *(required)* — the design narrative: the shape of the solution, key
   decisions, trade-offs. Detailed enough that `tiny-spec-tasks` can derive a task list

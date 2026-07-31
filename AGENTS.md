@@ -38,7 +38,7 @@ silent (no compiler, no test will catch a misleading instruction). So:
 
 1. **Keep the contract consistent — by hand.** There are *no* Python validators by
    design. A format or rule change must land in **all three**: `CONTRACTS.md`
-   (rules of record), the matching skeleton in the **owning skill's** `templates/`
+   (rules of record), the **inline skeleton in the owning skill's `SKILL.md`**
    folder, and **every** skill or agent that reads/writes that artifact. Grep for
    the artifact name and the token you changed; reconcile every hit. The artifacts
    split **project-wide vs per-ticket** (see `CONTRACTS.md` §3): `constitution.md`
@@ -85,9 +85,11 @@ silent (no compiler, no test will catch a misleading instruction). So:
 This suite must run for **anyone on any machine**. So:
 
 - **No hardcoded absolute paths** (no `/Users/...`, no machine-specific dirs).
-  Each skill is **self-contained**: it carries its templates in its own
-  `templates/` folder and references them by **relative** path ("this skill's
-  `templates/<name>`"). A skill folder works wherever it's installed.
+  Each skill is **self-contained**: every skeleton it writes is **inline in its own
+  `SKILL.md`**, so it reads no companion file at all.
+  A skill is one file, and it works wherever it's installed. Don't reintroduce a
+  `templates/` folder — an out-of-project read costs the user a permission prompt on
+  every run.
 - **No shared parent required at runtime.** `CONTRACTS.md` is a maintainer
   reference only — the skills do not read it when they run; each `SKILL.md` is
   self-sufficient. Keep it that way: if you add a rule a skill needs, inline it in

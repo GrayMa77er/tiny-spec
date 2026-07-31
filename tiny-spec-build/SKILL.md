@@ -12,8 +12,8 @@ thing that grades it.
 
 Artifacts live under `.spec/`: the **shared** constitution and memory at the root
 (`.spec/constitution.md`, `.spec/memory.md`), the per-ticket `tasks.md`/`SPEC.md`/
-`decisions.md` under `.spec/<ticket-id>/`. The memory template ships in this skill's
-own `templates/` folder (alongside this file). The two subagents dispatched below
+`decisions.md` under `.spec/<ticket-id>/`. The `memory.md` skeleton is inline below —
+write it from there, no file to read. The two subagents dispatched below
 (`tiny-spec-build-executor`, `tiny-spec-build-reviewer`) are referenced by name — install them
 alongside this skill (see the suite README).
 
@@ -125,9 +125,30 @@ Never commit a red gate. Never tick a task the reviewer did not pass.
 If steps 2–4 surfaced a **forward-acting operational lesson** (a toolchain quirk,
 a flaky/precondition gate, an abandoned approach, a fragile area), append a curated
 entry to the **shared** `.spec/memory.md` (the root — lessons are project-wide) —
-creating it from this skill's `templates/memory.template.md` on first use, and
 pruning any entry the new one supersedes. Skip code-style rules (→ shared
 `constitution.md`) and one-off history (→ the ticket's `decisions.md`). Keep it lean.
+
+On first use, create the file with this structure:
+
+```markdown
+# Memory — operational lessons
+
+> Curated, forward-acting lessons that should survive across runs so the blind
+> executor and reviewer don't re-learn them. **Project-wide** — lives at the
+> `.spec/` root and is shared across every ticket. NOT a changelog. Prune superseded
+> entries. Code-style rules belong in `constitution.md`; one-off history in the
+> ticket's `decisions.md`.
+
+<!-- Each entry:
+- type: environment | pitfall | tried-rejected | hotspot
+  lesson: <one line — the operational fact>
+  apply:  <one line — why it matters / what to do about it>
+-->
+
+- type: environment
+  lesson: <e.g. the test suite needs the package installed (`pip install -e .`) first>
+  apply:  <run the documented setup before the gate; a bare `pytest` gives a false red>
+```
 
 ### 7. NEXT
 Report the task outcome (built, reviewed, committed). Then:

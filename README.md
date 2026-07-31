@@ -96,7 +96,7 @@ git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-run tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
@@ -212,9 +212,10 @@ independent reviewer and stops.
 
 ## Project layout
 
-Each skill is self-contained. It carries its own templates and refers to them by
-relative path, with no absolute paths and no shared parent required at runtime, so
-a skill folder works wherever you drop it.
+Each skill is one self-contained `SKILL.md`, with every document skeleton inline in
+it — no companion template files, no absolute paths, and no shared parent required
+at runtime, so a skill works wherever you drop it. (It also means a run never stops
+to ask permission to read a template out of your Claude config directory.)
 
 tiny-spec creates a `.spec/` directory in your project root, never inside a skill.
 It is namespaced per ticket, with a shared spine at the root:

@@ -173,7 +173,7 @@ of machinery and has never been benchmarked.
 | C1 | 3 | Minimal, lean artifact set with optional sections marked as such; explicit anti-bloat stance ("documents are context, and context isn't free", README). |
 | C2 | 3 | The gate **runs install→lint→test→build→run for real** and exercises acceptance black-box; "a green unit test suite is not the same as working software" (README; `CONTRACTS.md` §3.2 §4). |
 | C3 | 2 | Durable trail via `decisions.md`, requirement coverage map, and `Refs:` commit footers — but `decisions.md` and `req:` are **lazy/optional**, so auditability is present rather than guaranteed (`CONTRACTS.md` §3.6, §4.1). |
-| C4 | 3 | Fully portable: "no absolute paths anywhere", self-contained skills carrying their own templates, reference-only ticket binding with no credentials (`CONTRACTS.md` §3, §8; README "Project layout"). |
+| C4 | 3 | Fully portable: "no absolute paths anywhere", self-contained single-file skills with every skeleton inline, reference-only ticket binding with no credentials (`CONTRACTS.md` §3, §8; README "Project layout"). |
 
 ### Dimension D — Developer experience / ceremony · avg 2.75 → 18.3 / 20
 

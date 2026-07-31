@@ -13,8 +13,8 @@ The suite works **one spec at a time**, namespaced per spec. Artifacts live
 under `.spec/` in the **project root** (the user's cwd) — never in this skill's
 directory. Two are **project-wide** and shared at the `.spec/` root
 (`constitution.md`, `memory.md`); the per-spec ones (`SPEC.md`, `PLAN.md`,
-`tasks.md`, `decisions.md`) live under `.spec/<slug>/`. Templates ship in this
-skill's own `templates/` folder (alongside this file); read them from there.
+`tasks.md`, `decisions.md`) live under `.spec/<slug>/`. The `SPEC.md` and
+`constitution.md` skeletons are inline below — write them from there, no files to read.
 
 ## Pick your mode first — before doing anything else
 
@@ -55,8 +55,8 @@ If `.spec/` exists but `.spec/constitution.md` does not, do **only** this:
 
 1. Resolve the active ticket dir **read-only** — you may need its `SPEC.md`. There may
    be none; that's fine.
-2. Copy `templates/constitution.template.md` to `.spec/constitution.md` and fill it in
-   from whatever already exists, in this order of preference: a `BREAKDOWN.md`
+2. Write `.spec/constitution.md` using the skeleton in **First run — scaffold** below,
+   filled in from whatever already exists, in this order of preference: a `BREAKDOWN.md`
    `## Decisions` block at the project root if there is one (Stack + Code-lives →
    **Style** and **Layout**; verification hints → **Verification commands**;
    cross-cutting → **Guiding invariants**), then `PRD.md`, then the active `SPEC.md`,
@@ -153,13 +153,73 @@ If `.spec/` does not exist:
    - the intent in one paragraph;
    - the language/stack and where code lives;
    - the must-have requirements (the capabilities, not the design).
-3. Seed the **shared constitution**: copy this skill's
-   `templates/constitution.template.md` to `.spec/constitution.md` (the **root**, not
-   the ticket dir — it is project-wide) and fill in what the interview already told
+3. Seed the **shared constitution** at `.spec/constitution.md` (the **root**, not the
+   ticket dir — it is project-wide), filling in what the interview already told
    you (Style, Layout, Verification commands at minimum). Leave the rest for
    `tiny-spec-plan` to harden — but never leave a section empty of intent. If
    `constitution.md` already exists (a prior ticket created it), **reuse it** — do
-   not overwrite the project's constitution.
+   not overwrite the project's constitution. Write it with this structure (drop the
+   indentation when you write the file):
+
+   ```markdown
+   # Constitution
+
+   > This is the strongest, most persistent document in the project. It is
+   > **project-wide** — it lives at the `.spec/` root and anchors *every* ticket, not
+   > any one of them. Every task is implemented and reviewed against it. Keep it true;
+   > keep it lean. Project-specific richness belongs here — not scattered across tasks.
+
+   ## Style
+   <Formatting, naming, language idioms. The defaults a reader should assume.>
+
+   <!-- conditional: the one section that may be omitted entirely. Include it only if
+        this project has a visual surface; a CLI, library, or headless service should
+        not carry a dead design heading. -->
+   ## Design system
+   <The project-wide UI contract, written as **named tokens** — never raw values. Every
+   screen description and every line of UI code references these names, so a redesign
+   edits one table instead of every file. Name them DTCG-style (`color.surface.raised`,
+   `space.4`) so a token pipeline costs nothing to adopt later.
+   - color:     <semantic roles → value, e.g. `color.surface.base` #FFFFFF, `color.text.muted` #6B7280>
+   - space:     <one scale, e.g. `space.1`=4px … `space.8`=32px. A value off the scale is a violation.>
+   - type:      <named steps → size/weight/line-height, e.g. `type.heading.lg` 24px/600/1.25>
+   - radius:    <named steps, same rule>
+   - elevation: <named steps, same rule>
+   - states:    <what every interactive surface must define — default, hover, focus,
+     disabled, loading, empty, error>
+   >
+
+   ## Engineering standards
+   <Error handling, logging, testing approach, dependency policy, what "tested" means here.>
+
+   ## Guiding invariants
+   <The non-negotiables. "Never X." "Always Y." The rules a reviewer can fail a task on.>
+
+   ## Glossary
+   <Domain term — one-line definition. Keep the team speaking one language.>
+
+   ## Layout
+   <Where things live. Directory map. Where new code of each kind goes.>
+
+   ## Definition of Done
+   <The bar a task must clear to be checked off: e.g. code + tests + docs updated,
+   gate green, no TODOs left, matches the invariants above.>
+
+   ## Verification commands
+   <The exact gate. The reviewer runs these. Example:
+   - install: `...`
+   - lint:    `...`
+   - test:    `...`
+   - build:   `...`
+   - run:     `...`
+   - visual:  `...`   # optional; only if there is a Design system above. The command
+     that boots the UI so the reviewer can read back computed styles and geometry
+     (e.g. a Playwright script that navigates to a route and prints
+     getComputedStyle/getBoundingClientRect for the selectors it is given). Required
+     before any task may carry a `design:` reference — a task that names one with no
+     `visual:` command here is a blocker, not a silent pass.
+   >
+   ```
 
 ## Designs (only if this project has a visual surface)
 
@@ -219,8 +279,86 @@ says, ask which wins, and record the answer in the `D` entry or `## Open questio
 
 ## Write `SPEC.md`
 
-Copy this skill's `templates/SPEC.template.md` to `.spec/<slug>/SPEC.md` and fill
-it in:
+Write `.spec/<slug>/SPEC.md` with the structure below, filling it in:
+
+```markdown
+---
+status: current
+updated: <ISO date>
+# Ticket binding (reference-only). Omit this whole block if there is no ticket.
+ticket:
+  provider: jira | github | ado | monday
+  id: <PROJ-123 | #42 | AB#77 | item id>
+  url: <link to the ticket>
+  status: <optional manual mirror of the platform status, e.g. In Progress>
+---
+
+# <Project / feature name>
+
+<!-- optional: omit if N/A -->
+## Context
+
+<Why now — the background, the problem, what prompted this. No solution detail.>
+
+## Intent
+
+<One paragraph: what this is and why it exists. The "what" and "why", never the "how".>
+
+## Requirements
+
+<Each REQ is one user-observable, testable capability. No implementation detail.
+If a line hides two capabilities behind an "and", split it.>
+
+- REQ-1 — <capability>
+- REQ-2 — <capability>
+- REQ-3 — <capability>
+
+<!-- optional: omit if this ticket has no visual surface -->
+## Design
+
+<One `D<n>` entry per screen or surface this ticket touches. `layout`, `elements`, and
+`states` may reference **only** token names defined in the constitution's Design
+system — a raw value here (`24px`, `#3B82F6`) is a violation, because it is how
+per-screen drift starts. Keep the source and export lines even when a design is
+view-only: they are the provenance, and the sha256 is the staleness signal.
+
+The `elements:` selectors are a **contract the code must match verbatim** — the
+reviewer measures exactly these. Prefer a stable test id over a CSS class; classes get
+renamed by refactors and mangled by CSS-in-JS, and a selector that silently stops
+matching is the exact failure this prevents.>
+
+- D1 — <screen / surface name>
+  - source: <Figma URL#node-id, or the tool of record; "view-only" if you can't export from it>
+  - export: design/<file>.png            # the committed artifact the reviewer can actually read
+  - sha256: <hash of that export>        # changes when the design changes → this SPEC goes stale
+  - layout: <the arrangement and the order — e.g. "single centered column, max 420px;
+    title → field → error → submit". This is what the reviewer checks geometry against.>
+  - elements:
+    - <name>  `<selector>`  → <the tokens this element must satisfy>
+    - <name>  `<selector>`  → <…>
+  - states: <which of empty / loading / error / success this surface must render, and what each shows>
+
+<!-- optional: omit if N/A -->
+## Non-goals
+
+<What this explicitly does NOT cover — scope boundaries that prevent creep.>
+
+<!-- optional: omit if N/A -->
+## Success criteria
+
+<How we'll know the whole spec succeeded, beyond the per-requirement acceptance —
+e.g. a metric, an end-to-end scenario, a stakeholder sign-off.>
+
+<!-- optional: omit if N/A -->
+## Open questions
+
+<Unresolved questions that may change requirements. Resolve before/while planning.>
+
+<!-- optional: omit if N/A -->
+## Links
+
+<Ticket, related specs, design docs, prior art.>
+```
 
 - the **ticket binding** frontmatter block (or omit it if there's no ticket);
 - a one-paragraph **intent**;

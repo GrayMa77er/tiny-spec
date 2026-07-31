@@ -13,6 +13,6 @@ agent, artifact, format field, or knob, ask whether it clearly pays for itself;
 when in doubt, leave it out.
 
 Everything else — portability (no absolute paths; self-contained skills), contract
-consistency across `CONTRACTS.md` and each skill's own `templates/`, dry-run
+consistency across `CONTRACTS.md` and each skill's inline skeletons, dry-run
 validation of prompt changes, runtime-verify over static checks, the safeguards to
 trip, install, and commits — is in [AGENTS.md](AGENTS.md).

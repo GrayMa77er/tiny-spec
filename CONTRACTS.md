@@ -7,8 +7,8 @@ This is a deliberately small spec-driven flow. A change moves
 
 This file is a **maintainer reference** for every file format and rule — the
 skills do not read it at runtime (each `SKILL.md` is self-sufficient). If you
-change a format here, also change the matching skeleton in the **owning skill's**
-`templates/` folder and every skill that reads or writes it.
+change a format here, also change the **inline skeleton in the owning skill's
+`SKILL.md`** and every skill that reads or writes it.
 
 > **Design north star — earned ceremony.** This flow is deliberately small: no
 > waves, no `owns:` contracts, no checkpoint matrix, no autonomous budgets, no
@@ -92,9 +92,11 @@ The split is the point: the thing that writes the code does not grade it.
 ## §3 — The artifacts (under `.spec/` in the **project root**)
 
 `.spec/` lives in the user's project (their cwd), **never** inside a skill's
-directory. Each skill is self-contained and portable: it carries its own templates
-in its `templates/` folder and references them by relative path — there are no
-absolute paths anywhere in the suite.
+directory. Each skill is self-contained and portable: every artifact skeleton is
+**inline in its owning `SKILL.md`**, so a skill reads no
+companion file at runtime and there are no absolute paths anywhere in the suite.
+(Inline is also why a run never stops to ask permission to read a template out of the
+install dir.)
 
 The suite works **one ticket at a time**, namespaced per ticket. Two artifacts are
 **project-wide** (shared across every ticket) and live at the `.spec/` root; the
@@ -146,7 +148,7 @@ a short interview. The shortest PRD that lets `tiny-spec-breakdown` carve good s
   capability (no implementation detail, atomic), which `tiny-spec-breakdown` carves
   into Features → Stories.
 
-The skeleton is owned by `tiny-spec-prd` (`templates/PRD.template.md`).
+The skeleton is owned by `tiny-spec-prd` (inline in its `SKILL.md`).
 
 **`BREAKDOWN.md`** — written by the **optional** `tiny-spec-breakdown` skill from a PRD
 (`PRD.md` if present) + wireframes/notes. Read by `tiny-spec-create` in seeded mode.
@@ -162,7 +164,7 @@ Shape:
 
 `tiny-spec-create` maps a chosen story's `AC:` lines → `REQ-N` and the Decisions block
 → the constitution. The skeleton is owned by `tiny-spec-breakdown`
-(`templates/BREAKDOWN.template.md`).
+(inline in its `SKILL.md`).
 
 ### §3.1 `SPEC.md` (per-ticket)
 Frontmatter `status: current | stale`, `updated: <ISO date>`, and an optional

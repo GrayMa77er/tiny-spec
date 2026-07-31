@@ -12,8 +12,8 @@ top to bottom.
 Artifacts live under `.spec/`; `PLAN.md` and `tasks.md` are per-ticket. **Resolve
 the active ticket dir** from the current git branch: the `.spec/<slug>/` whose slug
 matches the branch name (one branch per ticket). If none matches, use the sole
-ticket dir if there's exactly one; else ask which. The template ships in this skill's own
-`templates/` folder (alongside this file). Requires `.spec/<active>/PLAN.md`.
+ticket dir if there's exactly one; else ask which. The `tasks.md` skeleton is inline
+below — write it from there, no file to read. Requires `.spec/<active>/PLAN.md`.
 
 **Two cases pre-empt that order — ask instead of applying it:** more than one dir
 matches the branch (there is no defined tie-break, and inventing one here would
@@ -78,9 +78,42 @@ built wrong.
 
 ## Write `tasks.md`
 
-Copy this skill's `templates/tasks.template.md` to
-`.spec/<active>/tasks.md`, fill in the `## Tasks` checklist with all tasks `[ ]`
-unchecked, set frontmatter `status: current`, `updated: <today>`.
+Write `.spec/<active>/tasks.md` with the structure below — fill in the `## Tasks`
+checklist with all tasks `[ ]` unchecked, set frontmatter `status: current`,
+`updated: <today>`:
+
+```markdown
+---
+status: current
+updated: <ISO date>
+---
+
+# Tasks — <project / feature name>
+
+> Executed top to bottom, one at a time. A checked `[x]` task is implemented AND
+> reviewed. `type:`, `req:`, and `design:` are optional; `files:` is a hint, not an
+> ownership contract. A task with `design:` is also graded against that screen's
+> `D<n>` entry and the constitution's Design system.
+
+## Tasks
+
+- [ ] T1 — <one small, independently-checkable slice of work>
+  - acceptance: <one user-observable outcome that proves T1 is done>
+  - type: feat            # optional; Conventional Commit type for this task's commit (defaults to feat)
+  - req: REQ-1            # optional; the REQ-N this task delivers
+  - files: <path, path>
+
+- [ ] T2 — <next slice; assume T1's code exists>
+  - acceptance: <observable outcome>
+  - type: feat
+  - req: REQ-2
+  - design: D1            # optional; only on tasks that build the visible surface
+  - files: <path, path>
+
+- [ ] T3 — <…>
+  - acceptance: <observable outcome>
+  - files: <path, path>
+```
 
 ## Update mode (PLAN changed → tasks are stale)
 

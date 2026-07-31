@@ -15,8 +15,9 @@ of truth for how to work on this suite. A few things worth knowing up front:
 - **Verify at runtime.** Validate prompt changes by dry-running them in a throwaway
   directory or dispatching the real agents, rather than reasoning about them
   statically.
-- **Stay portable.** No absolute paths. Each skill carries its own `templates/` and
-  works wherever it is dropped.
+- **Stay portable.** No absolute paths. Each skill is one self-contained `SKILL.md`
+  with every skeleton inline, so it works wherever it is dropped and never stops to
+  ask permission to read a companion file.
 
 ## Running the evals
 
