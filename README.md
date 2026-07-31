@@ -24,6 +24,9 @@ planning on-ramps** — `tiny-spec-prd` (idea → PRD) and `tiny-spec-breakdown`
 build step.
 
 ```
+                                           ┌───────────────── tiny-spec-run ─────────────────┐
+                                           │     optional: one command, stops before build   │
+                                           ▼                                                 ▼
 PLANNING (optional on-ramps)              EXECUTION (the core loop, one story at a time)
   tiny-spec-prd  ⇢  tiny-spec-breakdown ⇢  tiny-spec-create → tiny-spec-plan → tiny-spec-tasks → tiny-spec-build
   idea → PRD        PRD → stories           intent             design           tasks            per-task loop
@@ -114,6 +117,11 @@ short interview, `tiny-spec-plan` hardens it with concrete engineering rules, an
 `tiny-spec-build` injects it whole into every task. It holds your style, standards,
 invariants, definition of done, and verification commands.
 
+Because it is project-wide it can also go missing — deleted, or never committed —
+while your specs survive. Re-running `tiny-spec-create` then repairs it: it rebuilds
+the constitution from whatever is already written down and marks completed tasks
+stale, since they were reviewed against a document that wasn't there.
+
 ### Designs, if you have them
 
 Drop your exported wireframes in a `design/` directory and `tiny-spec-create` will
@@ -159,11 +167,14 @@ flowchart TB
 
     CON([constitution.md]) -.-> P & I & R
     MEM([memory.md]) -.-> I & R
+    DES([SPEC.md D-n + design/ export]) -.->|only on a design: task| I & R
 ```
 
 Solid arrows are the flow. Dotted arrows show the persistent context injected into
 a step: the `constitution.md` goes into planning, implementation, and review, while
-`memory.md` is handed to the executor and reviewer.
+`memory.md` is handed to the executor and reviewer. A task tagged `design:` also
+carries its screen's `D<n>` entry into both agents — and the review step then runs
+the `visual:` gate on top of the usual one.
 
 A small `memory.md` carries operational lessons between runs, so the executor and
 reviewer (which start fresh each time) don't relearn the same pitfalls.
