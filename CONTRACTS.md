@@ -12,8 +12,13 @@ change a format here, also change the matching skeleton in the **owning skill's*
 
 > **Design north star — earned ceremony.** This flow is deliberately small: no
 > waves, no `owns:` contracts, no checkpoint matrix, no autonomous budgets, no
-> orchestrator. Do **not** add a skill, artifact, agent, or knob unless it clearly
+> validators. Do **not** add a skill, artifact, agent, or knob unless it clearly
 > pays for itself. When in doubt, leave it out.
+>
+> `tiny-spec-run` is the one **router**, and it earns that place only by owning
+> **nothing**: it writes no artifact, duplicates no instructions, holds no state file,
+> and stops before `build`. A router that generated or reconciled documents itself
+> would be a second source of truth — that is the line.
 
 ---
 
@@ -27,6 +32,7 @@ change a format here, also change the matching skeleton in the **owning skill's*
 | `tiny-spec-plan` | `<ticket>/SPEC.md` | `<ticket>/PLAN.md`, refines shared `constitution.md` | Decide **how**. Produce the design and harden the **constitution**. |
 | `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
 | `tiny-spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
+| `tiny-spec-run` *(optional)* | every artifact's frontmatter (`status:`) + the git branch | **nothing — it owns no artifact** | Resolve where the ticket stands and invoke `create` → `plan` → `tasks` in order, **stale before new**. Stops before `build`. |
 
 `<ticket>` is the **active ticket directory** under `.spec/` — see §3. Every skill
 resolves it the **same way**, from the current git branch:
@@ -61,9 +67,11 @@ The branch is the single source of truth for which ticket is active: parallel wo
 on separate branches each resolves to its own ticket, with no shared pointer file to
 fall out of sync.
 
-There is **no orchestrator and no separate verify skill** — review happens
-per-task inside `tiny-spec-build`. To make a change, re-run the owning upstream skill
-in update mode, then re-run `tiny-spec-build`; it resumes from the checkbox state.
+There is **no separate verify skill** — review happens per-task inside
+`tiny-spec-build`. To make a change, re-run the owning upstream skill in update mode
+(or let `tiny-spec-run` walk the stale chain for you), then re-run `tiny-spec-build`;
+it resumes from the checkbox state. `tiny-spec-run` only ever **delegates** — it never
+edits an artifact, and it never enters the build loop.
 
 ## §2 — Two agents (both restricted: `Read, Write, Edit, Bash, Grep, Glob` — no `Agent`)
 
@@ -456,6 +464,16 @@ mode, which flips downstream `status: stale` and logs a `decisions.md` entry:
 | change the design / constitution | `PLAN.md` / `constitution.md` | `tasks.md` → stale |
 | change **Design system** token values | `constitution.md` | **every** ticket's `tasks.md` with `[x]` visual work → stale (it is project-wide) |
 | rework specific tasks | `tasks.md` | uncheck affected `[x]`, log it |
+
+`tiny-spec-run` automates that reconcile: it walks the chain **stale before new**,
+invoking the owning skill in update mode at each rung. It never flips a `status:`,
+edits an artifact, or unchecks a task itself — the owning skill does all of that.
+Its one non-`status:` check is **L4b**: re-hash each `D<n>` export and route a
+mismatch to `tiny-spec-create` update mode (a missing file stops the run instead).
+That is reading a value the spec declares about a file it names — the anchor's own
+integrity — not validating two documents against each other, and it is not a
+precedent for adding cross-document checks. Design drift is otherwise completely
+invisible: no `status:` flips, and the build reviews against a screen that changed.
 
 **Completed-work guardrail:** if a change touches a task already `[x]`, **uncheck
 it** and log it (`type: change`) for human review — never assume built work

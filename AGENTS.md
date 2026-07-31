@@ -16,8 +16,9 @@ shape and [CONTRACTS.md](CONTRACTS.md) for the formats and rules of record.
 ## North star — earned ceremony
 
 This suite is deliberately small. Do **not** grow it back into waves, `owns:`
-contracts, a checkpoint matrix, autonomous budgets, an orchestrator, or
-validators. Before adding a skill, agent, artifact, format field, or knob, the bar
+contracts, a checkpoint matrix, autonomous budgets, or validators.
+`tiny-spec-run` is the one router, and it earns that only by owning nothing — no
+artifact, no state file — and stopping before `build`. Before adding a skill, agent, artifact, format field, or knob, the bar
 is: *does it clearly pay for itself, or is it ceremony?* When in doubt, leave it
 out. A change that makes this bigger needs a strong reason; a change that makes it
 smaller usually doesn't.

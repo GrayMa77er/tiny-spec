@@ -20,7 +20,8 @@ committed.
 That core is **four skills and two agents**. In front of it sit **two optional
 planning on-ramps** — `tiny-spec-prd` (idea → PRD) and `tiny-spec-breakdown`
 (PRD → stories) — for when you're starting from an idea rather than a ready ticket.
-No orchestrator, no config file, no build step.
+`tiny-spec-run` walks the three planning steps in one command. No config file, no
+build step.
 
 ```
 PLANNING (optional on-ramps)              EXECUTION (the core loop, one story at a time)
@@ -67,6 +68,18 @@ Restart Claude Code so it picks up the new skills, then run the flow in your pro
 /tiny-spec-tasks     # slice the plan into an ordered checklist
 /tiny-spec-build     # build each task: implement, review, commit
 ```
+
+Or collapse the three planning steps into one and go straight to building:
+
+```
+/tiny-spec-run       # create → plan → tasks in one pass; stops before build
+/tiny-spec-build     # build each task: implement, review, commit
+```
+
+`tiny-spec-run` resolves where your ticket stands and invokes whichever of
+`create` / `plan` / `tasks` moves it forward, reconciling anything stale first. It
+**stops before `tiny-spec-build`** — that's where you actually review the work — and
+it writes nothing itself, it only delegates.
 
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
 installed. Each skill is copied (not symlinked) so every install is

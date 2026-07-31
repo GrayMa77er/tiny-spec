@@ -6,7 +6,9 @@ this suite; this file just points at it so the harness loads the pointer.
 
 **The one rule that matters most:** this suite exists to be *small* — earned
 ceremony. Don't grow it back into waves, `owns:` contracts, a checkpoint matrix,
-autonomous budgets, an orchestrator, or validators. Before adding any skill,
+autonomous budgets, or validators. `tiny-spec-run` is the one router, and it earns
+that only by owning nothing — no artifact, no state file — and stopping before
+`build`. Before adding any skill,
 agent, artifact, format field, or knob, ask whether it clearly pays for itself;
 when in doubt, leave it out.
 

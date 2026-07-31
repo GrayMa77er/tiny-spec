@@ -36,6 +36,7 @@ packages = ["tiny_spec"]
 [tool.hatch.build.targets.wheel.force-include]
 "tiny-spec-prd" = "tiny_spec/_bundle/tiny-spec-prd"
 "tiny-spec-breakdown" = "tiny_spec/_bundle/tiny-spec-breakdown"
+"tiny-spec-run" = "tiny_spec/_bundle/tiny-spec-run"
 "tiny-spec-create" = "tiny_spec/_bundle/tiny-spec-create"
 "tiny-spec-plan" = "tiny_spec/_bundle/tiny-spec-plan"
 "tiny-spec-tasks" = "tiny_spec/_bundle/tiny-spec-tasks"
@@ -46,6 +47,7 @@ packages = ["tiny_spec"]
 include = [
   "tiny_spec",
   "tiny-spec-prd",
+  "tiny-spec-run",
   "tiny-spec-breakdown",
   "tiny-spec-create",
   "tiny-spec-plan",
