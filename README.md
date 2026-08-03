@@ -84,6 +84,11 @@ Or collapse the three planning steps into one and go straight to building:
 **stops before `tiny-spec-build`** — that's where you actually review the work — and
 it writes nothing itself, it only delegates.
 
+**Building from a mockup?** There is no design flag to pass. Commit your exports to
+`design/` before the run and `tiny-spec-create` — whether you invoke it directly or
+reach it through `tiny-spec-run` — reads what's there and asks which screens this
+ticket covers. [Designs, if you have them](#designs-if-you-have-them) walks through it.
+
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
 installed. Each skill is copied (not symlinked) so every install is
 self-contained.
@@ -129,6 +134,13 @@ things — a project-wide token system in the constitution, and a per-screen ent
 the spec — so "does this look right?" becomes something the reviewer can fail a task
 on. Skip all of it for a CLI or a library; the constitution simply has no design
 section.
+
+**Designs enter by convention, not by argument.** No skill takes a design flag or a
+path parameter. `tiny-spec-create` reads every file in `design/` at your project root —
+directly, or when `tiny-spec-run` reaches it — and asks which screens this ticket
+covers; you can also just hand it paths during the interview. Change an export later and
+re-running `create` (or `run`) re-hashes it, marking the spec stale exactly like editing
+a requirement.
 
 **1. Commit your exports.** Any format an agent can read — a Figma export, an HTML
 mockup, an Excalidraw file, a photo of a whiteboard.
