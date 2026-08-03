@@ -256,9 +256,13 @@ sections (keep all, even if short) plus one conditional:
 8. **Verification commands** — the exact commands that constitute the gate
    (install, lint, test, build, run). This is what the reviewer executes. Adds an
    optional **`visual:`** command where there is a Design system: what boots the UI so
-   the reviewer can read back `getComputedStyle`/`getBoundingClientRect`. It is a
-   precondition for the visual gate (§4.2) — a `design:` task with no `visual:`
-   command is a blocker, never a silent pass.
+   the reviewer can read back `getComputedStyle`/`getBoundingClientRect`. It also writes
+   a screenshot per state it drives and prints `SCREENSHOT <state> <path>` for each,
+   which is what arms the judge in §4.2 item 5; those files are the command's own scratch
+   output, gitignored, never a `.spec/` artifact. It is a precondition for the visual
+   gate (§4.2) — a `design:` task with no `visual:` command is a blocker, never a silent
+   pass. A `visual:` command that runs but prints no `SCREENSHOT` line is the one
+   degraded case: numbers still gate, the judge doesn't run and says so.
 
 **Why tokens rather than a screenshot or a description.** A token name is the most
 durable anchor available: semantic, diffable, and stable across a visual redesign. An
@@ -429,15 +433,51 @@ reviewer, unchanged. With it, the reviewer adds a fourth step:
    the UI into each; a source-text match is not evidence and false-passes routinely.
    A surface that renders only its happy path is a fail — generated UI passing a
    functional check while missing its states is the single most common failure mode.
-5. **Read the export image** as a cross-check for what numbers can't catch (a missing
-   element, wrong hierarchy).
+5. **Judge the render against the export.** Steps 2–4 prove the numbers are right; they
+   cannot see a node that is present, on-token, and invisible. Read each
+   `SCREENSHOT <state> <path>` the `visual:` command printed (§3.2 item 8) alongside the
+   `D<n>`'s `export:` image and grade **every state**, not just the happy path, on four
+   fixed lines:
+
+   1. **Presence** — is every `elements:` row actually *visible* in the render? An
+      element at `opacity: 0`, zero-height, clipped out of view, occluded by a sibling,
+      or the same color as what's behind it passes every numeric assertion and is not
+      there. **FAIL.** This is the step's reason to exist.
+   2. **Legibility & occlusion** — text clipped, truncated mid-word, overlapping another
+      element, or on a background it cannot be read against. **FAIL.**
+   3. **Correspondence** — does the render show the same screen the export does: the same
+      regions present, in the reading order `layout:` names. A whole region missing is a
+      **FAIL**; a stylistic difference is a **flag**.
+   4. **Hierarchy & polish** — emphasis, balance, crowding, alignment. **Always a flag.**
+
+   Three rules keep this from turning into noise:
+
+   - **Numbers beat the eye on anything the numbers already measured.** Padding on the
+     `space.*` scale that "looks cramped" is a `flag:`, never a fail. A color that is
+     exactly its token but "looks washed out" is a `flag:`. The judge may only fail on
+     what measurement *cannot* see. Without this the two halves of the gate return
+     opposite verdicts on the same element and the bounded fix loop (§4) burns on a
+     disagreement no executor can resolve.
+   - **Still not a pixel diff.** The export is usually a wireframe. Judge structure and
+     legibility, never visual identity — item 2's restriction is unchanged.
+   - **Cite the evidence.** Every finding names the state whose screenshot it came from
+     and what was observed. An uncited visual claim reads as an opinion and gets ignored.
+
+   **If the command printed no `SCREENSHOT` line**, the judge does not run: steps 1–4
+   stand on their own and the reviewer records `judge: not run` in its `DESIGN:` section
+   plus a `flag:` naming the fix. This is the one degraded path — loud, but not a
+   blocker, because a constitution written before this step existed still gates fine on
+   numbers. `tiny-spec-plan` repairs it (§3.2 item 8).
 
 **Verdict split — deliberate, and the one place "when torn, fail" does not apply.**
-Measurable violations (an unmatched selector, off-scale value, undefined token,
-hardcoded value where a token exists, contradicted order, a named state that doesn't
-render) **fail**. Subjective impressions are recorded as `flag:` findings and do
-**not** fail the task: convergence is bounded at 2 attempts (§4), so failing on taste
-blocks a task on something no executor can fix.
+Violations you **measured or saw** fail: an unmatched selector, off-scale value,
+undefined token, hardcoded value where a token exists, contradicted order, a named state
+that doesn't render — plus, from item 5, an element that renders invisibly, text that
+clips or overlaps, and a region the export has that the render lacks. Subjective
+impressions are recorded as `flag:` findings and do **not** fail the task: convergence is
+bounded at 2 attempts (§4), so failing on taste blocks a task on something no executor
+can fix. **The line between the two lists is the precedence rule** — where a number
+already settled the question, the eye may only flag.
 
 ## §5 — Blockers (never hack around)
 

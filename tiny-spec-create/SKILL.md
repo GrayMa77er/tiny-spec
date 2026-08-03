@@ -215,7 +215,11 @@ If `.spec/` does not exist:
    - visual:  `...`   # optional; only if there is a Design system above. The command
      that boots the UI so the reviewer can read back computed styles and geometry
      (e.g. a Playwright script that navigates to a route and prints
-     getComputedStyle/getBoundingClientRect for the selectors it is given). Required
+     getComputedStyle/getBoundingClientRect for the selectors it is given). It also
+     saves a screenshot of each state it drives and prints `SCREENSHOT <state> <path>`
+     for each — that line is what lets the reviewer look at the render next to the
+     design export and catch what numbers can't (an element that is on-token but
+     invisible, clipped text). Scratch files, gitignored. Required
      before any task may carry a `design:` reference — a task that names one with no
      `visual:` command here is a blocker, not a silent pass.
    >
@@ -248,6 +252,13 @@ in `SPEC.md`. Skip the whole section for a CLI, library, or headless service.
 3. **Ask for the `visual:` command** — how the reviewer boots this UI to read back
    computed styles (a Playwright script, a dev-server URL plus a snippet). Record it
    in **Verification commands**. Without it no task can carry a `design:` reference.
+
+   Ask that it **also screenshot each state it drives** and print
+   `SCREENSHOT <state> <path>` — one `page.screenshot({ path })` call next to the
+   measuring it already does, not a second script. That line is what lets the reviewer
+   look at the render beside the export, which is the only way to catch an element that
+   measures perfectly and renders invisibly. If the user says no, that's fine: the gate
+   still works on numbers alone and the reviewer reports the judge as not run.
 
 4. **Write one `D<n>` entry per screen this ticket touches**, with the source link,
    the committed export path, and its `sha256` (`shasum -a 256 <file>` — this is the

@@ -84,6 +84,11 @@ Or collapse the three planning steps into one and go straight to building:
 **stops before `tiny-spec-build`** — that's where you actually review the work — and
 it writes nothing itself, it only delegates.
 
+**Building from a mockup?** There is no design flag to pass. Commit your exports to
+`design/` before the run and `tiny-spec-create` — whether you invoke it directly or
+reach it through `tiny-spec-run` — reads what's there and asks which screens this
+ticket covers. [Designs, if you have them](#designs-if-you-have-them) walks through it.
+
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
 installed. Each skill is copied (not symlinked) so every install is
 self-contained.
@@ -129,6 +134,13 @@ things — a project-wide token system in the constitution, and a per-screen ent
 the spec — so "does this look right?" becomes something the reviewer can fail a task
 on. Skip all of it for a CLI or a library; the constitution simply has no design
 section.
+
+**Designs enter by convention, not by argument.** No skill takes a design flag or a
+path parameter. `tiny-spec-create` reads every file in `design/` at your project root —
+directly, or when `tiny-spec-run` reaches it — and asks which screens this ticket
+covers; you can also just hand it paths during the interview. Change an export later and
+re-running `create` (or `run`) re-hashes it, marking the spec stale exactly like editing
+a requirement.
 
 **1. Commit your exports.** Any format an agent can read — a Figma export, an HTML
 mockup, an Excalidraw file, a photo of a whiteboard.
@@ -191,7 +203,7 @@ it. This is your blast radius:
   - design: D1
 ```
 
-**5. The reviewer measures it and fails on what it measured:**
+**5. The reviewer measures it, then looks at it, and fails on both:**
 
 ```
 DESIGN: D1 — Signup form
@@ -199,14 +211,23 @@ DESIGN: D1 — Signup form
   [data-testid="signup-email"] MISSING FROM DOM — never built, or renamed
   [data-testid="signup-error"] rgb(204,0,0) — color.text.danger is #B91C1C
   state "loading" never renders: button label stays "Continue", no spinner
+  judge: read states default, error — compared against design/signup.png
+    state "error": signup-error sits behind the card — every token right, and the
+      user sees nothing where the export shows the red caption
+    state "default": submit label "Create account" truncates to "Create acco…"
 FINDINGS:
 - flag: title/field gap feels tight (on-scale — does not fail the task)
 ```
 
-Numbers, not screenshot diffs — pixel comparison goes flaky on font antialiasing and
-teams end up muting it. Measurable violations fail; subjective ones come back as
-`flag:` notes so a bounded fix loop can't thrash on taste. A task with no `design:`
-tag is graded exactly as before.
+Numbers first, and never a screenshot diff — pixel comparison goes flaky on font
+antialiasing and teams end up muting it. But no measurement catches an element that is
+present, on-token, and still not on screen — occluded, clipped, truncated, or the same
+color as what's behind it. So the last step reads a screenshot of each state next to
+your export and grades presence, legibility, and correspondence. **Where a number
+already settled the question the eye may only flag** — on-scale-but-cramped is never a
+fail — which keeps the two halves from contradicting each other. Measurable or visible
+violations fail; taste comes back as `flag:` notes so a bounded fix loop can't thrash. A
+task with no `design:` tag is graded exactly as before.
 
 <details>
 <summary>The <code>visual:</code> command (you write this once)</summary>
@@ -236,16 +257,28 @@ for (const sel of process.argv.slice(2)) {
     return { padding: c.padding, margin: c.margin, fontSize: c.fontSize,
              fontWeight: c.fontWeight, lineHeight: c.lineHeight, color: c.color,
              background: c.backgroundColor, border: c.border,
+             opacity: c.opacity, visibility: c.visibility,
              top: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
   })));
 }
+
+const state = process.env.STATE ?? 'default';      // however you drive states
+const shot = `/tmp/visual-${state}.png`;
+await p.screenshot({ path: shot, fullPage: true });
+console.log('SCREENSHOT', state, shot);            // this line arms the judge
+
 await b.close();
 ```
 
 The missing-selector branch **must print something** — that is what turns a renamed
 element into a failure instead of a silent skip. `top` is what the layout-order check
-reads. Without a `visual:` command, a task tagged `design:` raises a blocker rather
-than passing quietly.
+reads, and `opacity`/`visibility` are worth printing because they turn the cheapest kind
+of invisible element into a numeric failure. The `SCREENSHOT` line is what the reviewer
+reads back to look at the render and catch the rest — occlusion, clipping, truncation,
+same-color-on-same-color — none of which any single property reports. Drop it and the
+numeric half still gates exactly as before, with the reviewer reporting `judge: not run`
+rather than quietly skipping it. Without a `visual:` command at all, a task tagged
+`design:` raises a blocker rather than passing quietly.
 
 </details>
 

@@ -65,6 +65,10 @@ a scale from the wireframes; your job is to make it enforceable:
 - **Confirm the `visual:` command actually runs.** It is the gate for every task
   carrying `design:`; an aspirational command means the visual gate silently never
   fires. If it doesn't work from a clean checkout, fix it or drop the `design:` refs.
+  **Check it prints a `SCREENSHOT <state> <path>` line per state it drives** — that is
+  what lets the reviewer judge the render against the design export, and a constitution
+  written before that existed won't have it. Add the `page.screenshot({ path })` call;
+  it is one line, and without it the reviewer grades on numbers alone and says so.
 - Add the scale as a **guiding invariant** where it matters ("no raw color or spacing
   values in UI code — reference a token"), since that is the line a reviewer fails on.
 
