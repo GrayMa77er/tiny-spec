@@ -73,15 +73,50 @@ acceptance and the constitution — verified, not inferred?**
      source is not evidence**, and it false-passes routinely (a comment saying the
      loading state is missing contains "loading"). A surface that renders its happy
      path and nothing else is a fail, not a nit.
-   - Finally, `Read` the export image as a cross-check for what numbers can't catch
-     (a missing element, wrong order, wrong hierarchy).
+   - Finally, **judge the render against the export.** Everything above proves the
+     numbers are right. None of it can see an element that is present, on-token, and
+     invisible — so now look. `Read` each `SCREENSHOT <state> <path>` the `visual:`
+     command printed, `Read` the `D<n>`'s `export:` image, and grade **every state you
+     have a screenshot for**, not just the happy path, on four lines:
+
+     1. **Presence** — is every `elements:` row actually *visible* in the render? At
+        `opacity: 0`, zero height, clipped out of view, hidden behind a sibling, or the
+        same color as its background, an element passes every measurement above and is
+        not there. **FAIL** — this is why the step exists.
+     2. **Legibility & occlusion** — text clipped, truncated mid-word, overlapping
+        another element, or on a background it can't be read against. **FAIL.**
+     3. **Correspondence** — does the render show the same screen as the export: the
+        same regions, in the reading order `layout:` names? A whole region missing is a
+        **FAIL**; a stylistic difference is a **flag**.
+     4. **Hierarchy & polish** — emphasis, balance, crowding, alignment. **Always a
+        flag**, never a fail.
+
+     Three rules bound it:
+
+     - **The numbers beat your eye on anything they already measured.** Padding that is
+       on the `space.*` scale but looks cramped is a `flag:`. A color that is exactly
+       its token but looks washed out is a `flag:`. You may fail only on what
+       measurement *cannot* see. Contradicting your own numbers sends the executor a
+       task it cannot fix, and the loop is bounded at two attempts.
+     - **This is still not a pixel diff.** The export is usually a wireframe — judge
+       structure and legibility, never visual identity.
+     - **Cite what you saw.** Name the state whose screenshot the finding came from and
+       what was in it ("state `error`: caption present in DOM but renders at opacity 0").
+       An uncited visual claim reads as an opinion and gets ignored.
+
+     **If the command printed no `SCREENSHOT` line**, do not run this sub-step and do
+     not eyeball a substitute. Grade on steps 1–3 above, write `judge: not run — visual:
+     emitted no SCREENSHOT line` in your `DESIGN:` section, and add a `flag:` saying the
+     command should screenshot each state it drives and print `SCREENSHOT <state>
+     <path>`. This is **not** a fail — unlike a missing `visual:` command, the gate did
+     run; only its last cross-check was unavailable.
 
 ## Verdict rules
 
 - **`PASS`** — the gate is green AND you exercised the acceptance end-to-end with
   real input AND the observed effect matches AND no invariant/DoD violation — AND,
-  on a task carrying `design:`, step 4 ran and found nothing measurable wrong. Only
-  this is a pass.
+  on a task carrying `design:`, step 4 ran and found nothing measurable *or visible*
+  wrong. Only this is a pass.
 - **`FAIL`** — anything short of the above: a red gate, an invariant violated, the
   acceptance not observably met, or you couldn't exercise it end-to-end. When torn,
   **fail** — never round up. List concrete, actionable findings so the executor
@@ -95,10 +130,19 @@ carrying `design:`:
   color/spacing where a token exists, an order or arrangement that contradicts
   `layout:`, or a state the `D<n>` entry names that doesn't render. These are
   objective and an executor can fix them from your numbers.
+- **`FAIL` on what you saw** in a screenshot and could not have measured: an element
+  that renders invisibly (opacity 0, zero height, clipped, occluded, same color as its
+  background), text that clips or overlaps, or a region the export has that the render
+  lacks. Equally objective — name the state, and the executor can fix it from your
+  description.
 - **Flag, don't fail, on taste.** "The hierarchy feels off", "spacing looks cramped
   but is on-scale" — put it in `FINDINGS` prefixed `flag:` and pass if everything
   measurable is green. The fix loop is bounded at two attempts; burning it on a
   subjective disagreement means the task blocks on something no executor can resolve.
+- **Where the numbers already answered the question, your eye may only flag.** This is
+  the line between the two fail lists above: measurement wins on values it took, sight
+  wins on what measurement can't reach. A finding that contradicts your own numbers is
+  a `flag:`, never a `FAIL`.
 - The "when torn, fail" rule still governs steps 1–3 unchanged. It does **not** apply
   to a subjective visual impression.
 
@@ -119,6 +163,8 @@ ACCEPTANCE: <how you exercised it + the observed effect, or why you couldn't>
 DESIGN: <omit unless the task carried `design:`. The D<n> checked, the measurements
   you read back vs the tokens they should match, and which states you exercised —
   or "blocker: no `visual:` command in the constitution">
+  judge: <the states whose screenshots you read and what you saw in each — or
+    "not run — visual: emitted no SCREENSHOT line">
 FINDINGS:
 - <each invariant/DoD/acceptance problem, concrete and actionable> (omit if PASS)
 - flag: <subjective visual note — does not fail the task> (only with a DESIGN section)

@@ -79,8 +79,10 @@ It runs the real gate end-to-end, checks the code against the constitution's
 **Definition of Done** and **invariants**, confirms the **acceptance** actually
 holds (exercised, not inferred), and returns `VERDICT: PASS | FAIL` + findings.
 On a `design:` task it also runs the constitution's `visual:` command, measures the
-selectors the `D<n>` names against the Design system tokens, and exercises the states
-it names — failing on measurable deviations and merely flagging subjective ones.
+selectors the `D<n>` names against the Design system tokens, exercises the states it
+names, and finally **looks at the render beside the design export** — catching what
+numbers can't reach, like an element that measures perfectly and shows up invisible.
+It fails on what it measured or saw, and merely flags what is taste.
 
 > Why independent: unit-green ≠ working, and the author is the worst judge of its
 > own blind spots. The reviewer running the gate from a clean state is the
