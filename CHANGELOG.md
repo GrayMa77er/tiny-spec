@@ -7,7 +7,7 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [Unreleased]
+## [0.5.0] — 2026-08-30
 
 ### Added
 
@@ -66,6 +66,16 @@ Claude Code.
   before.
 - **`tiny-spec-run` forwards stage-addressed caller briefs verbatim** and acts on none
   of them. The ladder is unchanged.
+
+### Upgrading
+
+Re-run `uvx tiny-spec install` and **restart Claude Code** — `tiny-spec-loop` is a new
+skill, and skills only load at startup, so it stays invisible until you do.
+
+Nothing else changes. Existing `tasks.md` files are valid as they are: `pause:` is
+optional, and a task list without one builds exactly as it did in v0.4.0. Invoked
+directly, every skill behaves as before — the loop-run waiver in `tiny-spec-create`
+applies only when `tiny-spec-loop` is driving.
 
 ### Notes
 
@@ -196,6 +206,7 @@ Code. You write the intent; it produces a design, a task list, and then builds t
 one task at a time. Every task is implemented by one agent and graded by an independent
 reviewer that runs your real tests before anything is committed.
 
+[0.5.0]: https://github.com/GrayMa77er/tiny-spec/releases/tag/v0.5.0
 [0.4.0]: https://github.com/GrayMa77er/tiny-spec/releases/tag/v0.4.0
 [0.3.0]: https://github.com/GrayMa77er/tiny-spec/releases/tag/v0.3.0
 [0.2.1]: https://github.com/GrayMa77er/tiny-spec/releases/tag/v0.2.1
