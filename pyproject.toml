@@ -37,6 +37,7 @@ packages = ["tiny_spec"]
 "tiny-spec-prd" = "tiny_spec/_bundle/tiny-spec-prd"
 "tiny-spec-breakdown" = "tiny_spec/_bundle/tiny-spec-breakdown"
 "tiny-spec-run" = "tiny_spec/_bundle/tiny-spec-run"
+"tiny-spec-loop" = "tiny_spec/_bundle/tiny-spec-loop"
 "tiny-spec-create" = "tiny_spec/_bundle/tiny-spec-create"
 "tiny-spec-plan" = "tiny_spec/_bundle/tiny-spec-plan"
 "tiny-spec-tasks" = "tiny_spec/_bundle/tiny-spec-tasks"
@@ -48,6 +49,7 @@ include = [
   "tiny_spec",
   "tiny-spec-prd",
   "tiny-spec-run",
+  "tiny-spec-loop",
   "tiny-spec-breakdown",
   "tiny-spec-create",
   "tiny-spec-plan",

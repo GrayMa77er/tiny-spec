@@ -15,10 +15,17 @@ change a format here, also change the **inline skeleton in the owning skill's
 > validators. Do **not** add a skill, artifact, agent, or knob unless it clearly
 > pays for itself. When in doubt, leave it out.
 >
-> `tiny-spec-run` is the one **router**, and it earns that place only by owning
-> **nothing**: it writes no artifact, duplicates no instructions, holds no state file,
-> and stops before `build`. A router that generated or reconciled documents itself
-> would be a second source of truth — that is the line.
+> Both of those last two still hold under the loop (§4.3), and must keep holding:
+> `pause:` is **one optional field on a task**, not a matrix of checkpoint kinds, and
+> **the task list is the budget** — the loop ends when the tasks end, so there is no
+> turn ceiling or token cap to configure. A second, weaker stopping rule beside the
+> real one is exactly the ceremony this bar exists to refuse.
+>
+> `tiny-spec-run` and `tiny-spec-loop` are the two **routers**, and they earn that
+> place only by owning **nothing**: they write no artifact, duplicate no instructions,
+> hold no state file. `run` stops before `build`; `loop` invokes it but never reads
+> execution state or decides where the work stands. A router that generated or
+> reconciled documents itself would be a second source of truth — that is the line.
 
 ---
 
@@ -33,6 +40,7 @@ change a format here, also change the **inline skeleton in the owning skill's
 | `tiny-spec-tasks` | `<ticket>/PLAN.md` | `<ticket>/tasks.md` | Slice the plan into a **flat, ordered checklist** of small tasks. |
 | `tiny-spec-build` | `<ticket>/tasks.md`, shared `constitution.md`, shared `memory.md` | code, ticks `<ticket>/tasks.md`, appends shared `memory.md` / `<ticket>/decisions.md` | Run the **per-task loop** — plan, implement (executor), review (independent reviewer), commit. |
 | `tiny-spec-run` *(optional)* | every artifact's frontmatter (`status:`) + the git branch | **nothing — it owns no artifact** | Resolve where the ticket stands and invoke `create` → `plan` → `tasks` in order, **stale before new**. Stops before `build`. |
+| `tiny-spec-loop` *(optional)* | `BREAKDOWN.md` stories (or a pasted list), each `<ticket>/tasks.md`, and git | **nothing — it owns no artifact** | Walk a story list: per story branch → `run` → `build` → merge locally, then next. Owns the **stopping rule** (§4.3) and the **branch/merge lifecycle** (§9); owns no state. |
 
 `<ticket>` is the **active ticket directory** under `.spec/` — see §3. Every skill
 resolves it the **same way**, from the current git branch:
@@ -72,6 +80,14 @@ There is **no separate verify skill** — review happens per-task inside
 (or let `tiny-spec-run` walk the stale chain for you), then re-run `tiny-spec-build`;
 it resumes from the checkbox state. `tiny-spec-run` only ever **delegates** — it never
 edits an artifact, and it never enters the build loop.
+
+`tiny-spec-loop` is the same deal one level up: per story it invokes `run` once and
+`build` once, merges the finished branch, and moves on — then reports the terminal
+state (§4.3). It never edits an artifact either, never walks `run`'s ladder itself, and
+never resolves a halt — a blocker means an upstream document is wrong, and letting the
+loop rewrite the requirement its own task failed to satisfy is the agent grading its own
+homework. Both routers stop; only the owning skill writes. See §9 for the story list,
+the branch/merge lifecycle, and why progress is derived rather than recorded.
 
 ## §2 — Two agents (both restricted: `Read, Write, Edit, Bash, Grep, Glob` — no `Agent`)
 
@@ -290,6 +306,7 @@ Frontmatter `status`, `updated`. Body is a single `## Tasks` checklist, executed
   - type: feat            # optional; the Conventional Commit type for this task's commit (defaults to feat)
   - req: REQ-1            # optional; the REQ-N this task delivers (traceability)
   - design: D1            # optional; the SPEC.md D<n> this task builds — arms the visual gate (§4.2)
+  - pause: <why>          # optional; halt the loop before this task (§4.3)
   - files: <comma-separated hint of files it will touch> (guidance, not a contract)
 ```
 
@@ -307,6 +324,18 @@ on the API call behind it; the gate is per-task precisely so the blast radius is
 deliberate choice rather than a project-wide mode. Every `D<n>` in `SPEC.md` should be
 claimed by at least one task, and a task may only carry `design:` if the constitution
 has a `visual:` command.
+
+`pause:` is the **only field that changes whether the loop continues** (§4.3) — the two
+are deliberately separate axes: `design:` changes the *verdict*, `pause:` changes the
+*control flow*, and neither implies the other. Set it and `tiny-spec-build` halts
+**before** that task, leaving it `[ ]` and dispatching nothing, so a human reviews the
+approach while redirecting it is still cheap. Reserve it for irreversible or
+wide-blast-radius work — a data migration, a destructive/bulk file operation, a new
+third-party dependency, an auth or trust boundary, a public API/schema contract. Most
+task lists carry zero or one; a pause the user didn't want trains them to wave past the
+ones they did. It can be waived or added **for one run** conversationally, and that
+override is never written back into `tasks.md` — the file holds standing intent, not a
+run's arguments.
 
 ### §3.5 `memory.md` — kept, lean (project-wide, shared)
 Curated operational lessons that should survive across runs so the blind executor
@@ -327,14 +356,23 @@ every entry uses this **fixed skeleton** so all logs look the same:
 
 ```
 ## D-NNN — <short title>
-- type: decision | blocker | change
+- type: decision | blocker | change | halt
+- state: blocked | exhausted | fork            # required on blocker + halt; omitted otherwise
 - date: <ISO date>
 - affects: REQ-N, T-n     # the requirement / task ids this touches
-- note: <what + why; for a blocker, name the upstream doc to fix>
+- note: <what + why; for a blocker, name the upstream doc to fix; for a halt, what unblocks it>
 ```
 
-Ids are `D-001, D-002, …`. Used for the blocker round-trip (§5) and the
-change/update path (§6).
+Ids are `D-001, D-002, …`. Used for the blocker round-trip (§5), the change/update
+path (§6), and the loop's halt record (§4.3).
+
+`type: halt` covers the one loop stop that is neither an upstream defect nor a settled
+call: `fork` (§4.3). `blocked` and `exhausted` stay `type: blocker`, because both do
+mean an upstream doc must change; a fork that the user later *answers* becomes a normal
+`type: decision`. `state:` is what makes the record honest — without it, "convergence
+never got there" and "the executor said it was impossible" read identically weeks later.
+**One entry per halt, not one per cause** — a blocker that stops the loop is a single
+event. `done` and `paused` write nothing at all (§4.3).
 
 ---
 
@@ -362,9 +400,16 @@ change/update path (§6).
 6. **DISTILL.** If anything in steps 2–4 surfaced a forward-acting operational
    lesson, add a curated `memory.md` entry (§3.5).
 7. **NEXT.** Interactive default: do one task, report, and continue to the next
-   (pausing for the user is fine). If the user said "do it all / run it through,"
-   keep looping until done or a blocker stops you. There is **no** separate
-   autonomous mode and **no** checkpoint matrix — one commit per passed task, always.
+   (pausing for the user is fine). If the user said "do it all / run it through," or
+   `tiny-spec-loop` invoked the build, keep looping until one of the five terminal
+   states in §4.3 is reached. There is **no** separate autonomous mode and **no**
+   checkpoint matrix — one commit per passed task, always. Running through is a
+   *caller's instruction*, not a mode: every step above is identical either way,
+   which is why a looped build and a hand-driven one cannot drift apart.
+
+Step 1 is preceded by one check: if the task carries `pause:` (§3.4) and the user
+hasn't waived it for this run, **halt `paused`** (§4.3) — leave it `[ ]` and dispatch
+nothing.
 
 When every task is `[x]`: run the Verification commands once more as a final
 whole-spec smoke, report what was built + the commits + any open `decisions.md`
@@ -479,6 +524,75 @@ bounded at 2 attempts (§4), so failing on taste blocks a task on something no e
 can fix. **The line between the two lists is the precedence rule** — where a number
 already settled the question, the eye may only flag.
 
+### §4.3 Terminal states — how the loop stops
+
+The suite's loop was always four-fifths built. A loop specification has five parts —
+**trigger, goal, verification, stopping rule, memory** — and the flow already supplied
+four of them:
+
+| Part | What supplies it |
+|---|---|
+| trigger | the user invoking a skill |
+| goal | the `tasks.md` checklist |
+| verification | the independent reviewer running the **real gate** end-to-end (§4) |
+| memory | shared `memory.md` (§3.5), `decisions.md` (§3.6), one commit per passed task |
+| **stopping rule** | **§4.3, below** |
+
+`tiny-spec-loop` exists to supply that fifth part and nothing else. It adds no budget,
+no ceiling, and no config — see the north star.
+
+**Every run ends in exactly one of six terminal states.** The first five belong to
+`tiny-spec-build`; `conflict` is `tiny-spec-loop`'s alone, and only exists because that
+skill merges (§9):
+
+| State | Cause | Recorded as |
+|---|---|---|
+| `done` | every task `[x]` and the final smoke passed | nothing — the green tree and the commits are the record |
+| `blocked` | executor `BLOCKER`, a missing `visual:` command, or a red gate after a merge | `type: blocker`, `state: blocked` |
+| `exhausted` | convergence spent its 2 fix attempts, task still red | `type: blocker`, `state: exhausted` |
+| `paused` | a task's `pause:` point was reached | nothing — the `pause:` line on the first unchecked task is the record |
+| `fork` | a genuine either/or the plan doesn't pin down | `type: halt`, `state: fork` |
+| `conflict` | a story's branch would not merge cleanly | nothing — the unmerged branch and git's own report are the record |
+
+`stalled` and `no-op` are deliberately **absent**. The 2-attempt convergence bound
+already collapses a stall into `exhausted`, and "every task was already `[x]`" is just
+`done` — two names for one state is how a taxonomy starts rotting.
+
+`conflict` earns its place by having a different fix from every other state: you resolve
+it by editing code in a merge, not by editing an upstream document. It never appears as
+a `state:` value in `decisions.md`, because it is never recorded — see below.
+
+**Never round up.** Only `done` may report the work as built. A closing report that
+calls a `blocked`, `exhausted`, `paused`, or `fork` run "done" is worse than the halt
+itself: it converts a stop the user could act on into a false completion they won't
+check. This is the one rule in §4.3 that everything else exists to serve.
+
+**Where halts are recorded — and where they deliberately aren't.** One test decides it:
+*is the reason already legible on disk?*
+
+- **`blocked`, `exhausted`, `fork` → recorded** by `tiny-spec-build`. An unchecked
+  `[ ]` task is ambiguous on its own: it looks identical whether it was blocked or
+  simply never reached.
+- **`paused` → not recorded.** The `pause:` line on the first unchecked task already
+  says both that the loop stopped and why.
+- **`conflict` → not recorded.** The story's branch is sitting there unmerged and git
+  reports the conflicted paths itself.
+- **Planning-chain halts → not recorded.** A `SPEC.md` reading `status: stale`, or a
+  design export that isn't on disk, says so plainly; re-invoking `tiny-spec-loop` lands
+  on the identical `run` rung and re-reports it.
+
+**`tiny-spec-loop` writes no entries at all** — every state it can reach is either
+recorded by `build` or legible from git. That is what keeps it a router.
+
+That is the same no-state-file property that makes `tiny-spec-run` safe to abandon
+mid-interview (§1): neither router has to write anything to be resumable, and the log
+stays for things nothing else records. A `decisions.md` that restates what `tasks.md`
+already shows is a second source of truth with extra steps.
+
+**Resume is the checkbox state, unchanged.** The task the loop stopped at stays `[ ]`;
+re-running `tiny-spec-build` or `tiny-spec-loop` picks up there with no conversational
+context required. There is no run log, no pointer, and nothing to reconcile.
+
 ## §5 — Blockers (never hack around)
 
 If the executor cannot proceed correctly — a design gap, an impossible
@@ -486,13 +600,21 @@ requirement, a contradiction with the constitution, a missing dependency — it
 **stops and reports a `BLOCKER`**, leaving the tree clean. `tiny-spec-build` then:
 
 1. Leaves the task `[ ]`.
-2. Logs it to `decisions.md` (`type: blocker`, naming the upstream doc to fix).
+2. Logs it to `decisions.md` (`type: blocker`, `state: blocked` — or `exhausted` when
+   convergence ran out — naming the upstream doc to fix).
 3. Surfaces it to the user and routes upstream: `tiny-spec-plan` (design gap) or
    `tiny-spec-create` (a requirement itself is wrong/impossible), in update mode.
 
+**Routing upstream is a recommendation to the user, never an action the loop takes.**
+`tiny-spec-loop` reports the blocker and stops; it does not invoke the update-mode fix
+itself. A loop that rewrites the requirement its own task failed to satisfy is grading
+its own homework one level up, and it is the exact shape of specification gaming.
+
 After the upstream fix, re-run `tiny-spec-build`; it resumes from the checkbox state.
 A genuine fork the plan doesn't pin down → don't guess: surface it with the
-options + your recommendation, record the resolution in `decisions.md`.
+options + your recommendation, record the resolution in `decisions.md`. **When running
+through**, a fork is a halt (`state: fork`, §4.3) rather than a question — an answer
+nobody is present to give stalls the run without ending it.
 
 ## §6 — Changes & staleness
 
@@ -555,3 +677,57 @@ resolving to its own artifacts. There are **no API calls, no
 credentials, and no config** — status is moved manually. Deeper, opt-in integration
 layers (active MCP/CLI sync, PR automation, full API) are documented in
 [INTEGRATIONS.md](INTEGRATIONS.md) — none are part of the core suite.
+
+## §9 — The story loop (`tiny-spec-loop` only)
+
+The suite still works **one ticket at a time**. `tiny-spec-loop` doesn't change that —
+it drives the same one-ticket flow repeatedly, **in sequence**, over a list.
+
+**The list.** `BREAKDOWN.md` stories in file order by default (§3.0); a list pasted at
+invocation wins when given. The unit is the **`- Story:`**, not the `## Feature:`
+heading, because the `slug:` lives on the story and the slug is what names both the
+branch and `.spec/<slug>/`. A pasted-list story has no `AC:` lines, so
+`tiny-spec-create` runs its full interview when it reaches one — that interview is the
+human input the run stops for, not a defect.
+
+**The cycle, per story:**
+
+```
+git switch -c <slug> <integration>   cut fresh from main/master
+tiny-spec-run                        create → plan → tasks (one invocation)
+tiny-spec-build                      the per-task loop (one invocation)
+git merge --no-ff <slug>             into main/master, then re-run Verification commands
+```
+
+Cutting each branch **fresh from the integration branch** is what makes an ordered list
+build correctly: story 3 sees stories 1 and 2 already merged. It only holds because the
+merge happens between stories, which is why a story that doesn't reach `done` stops the
+run rather than being skipped.
+
+**Progress is derived, never recorded** — and derived from **git refs**, not the working
+tree. Per slug, first match wins: `git show <integration>:.spec/<slug>/tasks.md` with
+every task `[x]` → built and merged; else if branch `<slug>` exists,
+`git show <slug>:.spec/<slug>/tasks.md` → all `[x]` means built but unmerged, an
+unchecked task means mid-build, and no such file means planning didn't finish; else not
+started. Asking refs rather than the file system is what distinguishes "not started"
+from "built on a branch nobody merged" — on the integration branch those look identical.
+Sourcing the first check from the integration branch is also what survives a deleted
+branch. There is no run log, pointer, or lock — that is what lets an overnight run
+resume correctly the next day.
+
+**Git rules — narrow on purpose.** `tiny-spec-loop` issues only `switch`, `switch -c`,
+`merge --no-ff`, `merge --abort`, and read-only queries. It **never** pushes, forces,
+rebases, resets, or deletes a branch, and it requires a **clean working tree** before it
+starts. Merging locally keeps a bad run one `git reset` away; publishing is the user's
+call, and the suite makes no network calls (§8). On a red gate after a merge it leaves
+the merge in place and names the undo command rather than running it — fixing forward
+and rolling back are both reasonable, and discarding a real merge is not a router's
+decision.
+
+**Caller briefs.** `tiny-spec-loop` passes stage-addressed briefs *through*
+`tiny-spec-run`, which forwards them verbatim and acts on none of them: a create-stage
+brief naming the story slug and waiving the seeded-mode confirmation (the `AC:` lines
+are the approval), and a tasks-stage brief carrying the run's standing **pause policy**
+so technical stop points land as real `pause:` lines (§3.4). Pause points are technical,
+never per-story — there is no way to mark a whole story for review, because what is
+worth looking at is a migration or an auth boundary, not a feature heading.

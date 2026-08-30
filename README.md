@@ -7,9 +7,23 @@
 <p align="center">A tiny, opinionated take on spec-driven development.</p>
 
 <p align="center">
+  <a href="https://pypi.org/project/tiny-spec/"><img src="https://img.shields.io/pypi/v/tiny-spec.svg?color=d97757" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/tiny-spec/"><img src="https://img.shields.io/pypi/dm/tiny-spec.svg?color=d97757" alt="PyPI downloads"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://docs.claude.com/en/docs/claude-code/overview"><img src="https://img.shields.io/badge/Claude%20Code-skills-d97757.svg" alt="Claude Code"></a>
+  <a href="https://github.com/GrayMa77er/tiny-spec/stargazers"><img src="https://img.shields.io/github/stars/GrayMa77er/tiny-spec?color=d97757" alt="Stars"></a>
 </p>
+
+<p align="center">
+  <code>uvx tiny-spec install</code>
+</p>
+
+<!-- DEMO GIF SLOT — images/demo.gif
+     Record the FAIL -> fix -> PASS loop, then uncomment:
+<p align="center">
+  <img src="images/demo.gif" alt="tiny-spec build loop: the reviewer fails a task, the executor fixes it, the task commits" width="800">
+</p>
+-->
 
 tiny-spec is a four-step workflow for Claude Code that turns a ticket into shipped,
 reviewed code. You write the intent, it produces a design, a task list, and then
@@ -20,7 +34,9 @@ committed.
 That core is **four skills and two agents**. In front of it sit **two optional
 planning on-ramps** — `tiny-spec-prd` (idea → PRD) and `tiny-spec-breakdown`
 (PRD → stories) — for when you're starting from an idea rather than a ready ticket.
-`tiny-spec-run` walks the three planning steps in one command. No config file, no
+Two optional routers sit over the top: `tiny-spec-run` walks the three planning steps
+in one command, and `tiny-spec-loop` works a whole list of stories — branch, plan,
+build, merge, next — until they're built or something stops it. No config file, no
 build step.
 
 ```
@@ -32,6 +48,10 @@ PLANNING (optional on-ramps)              EXECUTION (the core loop, one story at
   idea → PRD        PRD → stories           intent             design           tasks            per-task loop
   PRD.md            BREAKDOWN.md            SPEC.md            PLAN.md +        tasks.md         plan → implement → review → commit
                                                               constitution
+                                           ▲                                                 ▲
+                                           └──────────────── tiny-spec-loop ─────────────────┘
+                                             optional: per story — branch, run, build, merge,
+                                             then the next story. Halts on a wall.
 ```
 
 The two on-ramps are **optional** and stack. Have nothing written down? Run
@@ -41,6 +61,97 @@ Features → Stories with draft acceptance criteria. Have a single known piece o
 work? Skip both and start at `tiny-spec-create`. Both on-ramps write a regenerable
 file at your project root (not under `.spec/`); `tiny-spec-create` then reads the
 breakdown one story at a time.
+
+## How small
+
+Every other kit in this space is bigger. That is the whole pitch, so here is the
+receipt rather than the adjective:
+
+| | skills / commands | agents | config | artifacts per feature |
+|---|---|---|---|---|
+| **tiny-spec** | **8** (4 core + 4 optional) | **2** | **none** | **`SPEC` `PLAN` `tasks`** |
+| [GitHub Spec Kit](https://github.com/github/spec-kit) | 10 | — | `specify init` | `spec` `plan` `tasks` `checklist` `constitution` `research` `data-model` `contracts/` `quickstart` |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 12 | — | `.openspec.yaml` | `proposal` `design` `tasks` `specs/` |
+| [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 58 | 5 personas | 35 × `customize.toml` | `PRD` `architecture` `epics` `stories` `UX` `brief` `sprint-plan` |
+
+The whole of tiny-spec is **2,079 lines** of markdown across 8 skills and 2 agents.
+There is no config file, no build step, no orchestrator, and no CLI to initialize a
+project — the skills are the product.
+
+<sub>Counts taken from each project's own repository on 2026-08-03 by listing its
+command/skill/agent directories and templates, not from its marketing copy. Spec Kit:
+`templates/commands/` (10 files) and the artifact set named in `templates/plan-template.md`.
+OpenSpec: `skills/` (12 directories). BMAD: `SKILL.md` files on `main` (58), agent
+personas in `src/bmm-skills/agents/` (analyst, architect, dev, pm, ux-designer), and
+`customize.toml` files (35). These projects are all substantially more popular than
+tiny-spec — Spec Kit ~125k stars, OpenSpec ~64k, BMAD ~51k — and being smaller is a
+bet, not a proof of quality. Re-run the counts yourself before believing them.</sub>
+
+## Why it's small
+
+Most spec frameworks are generous by default:
+many phases, many agents, many generated documents. tiny-spec makes the opposite
+bet. Keep one safeguard, drop the rest.
+
+A green unit test suite is not the same as working software, so the reviewer
+exercises acceptance criteria end to end and a final smoke test confirms the whole
+spec. That independent review is the safeguard — not the volume of planning
+artifacts. One task, one commit, an external reviewer. Nothing gets added unless
+it earns its place.
+
+The case for staying small:
+
+- **Documents are context, and context isn't free.** Generating large `spec.md`,
+  `plan.md`, `research.md`, and `data-model.md` files costs tokens to write, then
+  costs context to carry. Every paragraph the agent has to hold is room it no
+  longer has for your actual code. tiny-spec keeps the spine small — a
+  constitution and a short memory — and injects only what each task needs.
+- **Real work is a ticket inside a system, not a greenfield repo.** Bigger kits
+  assume you're bootstrapping a project from a blank page. Day to day, you pick up
+  a ticket and change part of a system that already exists. tiny-spec binds to a
+  ticket, works one at a time, and references your task platform instead of
+  re-describing the world.
+- **Rigid pipelines fight the user.** Mandatory phases and required sections
+  impose ceremony on work that doesn't need it. tiny-spec's extra structure is
+  optional by design — add shape where it pays, skip it where it doesn't.
+- **More moving parts is more to maintain.** Orchestrators, ownership contracts,
+  checkpoint matrices, and config files are themselves a system you have to learn
+  and keep in sync. A few small skills and two agents are not.
+- **Generated docs can fake rigor.** A folder of polished planning artifacts looks
+  like progress, but it isn't proof. The proof is the reviewer running your real
+  tests before each commit.
+
+That's the whole trade: where larger kits add machinery, tiny-spec adds one
+independent reviewer and stops.
+
+### Does the trade hold up?
+
+Smaller is easy to claim, so the suite ships a harness that measures it. `docs/eval/`
+runs tiny-spec headlessly on benchmark tasks in hermetic sandboxes, grades the produced
+code with held-out tests the suite never sees, and checks the reviewer's own verdict
+against that ground truth — the number that matters being **false-PASS rate**, how
+often the gate blesses code that is actually broken.
+
+Most recent run — 5 benchmark tasks, v0.4.0 (`7810074`), 2026-08-03:
+
+| | |
+|---|---|
+| held-out pass rate | **100%** (5/5) — the code works, judged by tests it never saw |
+| suite/truth agreement | **100%** — the reviewer's verdict matched the held-out grader every time |
+| **false-PASS rate** | **0%** — it never called broken code done |
+| blocker rate | 0% |
+
+The same run a month earlier on `f973c85` scored identically, which is the more
+interesting result: the loop is at least stable across versions rather than tuned to a
+single commit.
+
+See [`docs/eval/README.md`](docs/eval/README.md) for the method and
+[`docs/sdd-evaluation-rubric.md`](docs/sdd-evaluation-rubric.md) for the scoring rubric
+this repo grades itself against. **Read both skeptically: it is my benchmark, of my own
+tool, scored by me.** The rubric says so itself — *"treat the tiny-spec column as
+self-assessment to pressure-test, not gospel."* The tasks are small and self-contained,
+so the harness measures the loop on well-specified work, not large-codebase performance.
+The harness is in the repo precisely so you don't have to take my word for it.
 
 ## New to spec-driven development?
 
@@ -84,6 +195,17 @@ Or collapse the three planning steps into one and go straight to building:
 **stops before `tiny-spec-build`** — that's where you actually review the work — and
 it writes nothing itself, it only delegates.
 
+Or hand it a whole list of stories:
+
+```
+/tiny-spec-loop      # per story: branch → plan → build → merge → next
+```
+
+`tiny-spec-loop` reads your `BREAKDOWN.md` (or a list you paste) and works the stories
+one after another, merging each finished branch into `main` locally before starting the
+next — until it's done or reaches a **terminal state** it names out loud. See
+[Working a whole list](#working-a-whole-list--tiny-spec-loop).
+
 **Building from a mockup?** There is no design flag to pass. Commit your exports to
 `design/` before the run and `tiny-spec-create` — whether you invoke it directly or
 reach it through `tiny-spec-run` — reads what's there and asks which screens this
@@ -104,7 +226,7 @@ git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-run tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-run tiny-spec-loop tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
@@ -114,6 +236,13 @@ If a skill name collides with one you already have, rename these before copying,
 or install one set at a time.
 
 </details>
+
+### See a finished run first
+
+[`examples/todo-cli/`](examples/todo-cli/) is a real run of the flow on one small
+ticket, committed verbatim — the `TICKET.md` that went in, the `SPEC.md`, `PLAN.md`,
+`tasks.md` and `constitution.md` the suite wrote, and the code and tests it produced.
+The tests pass; you can clone it and run the gate yourself.
 
 ## How it works
 
@@ -295,19 +424,21 @@ unnoticed.
 3. Review it with an independent `tiny-spec-build-reviewer` agent that runs the gate
    end to end and grades against the constitution and the task's acceptance.
 4. On pass, commit the code plus a checklist tick. On fail, loop back to the
-   executor with the findings. After two failed attempts it becomes a blocker.
+   executor with the findings. After two failed attempts the run halts `exhausted`.
 
 ```mermaid
 flowchart TB
     SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[tasks.md<br/>checklist]
 
+    TASKS -->|pause: set| H[Halt — paused<br/>task stays unchecked]
     TASKS --> P[Plan task]
     P --> I[Implement<br/>executor]
     I --> R[Review + run gate<br/>reviewer]
+    I -->|blocker| B
     R -->|pass| C[Commit + tick]
     C --> TASKS
     R -->|fail| I
-    R -->|fail twice| B[Blocker logged to decisions.md]
+    R -->|fail twice| B[Halt — blocked / exhausted<br/>logged to decisions.md]
 
     CON([constitution.md]) -.-> P & I & R
     MEM([memory.md]) -.-> I & R
@@ -328,42 +459,74 @@ and logs a blocker instead of hacking around it. You fix the gap upstream in
 `tiny-spec-plan` or `tiny-spec-create`, then resume. Work runs one ticket at a time and
 resumes from the checklist state.
 
-## Why it's small
+### Working a whole list — `tiny-spec-loop`
 
-Most spec frameworks are generous by default:
-many phases, many agents, many generated documents. tiny-spec makes the opposite
-bet. Keep one safeguard, drop the rest.
+`/tiny-spec-loop` takes a list of stories and works them one after another. Per story
+it does the same four moves:
 
-A green unit test suite is not the same as working software, so the reviewer
-exercises acceptance criteria end to end and a final smoke test confirms the whole
-spec. That independent review is the safeguard — not the volume of planning
-artifacts. One task, one commit, an external reviewer. Nothing gets added unless
-it earns its place.
+```
+cut a branch from main  →  tiny-spec-run  →  tiny-spec-build  →  merge back to main
+```
 
-The case for staying small:
+Then the next story. Each branch is cut **fresh from main**, so story 3 sees stories 1
+and 2 already merged — which is what makes an ordered list build correctly.
 
-- **Documents are context, and context isn't free.** Generating large `spec.md`,
-  `plan.md`, `research.md`, and `data-model.md` files costs tokens to write, then
-  costs context to carry. Every paragraph the agent has to hold is room it no
-  longer has for your actual code. tiny-spec keeps the spine small — a
-  constitution and a short memory — and injects only what each task needs.
-- **Real work is a ticket inside a system, not a greenfield repo.** Bigger kits
-  assume you're bootstrapping a project from a blank page. Day to day, you pick up
-  a ticket and change part of a system that already exists. tiny-spec binds to a
-  ticket, works one at a time, and references your task platform instead of
-  re-describing the world.
-- **Rigid pipelines fight the user.** Mandatory phases and required sections
-  impose ceremony on work that doesn't need it. tiny-spec's extra structure is
-  optional by design — add shape where it pays, skip it where it doesn't.
-- **More moving parts is more to maintain.** Orchestrators, ownership contracts,
-  checkpoint matrices, and config files are themselves a system you have to learn
-  and keep in sync. A few small skills and two agents are not.
-- **Generated docs can fake rigor.** A folder of polished planning artifacts looks
-  like progress, but it isn't proof. The proof is the reviewer running your real
-  tests before each commit.
+**The list is `BREAKDOWN.md` by default** — its `- Story:` entries, in file order,
+each already carrying a `slug:` (the branch and directory name) and `AC:` lines. Paste
+a list at invocation instead and that wins; but a bare feature name has no acceptance
+criteria, so `tiny-spec-create` will interview you when it reaches it. That's the
+honest trade: a breakdown runs unattended, a pasted list is supervised.
 
-That's the whole trade: where larger kits add machinery, tiny-spec adds one
-independent reviewer and stops.
+**Every run ends in exactly one of six states, and it says which:**
+
+| | |
+|---|---|
+| `done` | every story built **and merged** |
+| `blocked` | an upstream document is wrong — go fix the spec or the plan |
+| `exhausted` | a task stayed red past two fix attempts |
+| `paused` | it reached a `pause:` point |
+| `fork` | a real either/or the plan doesn't answer |
+| `conflict` | a story's branch wouldn't merge cleanly |
+
+**Only `done` means the work is built** — and in a story loop that means *all* of them.
+A run that stopped at story 2 of 7 reporting "done" is the single thing autonomous loops
+get wrong most often, so the state is always named, along with what got merged and how
+many stories are still untouched.
+
+**A halt stops the whole run, not just that story.** Later stories in a list you wrote
+top to bottom usually assume the earlier ones landed, so skipping ahead past a failure
+just produces a second, more confusing failure downstream.
+
+**Pause points are technical, not per-story.** Any task can carry a `pause:` line, and
+the build halts *before* running it:
+
+```
+- [ ] T7 — run the schema migration against the restored snapshot
+  - acceptance: every row in orders has a non-null tenant_id
+  - pause: confirm the snapshot is current before this touches real rows
+```
+
+`tiny-spec-tasks` proposes these for genuinely irreversible work — migrations,
+destructive file operations, a new dependency, an auth boundary, a public API contract.
+You can also give the run a standing policy up front ("halt before anything that touches
+auth") and it gets applied as each story's tasks are sliced.
+
+**What it will not do to your repo.** It runs exactly five git commands — `switch`,
+`switch -c`, `merge --no-ff`, `merge --abort`, and reads. It refuses to start on a dirty
+tree. It **never pushes**, never rebases, never resets, never deletes a branch, and
+never opens a PR. Merges are local, so a bad run is one `git reset` away; publishing
+stays yours. If the gate goes red after a merge it leaves the merge alone and tells you
+the undo command rather than running it.
+
+**Walk away and come back.** Nothing is written down to track progress — it's derived:
+a story whose ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked
+task is in progress, no directory means not started. So re-running `/tiny-spec-loop`
+tomorrow in a fresh session picks up exactly where it stopped. No run-state file, no
+lock, and no budget to configure: the story list *is* the budget.
+
+**It never fixes a blocker for you.** A blocker means one of your documents is wrong,
+and a loop allowed to rewrite the requirement its own task just failed would be grading
+its own homework. It reports and stops; the upstream edit is yours.
 
 ## Project layout
 

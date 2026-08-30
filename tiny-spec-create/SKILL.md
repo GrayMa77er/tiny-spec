@@ -111,6 +111,21 @@ Only the **project-wide** questions collapse — still confirm this story's bind
 requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **full
 interview** below unchanged.
 
+**Exception — a loop run.** If the caller says this is a **loop run** and names the
+story's slug (`tiny-spec-loop` does, through `tiny-spec-run`), skip step 6's
+confirmation and write `SPEC.md` straight out. The `AC:` lines *are* the approval: the
+user reviewed them when they wrote or accepted `BREAKDOWN.md`, and re-confirming them
+once per story is asking the same question twice — across a seven-story run it is the
+difference between walking away and being interrupted seven times. Report the captured
+`REQ-N` instead of asking about them.
+
+This waives **only** that confirmation. Everything that is a genuine question still
+stops the run: a story whose `AC:` lines contradict each other or the Decisions block,
+an `AC:` you cannot turn into a testable `REQ-N`, a missing ticket id the platform
+needs, a design export the story names that isn't on disk. Those are not ceremony —
+they are the human input the loop is supposed to stop for. Never guess past one because
+a loop is running.
+
 ## Pick the slug (resolve the active dir)
 
 **Fresh modes only** — in reseed or update mode the active dir already exists and you

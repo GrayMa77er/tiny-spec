@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: Run the spec flow end to end — read each artifact's status flag to work out where the active ticket stands, then invoke tiny-spec-create → tiny-spec-plan → tiny-spec-tasks in order, taking anything marked stale before anything missing. STOPS before tiny-spec-build; it never builds, never commits, and never writes an artifact itself. Use for "run the whole spec flow", "spec this out end to end", or "pick the chain back up after a change". NOT for a single stage — for that, invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-tasks directly.
+description: Run the spec flow end to end — read each artifact's status flag to work out where the active ticket stands, then invoke tiny-spec-create → tiny-spec-plan → tiny-spec-tasks in order, taking anything marked stale before anything missing. STOPS before tiny-spec-build; it never builds, never commits, and never writes an artifact itself. Use for "run the whole spec flow", "spec this out end to end", or "pick the chain back up after a change". NOT for a single stage — for that, invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-tasks directly. NOT for building — for "spec it out and build it", use tiny-spec-loop.
 ---
 
 # tiny-spec-run
@@ -29,9 +29,11 @@ to resolve. `tiny-spec-create` picks `BREAKDOWN.md` up on its own when it exists
 If the user named a **single stage** ("update the spec", "redo the tasks"), hand off
 to that skill and stop. `run` is for walking the chain, not for wrapping one stage.
 
-If they asked for the flow **and** the build ("spec this out and build it"), run the
-chain as normal and stop at the end anyway — then tell them `tiny-spec-build` is the
-next command. The stop is not negotiable; see the hard rules.
+If they asked for the flow **and** the build ("spec this out and build it"), that is
+`tiny-spec-loop` — hand off to it and stop. If you are *already* inside a
+`tiny-spec-loop` run (it invoked you), run the chain as normal and stop at the end
+anyway; the loop takes it from there. Either way **you** never enter the build. The
+stop is not negotiable; see the hard rules.
 
 Step 0 is a **once-per-run** check on the user's opening request. Do not re-run it
 when you return to Step 1 after a stage.
@@ -181,6 +183,13 @@ something new:
   fall back to an existing ticket dir — the user confirmed this is new work.*
   (`tiny-spec-create` honors that phrase by skipping its sole-dir fallback.)
 
+**Caller briefs — pass them through verbatim.** A caller (today, `tiny-spec-loop`) may
+hand you a brief addressed to a specific stage: *"for the create stage: …"*, *"for the
+tasks stage: …"*. Append it, **word for word**, to the scope you send that stage, and
+send nothing to the others. Do not summarize it, act on it yourself, or let it change
+which rung fires — the ladder is still yours, and a brief is cargo, not an instruction
+to you. A brief for a stage this run never reaches is simply never delivered.
+
 **A stage's closing "point the user at X" is not a terminus.** Each stage ends by
 naming the next skill ("point the user at `tiny-spec-plan`"). Inside a run that
 sentence is a *report*, not a stop — when a stage finishes, return to Step 1 and keep
@@ -224,5 +233,9 @@ invent a `## Design` section and the condition would still hold on the next pass
 Telling the user once and letting them decide is the version that terminates.
 
 Then hand off explicitly: **run `tiny-spec-build` when you're ready to build** (it
-starts at the first unchecked task). If you stopped at L4 or on a bound, say exactly
-what stopped you and what the user needs to decide.
+starts at the first unchecked task, reviewing as it goes), or **`tiny-spec-loop`** to
+run it through until the work is built or something stops it. If you stopped at L4 or
+on a bound, say exactly what stopped you and what the user needs to decide.
+
+(If `tiny-spec-loop` invoked you, this report is what it reads to decide whether to
+build — so say which rung you stopped on either way.)

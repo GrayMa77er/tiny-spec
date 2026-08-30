@@ -3,6 +3,7 @@
     "tiny-spec-prd",
     "tiny-spec-breakdown",
     "tiny-spec-run",
+    "tiny-spec-loop",
     "tiny-spec-create",
     "tiny-spec-plan",
     "tiny-spec-tasks",

@@ -10,18 +10,40 @@ per-task loop of **plan → implement → review → commit** with an *independe
 reviewer. In front of it sit **two optional planning on-ramps** — `tiny-spec-prd`
 (idea → `PRD.md`) and `tiny-spec-breakdown` (PRD → stories, `BREAKDOWN.md`). Both
 write a **project-root, regenerable** file, **not** a `.spec/` artifact, and neither
-scaffolds `.spec/` or touches the constitution. See [README.md](README.md) for the
-shape and [CONTRACTS.md](CONTRACTS.md) for the formats and rules of record.
+scaffolds `.spec/` or touches the constitution. Two optional routers sit over the top:
+`tiny-spec-run` walks intent → task list and stops, and `tiny-spec-loop` runs the whole
+thing through until a **terminal state** (`CONTRACTS.md` §4.3). See
+[README.md](README.md) for the shape and [CONTRACTS.md](CONTRACTS.md) for the formats
+and rules of record.
 
 ## North star — earned ceremony
 
 This suite is deliberately small. Do **not** grow it back into waves, `owns:`
 contracts, a checkpoint matrix, autonomous budgets, or validators.
-`tiny-spec-run` is the one router, and it earns that only by owning nothing — no
-artifact, no state file — and stopping before `build`. Before adding a skill, agent, artifact, format field, or knob, the bar
+`tiny-spec-run` and `tiny-spec-loop` are the two routers, and they earn that only by
+owning nothing — no artifact, no state file. `run` stops before `build`; `loop`
+invokes it but never reads execution state, never walks `run`'s ladder itself, and
+never resolves a halt. Before adding a skill, agent, artifact, format field, or knob, the bar
 is: *does it clearly pay for itself, or is it ceremony?* When in doubt, leave it
 out. A change that makes this bigger needs a strong reason; a change that makes it
 smaller usually doesn't.
+
+**The loop did not buy a budget or a matrix, and must not grow one.** `pause:` is one
+optional field on a task (`CONTRACTS.md` §3.4), and the story list *is* the budget — the
+run ends when the stories end (§4.3, §9). A turn ceiling, a token cap, a max-stories
+knob, or a second kind of checkpoint would each put a weaker stopping rule beside the
+real one. If a loop feels like it needs a budget, the list is wrong.
+
+**It also did not buy a state file, and this is the one most likely to be "fixed" by a
+future contributor.** Loop progress is *derived* — `git show <integration>:.spec/<slug>/tasks.md`
+answers "is this story built and merged" without anything being written down (§9). A
+progress file would be faster to read and wrong the first time someone merges by hand.
+
+**The git surface is deliberately tiny.** `tiny-spec-loop` is the only skill that runs
+git beyond committing, and it is capped at `switch`, `switch -c`, `merge --no-ff`,
+`merge --abort`, and reads. Pushing, rebasing, resetting, deleting branches, and opening
+PRs are all out — not because they're hard, but because they are outward-facing or
+destructive, and the suite's stance (§8) is that those stay the user's.
 
 Two structural choices are **intended**, not drift — don't "simplify" them away:
 the **per-ticket namespacing** under `.spec/<ticket-id>/` with a shared
@@ -77,6 +99,20 @@ silent (no compiler, no test will catch a misleading instruction). So:
      executor/reviewer prompt — not re-learned;
    - **completed-work guardrail:** an upstream change that touches a `[x]` task
      must **uncheck** it and log it for review.
+   - **pause honored, and honored *early*:** a task carrying `pause:` must halt the
+     build **before** it runs — task still `[ ]`, no executor dispatched, `tasks.md`
+     untouched — and a conversational waiver must not be written back into the file;
+   - **terminal state never rounded up:** a run that ends `blocked`, `exhausted`,
+     `paused`, `fork`, or `conflict` must say so by name. Only `done` may report the
+     work as built, and in a story loop that means **every** story merged — a run that
+     stopped at story 2 of 7 must not read like a finished backlog. This is the loop's
+     whole reason to exist; a false completion is worse than the halt it hides.
+   - **no merge without `done`:** a story whose build halted must leave its branch
+     unmerged, and the run must stop rather than move to the next story;
+   - **git stays narrow:** `tiny-spec-loop` may only `switch`, `switch -c`,
+     `merge --no-ff`, `merge --abort`, and read. It must refuse to start on a dirty
+     tree, and must **never** push, force, rebase, reset, or delete a branch. A red
+     gate after a merge is reported with the undo command, never undone automatically.
 5. **Clean up.** Remove the sandbox. Never commit a `.spec/` from a test run or
    any build artifacts into this folder.
 

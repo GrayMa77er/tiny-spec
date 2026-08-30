@@ -45,6 +45,7 @@ For each task, write:
   - type: feat            # optional; Conventional Commit type (defaults to feat)
   - req: REQ-n            # optional; the REQ-N this task delivers
   - design: D-n           # optional; the SPEC.md D<n> screen this task builds — arms the visual gate
+  - pause: <why>          # optional; halt the loop before this task so a human looks first
   - files: <comma-separated hint of files it will touch>
 ```
 
@@ -70,6 +71,32 @@ other. Two rules:
 - Only set it if the constitution has a `visual:` verification command. Without one
   the reviewer cannot render anything and will raise a blocker instead of a verdict.
 
+**pause** is the other field that changes what happens rather than what gets written —
+but where `design:` changes how a task is **graded**, `pause:` changes whether the loop
+**continues**. Set it and `tiny-spec-build` halts *before* that task, leaving it
+unchecked, so a human reviews the approach while redirecting it is still cheap. The
+value is one line saying what to look at.
+
+Propose it only on work that is genuinely **irreversible or wide-blast-radius**:
+
+- a data migration, or anything that writes to real rows;
+- a destructive or bulk file operation;
+- pulling in a new third-party dependency;
+- an auth, permissions, or trust boundary;
+- a public API or schema contract other people's code depends on.
+
+**When in doubt, leave it out.** A pause the user didn't want is worse than no pause at
+all — it trains them to wave past the ones they did want, which is exactly the reflex
+that makes the mechanism useless the one time it matters. Most task lists should carry
+zero or one.
+
+**A caller may hand you a standing pause policy** — *"halt before anything that touches
+auth"*, *"stop before any schema migration"* (`tiny-spec-loop` passes one through
+`tiny-spec-run`). Apply it to **this** task list: any task matching the description gets
+a `pause:` naming the policy that put it there, on top of whatever you'd have set
+anyway. A policy that matches nothing here is not an error — say so and move on, rather
+than stretching a task to fit it.
+
 Cover **every** part of the approach — together the tasks must deliver all
 `REQ-N`. Don't leave a requirement with no task. Likewise, if `SPEC.md` has a
 `## Design` section, every `D<n>` in it needs at least one task carrying that
@@ -91,9 +118,10 @@ updated: <ISO date>
 # Tasks — <project / feature name>
 
 > Executed top to bottom, one at a time. A checked `[x]` task is implemented AND
-> reviewed. `type:`, `req:`, and `design:` are optional; `files:` is a hint, not an
-> ownership contract. A task with `design:` is also graded against that screen's
-> `D<n>` entry and the constitution's Design system.
+> reviewed. `type:`, `req:`, `design:`, and `pause:` are optional; `files:` is a hint,
+> not an ownership contract. A task with `design:` is also graded against that screen's
+> `D<n>` entry and the constitution's Design system. A task with `pause:` halts the
+> build before it runs, so a human looks first.
 
 ## Tasks
 
@@ -112,6 +140,7 @@ updated: <ISO date>
 
 - [ ] T3 — <…>
   - acceptance: <observable outcome>
+  - pause: <optional; what to check before this runs — irreversible work only>
   - files: <path, path>
 ```
 
@@ -138,5 +167,7 @@ When `tasks.md` is `status: stale`:
 
 ## When done
 
-Report the task count and point the user at `tiny-spec-build` (one task at a time) or
-note they can run it straight through.
+Report the task count — and any `pause:` points you set, with their reason, so the user
+can drop one before it fires. Then point them at `tiny-spec-build` (one task at a time,
+reviewing as it goes) or `tiny-spec-loop` (run it through until it's built or something
+stops it).
