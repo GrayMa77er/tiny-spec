@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Grade one planning-stage run: the PRD.md + BREAKDOWN.md produced by
-tiny-spec-prd → tiny-spec-breakdown for a single idea.
+"""Grade one planning-stage run: the BREAKDOWN.md produced by tiny-spec-scope
+for a single idea.
 
 Two layers, mirroring the suite's own measured-vs-judgment split:
 
-  STRUCTURAL (deterministic)  — do the artifacts conform to the contract?
-      PRD.md has its required sections filled; BREAKDOWN.md has a Decisions block,
-      ≥1 Feature, and Stories that each carry a slug and ≥1 AC; no .spec/ was
-      scaffolded by the planning skills.
+  STRUCTURAL (deterministic)  — does the artifact conform to the contract?
+      BREAKDOWN.md has its required sections filled (Problem, Goal & non-goals),
+      a Decisions block, ≥1 Feature, and Stories that each carry a slug and ≥1 AC;
+      no .spec/ was scaffolded by the planning skill.
 
   JUDGE (LLM, via the `claude` CLI)  — the things structure can't see:
-      coverage     every PRD capability lands in ≥1 BREAKDOWN story (nothing dropped)
-      fabrication  every BREAKDOWN story traces to a PRD capability (nothing invented)
-      atomicity    capabilities/ACs are atomic, user-observable, no impl detail
-      faithfulness the PRD honestly reflects the IDEA
+      coverage     every capability the IDEA implies lands in ≥1 story (nothing dropped)
+      fabrication  every story traces back to the IDEA (nothing invented)
+      atomicity    ACs are atomic, user-observable, no impl detail
+      faithfulness the breakdown honestly reflects the IDEA
 
-Usage (standalone — grade an existing pair):
+Usage (standalone — grade an existing artifact):
     grade_planning.py <case_name> <artifact_dir> <case_dir>
-  where <artifact_dir> holds PRD.md + BREAKDOWN.md (and must NOT hold .spec/),
+  where <artifact_dir> holds BREAKDOWN.md (and must NOT hold .spec/),
   and <case_dir> holds IDEA.md. Prints one result JSON object to stdout.
 
 Env:
@@ -26,7 +26,7 @@ Env:
 """
 import json, os, re, subprocess, sys
 
-REQUIRED_PRD_SECTIONS = ["Problem / context", "Goal & non-goals", "Core capabilities"]
+REQUIRED_BREAKDOWN_SECTIONS = ["Problem", "Goal & non-goals"]
 
 
 def _read(path):
@@ -76,26 +76,21 @@ def _bullets(section_text):
 
 
 def structural(artifact_dir):
-    prd_raw, bd_raw = _read(os.path.join(artifact_dir, "PRD.md")), _read(os.path.join(artifact_dir, "BREAKDOWN.md"))
-    prd, bd = _strip_comments(prd_raw), _strip_comments(bd_raw)
+    bd_raw = _read(os.path.join(artifact_dir, "BREAKDOWN.md"))
+    bd = _strip_comments(bd_raw)
     findings = []
 
-    prd_produced = bool(prd_raw.strip())
     bd_produced = bool(bd_raw.strip())
     no_spec_dir = not os.path.isdir(os.path.join(artifact_dir, ".spec"))
     if not no_spec_dir:
-        findings.append("planning skills scaffolded a .spec/ dir (they must not)")
+        findings.append("planning skill scaffolded a .spec/ dir (it must not)")
 
-    # PRD required sections present + filled
-    prd_sections_ok = True
-    for h in REQUIRED_PRD_SECTIONS:
-        if not _has_content(_section(prd, h)):
-            prd_sections_ok = False
-            findings.append(f"PRD missing/empty required section: {h}")
-    capabilities = _bullets(_section(prd, "Core capabilities"))
-    if len(capabilities) < 2:
-        prd_sections_ok = False
-        findings.append(f"PRD Core capabilities has <2 bullets ({len(capabilities)})")
+    # BREAKDOWN required framing sections present + filled
+    bd_sections_ok = True
+    for h in REQUIRED_BREAKDOWN_SECTIONS:
+        if not _has_content(_section(bd, h)):
+            bd_sections_ok = False
+            findings.append(f"BREAKDOWN missing/empty required section: {h}")
 
     # BREAKDOWN shape
     bd_ok = True
@@ -113,44 +108,43 @@ def structural(artifact_dir):
     if not re.search(r"(?m)^\s*-\s*AC:", bd):
         bd_ok = False; findings.append("BREAKDOWN has no - AC: lines")
 
-    ok = prd_produced and bd_produced and no_spec_dir and prd_sections_ok and bd_ok
+    ok = bd_produced and no_spec_dir and bd_sections_ok and bd_ok
     return {
         "structural_ok": ok,
-        "prd_produced": prd_produced,
         "breakdown_produced": bd_produced,
         "no_spec_dir": no_spec_dir,
-        "prd_sections_ok": prd_sections_ok,
+        "breakdown_sections_ok": bd_sections_ok,
         "breakdown_shape_ok": bd_ok,
-        "n_capabilities": len(capabilities),
         "n_stories": len(stories),
         "findings": findings,
-    }, prd_raw, bd_raw
+    }, bd_raw
 
 
-JUDGE_PROMPT = """You are grading the hand-off quality of a two-step planning stage. \
-An IDEA was expanded into a PRD (PRD.md), whose "Core capabilities" were then carved \
-into a BREAKDOWN (Features → Stories with acceptance criteria). Judge ONLY what is \
-present; do not rewrite anything.
+JUDGE_PROMPT = """You are grading the hand-off quality of a planning stage. An IDEA \
+was expanded directly into a BREAKDOWN (Problem, Goal & non-goals, a Decisions block, \
+then Features → Stories with acceptance criteria). Judge ONLY what is present; do not \
+rewrite anything.
 
 Return ONLY a JSON object (no prose, no code fences) with exactly these keys:
 {
-  "prd_faithful_to_idea": true|false,
-  "coverage_ok": true|false,            // every PRD core capability appears in >=1 BREAKDOWN story
-  "dropped_capabilities": [string],     // PRD capabilities with no corresponding story (empty if none)
-  "no_fabrication": true|false,         // every BREAKDOWN story traces to a PRD capability
-  "invented_stories": [string],         // story titles with no basis in the PRD (empty if none)
-  "atomicity_ok": true|false,           // capabilities & ACs are atomic, user-observable, no implementation detail
+  "breakdown_faithful_to_idea": true|false,
+  "coverage_ok": true|false,            // every capability the IDEA calls for appears in >=1 story
+  "dropped_capabilities": [string],     // IDEA capabilities with no corresponding story (empty if none)
+  "no_fabrication": true|false,         // every story traces back to the IDEA
+  "invented_stories": [string],         // story titles with no basis in the IDEA (empty if none)
+  "atomicity_ok": true|false,           // ACs are atomic, user-observable, no implementation detail
   "atomicity_violations": [string],     // offending lines (empty if none)
   "cross_cutting_placement_ok": true|false, // cross-cutting concerns are in Decisions/invariants, not their own Feature
   "verdict": "PASS"|"FAIL",             // PASS only if coverage_ok AND no_fabrication AND atomicity_ok
   "notes": string                       // 1-3 sentences, the single most important observation
 }
 
+Note: a breakdown may legitimately add a capability the IDEA did not literally name, \
+if it is required to make the product coherent — count that as fabrication ONLY if it \
+expands scope beyond what the IDEA asks for.
+
 === IDEA ===
 {idea}
-
-=== PRD.md ===
-{prd}
 
 === BREAKDOWN.md ===
 {breakdown}
@@ -174,12 +168,11 @@ def _extract_json(text):
     return None
 
 
-def judge(idea, prd, breakdown):
+def judge(idea, breakdown):
     if os.environ.get("NO_JUDGE") == "1":
         return {"judge_ran": False, "notes": "judge skipped (NO_JUDGE=1)"}
     prompt = (JUDGE_PROMPT
               .replace("{idea}", idea.strip())
-              .replace("{prd}", prd.strip())
               .replace("{breakdown}", breakdown.strip()))
     cmd = ["claude", "-p", prompt, "--dangerously-skip-permissions"]
     model = os.environ.get("JUDGE_MODEL")
@@ -202,10 +195,10 @@ def main():
         print("usage: grade_planning.py <case_name> <artifact_dir> <case_dir>", file=sys.stderr)
         sys.exit(2)
     case, artifact_dir, case_dir = sys.argv[1], sys.argv[2], sys.argv[3]
-    struct, prd_raw, bd_raw = structural(artifact_dir)
+    struct, bd_raw = structural(artifact_dir)
     idea = _read(os.path.join(case_dir, "IDEA.md"))
-    j = judge(idea, prd_raw, bd_raw) if struct["prd_produced"] and struct["breakdown_produced"] else \
-        {"judge_ran": False, "notes": "skipped judge (artifacts missing)"}
+    j = judge(idea, bd_raw) if struct["breakdown_produced"] else \
+        {"judge_ran": False, "notes": "skipped judge (artifact missing)"}
 
     # case PASS = structural conformance AND the judge's hand-off integrity core.
     judge_core = bool(j.get("coverage_ok")) and bool(j.get("no_fabrication"))
@@ -216,7 +209,7 @@ def main():
         "pass": case_pass,
         **{k: struct[k] for k in struct},
         "judge_ran": j.get("judge_ran", False),
-        "prd_faithful_to_idea": j.get("prd_faithful_to_idea"),
+        "breakdown_faithful_to_idea": j.get("breakdown_faithful_to_idea"),
         "coverage_ok": j.get("coverage_ok"),
         "dropped_capabilities": j.get("dropped_capabilities", []),
         "no_fabrication": j.get("no_fabrication"),

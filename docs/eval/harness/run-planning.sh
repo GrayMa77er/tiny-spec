@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Planning-stage eval harness for tiny-spec — runs the planning on-ramps on loose
-# ideas and grades the produced PRD.md + BREAKDOWN.md.
+# ideas and grades the produced BREAKDOWN.md.
 #
 # For each planning case it: spins up a hermetic sandbox, vendors the repo's
 # tiny-spec skills+agents into the sandbox's local .claude/, hands the sandbox an
-# IDEA.md, drives tiny-spec-prd → tiny-spec-breakdown headlessly with `claude -p`,
+# IDEA.md, drives tiny-spec-scope headlessly with `claude -p`,
 # then grades the artifacts with grade_planning.py (deterministic structural checks
 # + an LLM judge for coverage / no-fabrication / atomicity). Results are aggregated
 # by score_planning.py into docs/eval/planning-results.jsonl.
@@ -43,7 +43,7 @@ echo ">> tiny-spec planning eval  ($DATE @ $SHA)"
 echo ">> cases: ${CASES[*]}"
 echo ">> logs:  $LOGDIR"
 
-DRIVER='You are in a fresh project directory. Read IDEA.md, then run the planning stage END TO END, fully autonomously — do NOT ask me anything, make reasonable decisions and proceed. Steps: (1) use the tiny-spec-prd skill to turn the idea in IDEA.md into a PRD.md at the project root; (2) use the tiny-spec-breakdown skill to carve that PRD.md into a BREAKDOWN.md at the project root. Treat the work as ad-hoc (no external tracker). Do NOT scaffold .spec/, do NOT run tiny-spec-create or any later skill, and do not stop for confirmation at any point.'
+DRIVER='You are in a fresh project directory. Read IDEA.md, then run the planning stage END TO END, fully autonomously — do NOT ask me anything, make reasonable decisions and proceed. Steps: use the tiny-spec-scope skill to turn the idea in IDEA.md into a BREAKDOWN.md at the project root. Treat the work as ad-hoc (no external tracker). Do NOT scaffold .spec/, do NOT run tiny-spec-create or any later skill, and do not stop for confirmation at any point.'
 
 for case in "${CASES[@]}"; do
   CDIR="$PLAN_DIR/$case"
@@ -55,7 +55,7 @@ for case in "${CASES[@]}"; do
   git -C "$SB" config user.email eval@local; git -C "$SB" config user.name eval
   git -C "$SB" commit -q --allow-empty -m "init" || true
   mkdir -p "$SB/.claude/skills" "$SB/.claude/agents"
-  for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+  for s in tiny-spec-scope tiny-spec-create tiny-spec-plan tiny-spec-build; do
     [ -d "$REPO/$s" ] && cp -R "$REPO/$s" "$SB/.claude/skills/$s"
   done
   cp "$REPO/agents/"*.md "$SB/.claude/agents/" 2>/dev/null || true
