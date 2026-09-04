@@ -19,7 +19,8 @@ Worth being precise, because it is unusual for a Python package:
   your own `constitution.md`, and executes your `visual:` command if you defined one.
   tiny-spec never supplies those commands; it runs what your project declares.
 - **Prompt injection is a real consideration.** The skills read files from your project
-  — `PRD.md`, `BREAKDOWN.md`, ticket text, and design exports under `design/`. Content
+  — `BREAKDOWN.md`, ticket text, design exports under `design/`, and (via
+  `tiny-spec-adopt`) your build config, CI workflows, and source. Content
   in those files is treated as input to an agent that can write code and run commands.
   Treat untrusted design exports and ticket descriptions with the same care you would
   give any input to an agent with shell access.

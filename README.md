@@ -31,36 +31,40 @@ builds the work one task at a time. Every task is implemented by one agent and
 graded by an independent reviewer that runs the real tests before anything is
 committed.
 
-That core is **four skills and two agents**. In front of it sit **two optional
-planning on-ramps** — `tiny-spec-prd` (idea → PRD) and `tiny-spec-breakdown`
-(PRD → stories) — for when you're starting from an idea rather than a ready ticket.
-Two optional routers sit over the top: `tiny-spec-run` walks the three planning steps
-in one command, and `tiny-spec-loop` works a whole list of stories — branch, plan,
-build, merge, next — until they're built or something stops it. No config file, no
-build step.
+That core is **three skills and two agents**. In front of it sit **two front doors** —
+pick the one that matches where you're starting. Over the top sits **one router**,
+`tiny-spec-run`, which drives the chain and, when you ask it to, works a whole list of
+stories through to merged code. No config file, no build step.
 
 ```
-                                           ┌───────────────── tiny-spec-run ─────────────────┐
-                                           │     optional: one command, stops before build   │
-                                           ▼                                                 ▼
-PLANNING (optional on-ramps)              EXECUTION (the core loop, one story at a time)
-  tiny-spec-prd  ⇢  tiny-spec-breakdown ⇢  tiny-spec-create → tiny-spec-plan → tiny-spec-tasks → tiny-spec-build
-  idea → PRD        PRD → stories           intent             design           tasks            per-task loop
-  PRD.md            BREAKDOWN.md            SPEC.md            PLAN.md +        tasks.md         plan → implement → review → commit
-                                                              constitution
-                                           ▲                                                 ▲
-                                           └──────────────── tiny-spec-loop ─────────────────┘
-                                             optional: per story — branch, run, build, merge,
-                                             then the next story. Halts on a wall.
+   GREENFIELD                        BROWNFIELD
+   starting from an idea             starting from a codebase
+   tiny-spec-scope                   tiny-spec-adopt
+   idea → Features → Stories         real code → constitution
+   BREAKDOWN.md                      constitution.md
+            \                         /
+             └───────────┬───────────┘
+                         ▼
+   tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-build
+   intent               design + tasks      per-task loop
+   SPEC.md              PLAN.md             plan → implement
+                        tasks.md            → review → commit
+
+   tiny-spec-run      one router. Walks the chain and stops before build —
+                      or, asked to, builds each story and merges it.
+   tiny-spec-design   optional. Wireframes → tokens + gradeable screens.
 ```
 
-The two on-ramps are **optional** and stack. Have nothing written down? Run
-`tiny-spec-prd` to interview your idea into a `PRD.md`. Have a PRD already? Run
-`tiny-spec-breakdown` to carve it into a `BREAKDOWN.md` — a flat list of
-Features → Stories with draft acceptance criteria. Have a single known piece of
-work? Skip both and start at `tiny-spec-create`. Both on-ramps write a regenerable
-file at your project root (not under `.spec/`); `tiny-spec-create` then reads the
-breakdown one story at a time.
+**Pick one front door, once per project.** Starting from an idea with no code yet? Run
+`tiny-spec-scope` — it interviews the idea into a `BREAKDOWN.md`, a flat list of
+Features → Stories with draft acceptance criteria. Working in a codebase that already
+exists? Run `tiny-spec-adopt` — it reads your repo and derives the constitution from
+what's actually there: your real lint and test commands, your real layout, your real
+conventions. Have a single known ticket in a project that's already set up? Skip both
+and start at `tiny-spec-create`.
+
+Neither builds anything. They set the project up so the three core skills have
+something true to work from, and both write a regenerable file you can edit freely.
 
 ## How small
 
@@ -69,14 +73,16 @@ receipt rather than the adjective:
 
 | | skills / commands | agents | config | artifacts per feature |
 |---|---|---|---|---|
-| **tiny-spec** | **8** (4 core + 4 optional) | **2** | **none** | **`SPEC` `PLAN` `tasks`** |
+| **tiny-spec** | **7** (3 core + 1 router + 3 optional) | **2** | **none** | **`SPEC` `PLAN` `tasks`** |
 | [GitHub Spec Kit](https://github.com/github/spec-kit) | 10 | — | `specify init` | `spec` `plan` `tasks` `checklist` `constitution` `research` `data-model` `contracts/` `quickstart` |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 12 | — | `.openspec.yaml` | `proposal` `design` `tasks` `specs/` |
 | [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 58 | 5 personas | 35 × `customize.toml` | `PRD` `architecture` `epics` `stories` `UX` `brief` `sprint-plan` |
 
-The whole of tiny-spec is **2,079 lines** of markdown across 8 skills and 2 agents.
+The whole of tiny-spec is **2,195 lines** of markdown across 7 skills and 2 agents.
 There is no config file, no build step, no orchestrator, and no CLI to initialize a
-project — the skills are the product.
+project — the skills are the product. (That line count went *up* slightly in 1.0 while
+the skill count went down: `tiny-spec-adopt` is genuinely new capability, and merging
+four skills into two removed commands to learn rather than words to read.)
 
 <sub>Counts taken from each project's own repository on 2026-08-03 by listing its
 command/skill/agent directories and templates, not from its marketing copy. Spec Kit:
@@ -175,41 +181,41 @@ uvx tiny-spec install
 Restart Claude Code so it picks up the new skills, then run the flow in your project:
 
 ```
-/tiny-spec-prd       # optional: interview a rough idea into a PRD (PRD.md)
-/tiny-spec-breakdown # optional: carve a PRD + wireframes into stories (BREAKDOWN.md)
+/tiny-spec-scope     # starting from an idea: interview it into stories (BREAKDOWN.md)
+/tiny-spec-adopt     # starting from a codebase: derive the constitution from real code
 /tiny-spec-create    # capture intent and requirements (binds a ticket, optional)
-/tiny-spec-plan      # turn the spec into a design and harden the constitution
-/tiny-spec-tasks     # slice the plan into an ordered checklist
+/tiny-spec-plan      # design it, harden the constitution, slice the task list
 /tiny-spec-build     # build each task: implement, review, commit
 ```
 
-Or collapse the three planning steps into one and go straight to building:
+Run one of the two front doors once per project, then `create → plan → build` per
+ticket. Or let the router drive:
 
 ```
-/tiny-spec-run       # create → plan → tasks in one pass; stops before build
+/tiny-spec-run       # walks the chain, reconciling anything stale; stops before build
 /tiny-spec-build     # build each task: implement, review, commit
 ```
 
-`tiny-spec-run` resolves where your ticket stands and invokes whichever of
-`create` / `plan` / `tasks` moves it forward, reconciling anything stale first. It
-**stops before `tiny-spec-build`** — that's where you actually review the work — and
-it writes nothing itself, it only delegates.
+`tiny-spec-run` resolves where your work stands and invokes whichever skill moves it
+forward. It writes nothing itself, it only delegates. By default it **stops before
+`tiny-spec-build`** — that's where you actually review the work.
 
-Or hand it a whole list of stories:
+Ask it to build and it goes all the way instead:
 
 ```
-/tiny-spec-loop      # per story: branch → plan → build → merge → next
+/tiny-spec-run build the backlog     # per story: branch → plan → build → merge → next
 ```
 
-`tiny-spec-loop` reads your `BREAKDOWN.md` (or a list you paste) and works the stories
-one after another, merging each finished branch into `main` locally before starting the
-next — until it's done or reaches a **terminal state** it names out loud. See
-[Working a whole list](#working-a-whole-list--tiny-spec-loop).
+It reads your `BREAKDOWN.md` (or a list you paste) and works the stories one after
+another, merging each finished branch into `main` locally before starting the next —
+until it's done or reaches a **terminal state** it names out loud. See
+[Working a whole list](#working-a-whole-list). Which of the two it does is decided from
+your opening request and **never changes mid-run** — a run you started as "get it
+ready" will not talk itself into building.
 
-**Building from a mockup?** There is no design flag to pass. Commit your exports to
-`design/` before the run and `tiny-spec-create` — whether you invoke it directly or
-reach it through `tiny-spec-run` — reads what's there and asks which screens this
-ticket covers. [Designs, if you have them](#designs-if-you-have-them) walks through it.
+**Building from a mockup?** Run `/tiny-spec-design` after `create`. Commit your exports
+to `design/` first; it reads what's there and asks which screens this ticket covers.
+[Designs, if you have them](#designs-if-you-have-them) walks through it.
 
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
 installed. Each skill is copied (not symlinked) so every install is
@@ -226,7 +232,7 @@ git clone https://github.com/GrayMa77er/tiny-spec.git
 cd tiny-spec
 
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
-for s in tiny-spec-prd tiny-spec-breakdown tiny-spec-run tiny-spec-loop tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+for s in tiny-spec-scope tiny-spec-adopt tiny-spec-run tiny-spec-create tiny-spec-design tiny-spec-plan tiny-spec-build; do
   cp -R "$s" "$HOME/.claude/skills/$s"
 done
 cp agents/*.md "$HOME/.claude/agents/"
@@ -246,14 +252,23 @@ The tests pass; you can clone it and run the gate yourself.
 
 ## How it works
 
-The constitution (`constitution.md`) is the spine. `tiny-spec-create` seeds it from a
-short interview, `tiny-spec-plan` hardens it with concrete engineering rules, and
-`tiny-spec-build` injects it whole into every task. It holds your style, standards,
-invariants, definition of done, and verification commands.
+The constitution (`constitution.md`) is the spine. `tiny-spec-adopt` derives it from
+your codebase, or `tiny-spec-create` seeds it from a short interview; `tiny-spec-plan`
+hardens it with concrete engineering rules, and `tiny-spec-build` injects it whole into
+every task. It holds your style, standards, invariants, definition of done, and
+verification commands.
 
-Because it is project-wide it can also go missing — deleted, or never committed —
-while your specs survive. Re-running `tiny-spec-create` then repairs it: it rebuilds
-the constitution from whatever is already written down and marks completed tasks
+**On an existing codebase, deriving beats asking.** Your test command, your layout, and
+your conventions are already written down — in `package.json`, in CI, in your linter
+config, in the shape of the tree. `tiny-spec-adopt` reads them and marks each section
+as declared or inferred, so you know which parts to distrust. It then *runs* the
+verification commands it derived and reports which went green: a gate that has never
+been run is the most dangerous thing in the file, because it turns every future review
+into theatre.
+
+Because it is project-wide the constitution can also go missing — deleted, or never
+committed — while your specs survive. Re-running `tiny-spec-adopt` (or
+`tiny-spec-create`, on a project with no code yet) repairs it, and marks completed tasks
 stale, since they were reviewed against a document that wasn't there.
 
 ### Designs, if you have them
@@ -265,11 +280,11 @@ on. Skip all of it for a CLI or a library; the constitution simply has no design
 section.
 
 **Designs enter by convention, not by argument.** No skill takes a design flag or a
-path parameter. `tiny-spec-create` reads every file in `design/` at your project root —
-directly, or when `tiny-spec-run` reaches it — and asks which screens this ticket
-covers; you can also just hand it paths during the interview. Change an export later and
-re-running `create` (or `run`) re-hashes it, marking the spec stale exactly like editing
-a requirement.
+path parameter. `tiny-spec-design` reads every file in `design/` at your project root
+and asks which screens this ticket covers; you can also just hand it paths. Change an
+export later and `tiny-spec-run` notices — it re-hashes every anchored export on its way
+down the chain, and routes a mismatch back to `tiny-spec-design`, marking the spec stale
+exactly like editing a requirement.
 
 **1. Commit your exports.** Any format an agent can read — a Figma export, an HTML
 mockup, an Excalidraw file, a photo of a whiteboard.
@@ -281,7 +296,7 @@ your-project/
     dashboard.png
 ```
 
-**2. `tiny-spec-create` looks at them and proposes a design system.** Actually looks —
+**2. `tiny-spec-design` looks at them and proposes a design system.** Actually looks —
 they are read as images. It infers *one* coherent scale across all of them rather than
 measuring each screen separately, tells you what it rounded ("your wireframes had 19px
 and 21px — proposing `space.5`=20px for both"), and on your approval writes it into
@@ -459,13 +474,14 @@ and logs a blocker instead of hacking around it. You fix the gap upstream in
 `tiny-spec-plan` or `tiny-spec-create`, then resume. Work runs one ticket at a time and
 resumes from the checklist state.
 
-### Working a whole list — `tiny-spec-loop`
+### Working a whole list
 
-`/tiny-spec-loop` takes a list of stories and works them one after another. Per story
-it does the same four moves:
+Ask `/tiny-spec-run` to build — "build the backlog", "work through the breakdown",
+"spec it out and build it" — and it takes a list of stories and works them one after
+another. Per story it does the same four moves:
 
 ```
-cut a branch from main  →  tiny-spec-run  →  tiny-spec-build  →  merge back to main
+cut a branch from main  →  walk the chain  →  tiny-spec-build  →  merge back to main
 ```
 
 Then the next story. Each branch is cut **fresh from main**, so story 3 sees stories 1
@@ -488,7 +504,7 @@ honest trade: a breakdown runs unattended, a pasted list is supervised.
 | `fork` | a real either/or the plan doesn't answer |
 | `conflict` | a story's branch wouldn't merge cleanly |
 
-**Only `done` means the work is built** — and in a story loop that means *all* of them.
+**Only `done` means the work is built** — and in a story run that means *all* of them.
 A run that stopped at story 2 of 7 reporting "done" is the single thing autonomous loops
 get wrong most often, so the state is always named, along with what got merged and how
 many stories are still untouched.
@@ -506,7 +522,7 @@ the build halts *before* running it:
   - pause: confirm the snapshot is current before this touches real rows
 ```
 
-`tiny-spec-tasks` proposes these for genuinely irreversible work — migrations,
+`tiny-spec-plan` proposes these for genuinely irreversible work — migrations,
 destructive file operations, a new dependency, an auth boundary, a public API contract.
 You can also give the run a standing policy up front ("halt before anything that touches
 auth") and it gets applied as each story's tasks are sliced.
@@ -520,13 +536,18 @@ the undo command rather than running it.
 
 **Walk away and come back.** Nothing is written down to track progress — it's derived:
 a story whose ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked
-task is in progress, no directory means not started. So re-running `/tiny-spec-loop`
-tomorrow in a fresh session picks up exactly where it stopped. No run-state file, no
-lock, and no budget to configure: the story list *is* the budget.
+task is in progress, no directory means not started. So asking `/tiny-spec-run` to build
+the backlog again tomorrow in a fresh session picks up exactly where it stopped. No
+run-state file, no lock, and no budget to configure: the story list *is* the budget.
 
 **It never fixes a blocker for you.** A blocker means one of your documents is wrong,
-and a loop allowed to rewrite the requirement its own task just failed would be grading
+and a run allowed to rewrite the requirement its own task just failed would be grading
 its own homework. It reports and stops; the upstream edit is yours.
+
+**And it never decides to build on its own.** Whether a run stops before the build or
+goes all the way is fixed from your opening request and never revised — not by a stage's
+closing line, not by a follow-up message. Build is your review gate, so promoting
+yourself into it is the one thing a router doesn't get to do.
 
 ## Project layout
 
@@ -546,12 +567,12 @@ It is namespaced per ticket, with a shared spine at the root:
     SPEC.md  PLAN.md  tasks.md  decisions.md
 ```
 
-`PRD.md`, `BREAKDOWN.md`, and `design/` sit at your project root rather than inside
-`.spec/`, because they are yours: the first two are regenerable pre-spec planning
-files, and the design exports are project files no skill ever writes.
+`BREAKDOWN.md` and `design/` sit at your project root rather than inside `.spec/`,
+because they are yours: the breakdown is a regenerable pre-spec planning file, and the
+design exports are project files no skill ever writes.
 
-`CONTRACTS.md` documents the formats for maintainers. The skills do not read it at
-runtime; each is self-sufficient.
+Every format lives inline in the skill that writes it — there is no separate contract
+document to keep in sync, and no skill reads anything but its own `SKILL.md` at runtime.
 
 ## Integrations
 
