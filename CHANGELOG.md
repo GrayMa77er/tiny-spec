@@ -7,6 +7,114 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [1.0.0] — 2026-09-03
+
+A refocus, not a feature release. Same core loop — one task, one commit, an independent
+reviewer running the real gate — reorganised around **two front doors, three core
+stages, and one router**. Four skills became two, one skill was extracted, and one
+genuinely new skill was added.
+
+### ⚠️ Breaking — read before upgrading
+
+Four skills were removed. `tiny-spec install` copies what the manifest declares; it does
+**not** delete skills that left it. So the removed ones will linger in
+`~/.claude/skills/` and Claude Code will keep offering them.
+
+```sh
+tiny-spec uninstall        # removes the old set
+uvx tiny-spec install      # installs the 1.0 set
+```
+
+Then **restart Claude Code** — skills load at startup.
+
+| Removed | Replaced by |
+|---|---|
+| `tiny-spec-prd` | `tiny-spec-scope` — one on-ramp instead of two |
+| `tiny-spec-breakdown` | `tiny-spec-scope` |
+| `tiny-spec-tasks` | `tiny-spec-plan` — now writes `PLAN.md` **and** `tasks.md` in one pass |
+| `tiny-spec-loop` | `tiny-spec-run` — one router with two stop points |
+
+**`PRD.md` is no longer an artifact.** It was a pure intermediate — breakdown read it,
+then create read breakdown. Its problem/goal/non-goal material now lives in
+`BREAKDOWN.md`'s header. An existing `PRD.md` is still readable *input* to
+`tiny-spec-scope`; it just isn't written any more.
+
+**`CONTRACTS.md` was deleted.** No skill read it at runtime, and keeping it in sync by
+hand was pure drift surface. Every format now lives inline in the skill that owns it.
+Artifact ownership is mapped in [AGENTS.md](AGENTS.md).
+
+Artifacts on disk are **unchanged** — `SPEC.md`, `PLAN.md`, `tasks.md`,
+`constitution.md`, `memory.md`, `decisions.md` all keep their formats. An in-flight
+`.spec/` keeps working; only the commands change.
+
+### Added
+
+- **`tiny-spec-adopt` — the brownfield front door.** The suite's stated thesis has
+  always been that real work is a ticket inside a system that already exists, but every
+  skill behaved as though you were starting from a blank page: the constitution was
+  *interviewed* out of you, including the verification commands.
+
+  `tiny-spec-adopt` reads the repo instead. It derives the gate from CI workflows, task
+  runners, and tool config (CI wins — whatever runs on every PR *is* the real gate),
+  the layout from the actual tree, style and standards from linter config and observed
+  idiom, and invariants from `CONTRIBUTING.md`/ADRs where someone already wrote them
+  down. Every section is marked **declared** or **inferred** so you know what to
+  distrust.
+
+  Then it **runs the commands it derived** and reports which went green. A derived gate
+  that has never been run is the most dangerous thing the suite can produce — it turns
+  every future review into theatre.
+
+  Read-only against your code: it never modifies source, creates a spec dir, or touches
+  git. Re-run it in **refresh mode** after the codebase drifts; it diffs rather than
+  overwrites, and marks completed tasks stale, since they were reviewed against the
+  previous constitution.
+
+- **`tiny-spec-scope` — the greenfield front door.** Takes a rough idea *or* a PRD you
+  already have and produces `BREAKDOWN.md` in one interview instead of two.
+
+- **`tiny-spec-design` — the visual system, extracted.** Tokens, `D<n>` screen entries,
+  export hashing, and the `visual:` gate command used to be threaded through
+  `tiny-spec-create`, `tiny-spec-run`, and the constitution. They now live in one
+  optional skill you run only when a project has a visual surface. Non-UI projects no
+  longer read past ~35% of `tiny-spec-create`.
+
+  The reviewer's visual gate is unchanged — only *authoring* moved.
+
+### Changed
+
+- **`tiny-spec-plan` now writes `PLAN.md` and `tasks.md` in one pass.** They stay two
+  files (build rewrites `tasks.md` constantly; mixing that into design prose is worse)
+  but they are now **one staleness unit** — reconciled together, never left disagreeing.
+  One fewer command, one fewer status flag to reason about.
+
+- **`tiny-spec-run` is the only router, with a stop point fixed at Step 0.** By default
+  it walks the chain and stops before the build, exactly as before. Ask it to build
+  ("build the backlog", "spec it out and build it") or hand it a story list, and it runs
+  the per-story branch → plan → build → merge cycle that was `tiny-spec-loop`.
+
+  **The stop point is decided once from your opening request and never revised** — not
+  by a stage's closing line, not by a rung, not by a later "do it all". Build is your
+  review gate, so a run you started as "get it ready" will not promote itself into
+  building. The old absolute "`run` never invokes `build`" was a stronger guarantee;
+  this is the rule that replaces it, and it is the invariant to watch in this release.
+
+  Everything else carries over unchanged: the six terminal states and the never-round-up
+  rule, no merge without `done`, no run-state file (progress is derived from git), no
+  budget, and the same five git commands — `switch`, `switch -c`, `merge --no-ff`,
+  `merge --abort`, and reads. It still never pushes, rebases, resets, or deletes a
+  branch.
+
+- **The router's ladder went from 12 rungs to 8**, because merging skills removed rungs
+  rather than relocating them. Its first rung now carries the greenfield/brownfield
+  fork: does this repo already contain source?
+
+### Removed
+
+- `tiny-spec-prd`, `tiny-spec-breakdown`, `tiny-spec-tasks`, `tiny-spec-loop` — see the
+  breaking notice above.
+- `CONTRACTS.md` — folded into the skills.
+
 ## [0.5.0] — 2026-08-30
 
 ### Added

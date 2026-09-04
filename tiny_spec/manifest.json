@@ -1,12 +1,11 @@
 {
   "skills": [
-    "tiny-spec-prd",
-    "tiny-spec-breakdown",
+    "tiny-spec-scope",
+    "tiny-spec-adopt",
     "tiny-spec-run",
-    "tiny-spec-loop",
     "tiny-spec-create",
+    "tiny-spec-design",
     "tiny-spec-plan",
-    "tiny-spec-tasks",
     "tiny-spec-build"
   ],
   "agents": [
