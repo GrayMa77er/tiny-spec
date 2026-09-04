@@ -1,21 +1,28 @@
 ---
 name: tiny-spec-plan
-description: Turn the active ticket's SPEC.md into a technical design — produce PLAN.md and harden the shared constitution.md (the constitution). Re-run in update mode to reconcile after a SPEC change.
+description: Turn the active ticket's SPEC.md into a technical design and an executable task list — produce PLAN.md and tasks.md in one pass, and harden the shared constitution.md. tasks.md is a flat, ordered checklist executed sequentially by tiny-spec-build. Re-run in update mode to reconcile both after a SPEC change.
 ---
 
 # tiny-spec-plan
 
-Decides **how** the requirements get built, and — just as important — hardens the
-**constitution** (`constitution.md`) that every task will be implemented and
-reviewed against.
+Decides **how** the requirements get built, slices that into the tasks that build it,
+and — just as important — hardens the **constitution** (`constitution.md`) that every
+task will be implemented and reviewed against.
+
+It writes **two files in one pass**: `PLAN.md`, the stable design narrative, and
+`tasks.md`, the flat checklist `tiny-spec-build` executes and ticks. They are two files
+for a good reason — `tiny-spec-build` rewrites `tasks.md` constantly, and mixing mutable
+execution state into design prose would be worse — but they are **one staleness unit**.
+This skill always writes and reconciles both together, and it is the only skill that
+sets `tasks.md`'s `status:`.
 
 Artifacts live under `.spec/`: the **shared** constitution at the root
-(`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md` under
-`.spec/<ticket-id>/`. **Resolve the active ticket dir** from the current git branch:
-the `.spec/<slug>/` whose slug matches the branch name (one branch per ticket). If
-none matches, use the sole ticket dir if there's exactly one; else ask which. The
-`PLAN.md` skeleton is inline below — write it from there, no file to read.
-Requires `.spec/<active>/SPEC.md`.
+(`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md`/`tasks.md` under
+`.spec/<slug>/`. **Resolve the active ticket dir** from the current git branch: the
+`.spec/<slug>/` whose slug matches the branch name (one branch per ticket). If none
+matches, use the sole ticket dir if there's exactly one; else ask which. Both skeletons
+are inline below — write them from there, no file to read. Requires
+`.spec/<active>/SPEC.md`.
 
 **Two cases pre-empt that order — ask instead of applying it:** more than one dir
 matches the branch (there is no defined tie-break, and inventing one here would
@@ -25,54 +32,45 @@ the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo 
 **degraded** case, not an ask case — branch match is simply unavailable, so fall
 through to sole-dir and ask as written.
 
-## Harden the constitution (`constitution.md`) — do this first
+## Step 1 — harden the constitution (`constitution.md`)
 
-The constitution is the spine of the whole flow and **project-wide** — it lives at
-`.spec/constitution.md` (the root, shared across every ticket), and is injected whole
-into every executor and reviewer. Make it strong and specific to *this* project, not
-generic boilerplate. Fill in / sharpen all seven fixed sections:
+Do this **first**. The constitution is the spine of the whole flow and **project-wide**
+— it lives at `.spec/constitution.md` (the root, shared across every ticket), and is
+injected whole into every executor and reviewer. Make it strong and specific to *this*
+project, not generic boilerplate. Fill in / sharpen all seven fixed sections:
 
 1. **Style** · 2. **Engineering standards** · 3. **Guiding invariants** ·
 4. **Glossary** · 5. **Layout** · 6. **Definition of Done** ·
 7. **Verification commands**.
 
-Plus **Design system** — the one *conditional* section. Present only when the project
-has a visual surface; leave it absent otherwise rather than filling it with filler.
-
 Two sections carry the most weight — get them right:
-- **Guiding invariants** — the non-negotiables a reviewer can *fail a task on*.
-  Be concrete ("all timestamps are UTC ISO-8601", "no network calls in unit
-  tests"), not aspirational ("write clean code").
-- **Verification commands** — the exact, runnable gate (install → lint → test →
-  build → run). The reviewer executes these literally, so they must actually work
-  from a clean checkout. If setup is needed (e.g. install the package first), say
-  so explicitly.
 
-**Harden the Design system if there is one.** `tiny-spec-create` seeds it by inferring
-a scale from the wireframes; your job is to make it enforceable:
+- **Guiding invariants** — the non-negotiables a reviewer can *fail a task on*. Be
+  concrete ("all timestamps are UTC ISO-8601", "no network calls in unit tests"), not
+  aspirational ("write clean code").
+- **Verification commands** — the exact, runnable gate (install → lint → test → build →
+  run). The reviewer executes these literally, so they must actually work from a clean
+  checkout. If setup is needed (e.g. install the package first), say so explicitly.
 
-- **Every token needs a concrete value.** "a consistent spacing scale" fails nothing.
-  `space.1`=4px … `space.8`=32px fails a `padding: 19px`. A token with no value is
-  worse than no token, because it looks like a contract and isn't one.
-- **Check the `SPEC.md` `D<n>` entries resolve.** Every token a screen names must
-  exist here. An entry naming `color.accent.primary` when the system defines no such
-  token is a broken anchor — add the token or fix the entry, don't leave it dangling.
-- **Sanity-check the `elements:` selectors against the codebase you're planning for.**
-  They are a contract the code must match verbatim, so a selector that assumes markup
-  this project can't produce (a class a component library owns and mangles, an id that
-  collides) becomes a build-time blocker. Prefer stable test ids, and say in the
-  `## Approach` where they get added.
-- **Confirm the `visual:` command actually runs.** It is the gate for every task
-  carrying `design:`; an aspirational command means the visual gate silently never
-  fires. If it doesn't work from a clean checkout, fix it or drop the `design:` refs.
-  **Check it prints a `SCREENSHOT <state> <path>` line per state it drives** — that is
-  what lets the reviewer judge the render against the design export, and a constitution
-  written before that existed won't have it. Add the `page.screenshot({ path })` call;
-  it is one line, and without it the reviewer grades on numbers alone and says so.
-- Add the scale as a **guiding invariant** where it matters ("no raw color or spacing
-  values in UI code — reference a token"), since that is the line a reviewer fails on.
+**If the project came in through `tiny-spec-adopt`**, the constitution was *derived from
+the codebase* and its sections are marked inferred or declared. Hardening means
+confirming the inferred ones against the plan you are about to write — an inferred gate
+that has never been run is the single most dangerous thing in the file.
 
-## Write `PLAN.md`
+**If there is a `## Design system` section**, it belongs to `tiny-spec-design`; harden
+its *values*, don't restructure it:
+
+- **Every token needs a concrete value.** "A consistent spacing scale" fails nothing.
+  `space.1`=4px … `space.8`=32px fails a `padding: 19px`. A token with no value is worse
+  than no token, because it looks like a contract and isn't one.
+- **Check the `SPEC.md` `D<n>` entries resolve.** Every token a screen names must exist
+  here. An entry naming `color.accent.primary` when the system defines no such token is
+  a broken anchor — route it back to `tiny-spec-design`, don't leave it dangling.
+- **Confirm the `visual:` command actually runs.** It is the gate for every task carrying
+  `design:`; an aspirational command means the visual gate silently never fires. If it
+  doesn't work from a clean checkout, fix it or drop the `design:` refs.
+
+## Step 2 — write `PLAN.md`
 
 Write `.spec/<active>/PLAN.md` with the structure below, filling it in:
 
@@ -120,13 +118,12 @@ what level, and any fixtures/data needed.>
 <!-- optional: omit if N/A -->
 ## Open questions
 
-<Design questions still unresolved. A question that blocks tasks must be answered
-here or routed back to tiny-spec-create before tiny-spec-tasks runs.>
+<Design questions still unresolved. A question that blocks the task list must be
+answered here or routed back to tiny-spec-create before you slice.>
 ```
 
 - `## Approach` *(required)* — the design narrative: the shape of the solution, key
-  decisions, trade-offs. Detailed enough that `tiny-spec-tasks` can derive a task list
-  from it. Optional `### Phase` headings are allowed for readability only.
+  decisions, trade-offs. Detailed enough to derive a task list from.
 - `## Requirement coverage` *(required)* — map **every** `REQ-N` to where it's
   addressed. A requirement with no home is a gap: fix the approach or route back to
   `tiny-spec-create`.
@@ -135,18 +132,159 @@ here or routed back to tiny-spec-create before tiny-spec-tasks runs.>
 
 Keep it proportional: a small change is a few paragraphs, not a phased epic.
 
-## Update mode (SPEC changed → PLAN is stale)
+**An unresolved `## Open questions` entry that blocks the slice is a stop.** Don't guess
+past it into a task list — say what's unresolved and route back to `tiny-spec-create`.
 
-When `PLAN.md` is `status: stale`:
+## Step 3 — slice the approach into tasks
+
+Walk the `## Approach` you just wrote and break it into tasks. No waves, no
+parallelism, no `owns:` contracts — tasks run one at a time, top to bottom. Each task is:
+
+- **Small and independently checkable** — one slice a single executor can finish and a
+  reviewer can grade in one pass. If you can't write a one-line acceptance for it, it's
+  too big — split it.
+- **Ordered so each builds on the last.** Tasks run sequentially, so a later task may
+  freely assume an earlier task's code already exists. Put foundational work (types,
+  schema, scaffolding) first. Order by dependency, not by guesswork.
+- **Right-sized, not fragmented.** Don't split a cohesive change into five files' worth
+  of micro-tasks just to look granular. Earned ceremony: fewer, meaningful tasks beat
+  many trivial ones.
+
+For each task, write:
+
+```
+- [ ] T<n> — <imperative description>
+  - acceptance: <one user-observable outcome that proves it's done>
+  - type: feat            # optional; Conventional Commit type (defaults to feat)
+  - req: REQ-n            # optional; the REQ-N this task delivers
+  - design: D-n           # optional; the SPEC.md D<n> screen this task builds — arms the visual gate
+  - pause: <why>          # optional; halt the build before this task so a human looks first
+  - files: <comma-separated hint of files it will touch>
+```
+
+The **acceptance** is what the reviewer checks against — make it observable
+("`spec --version` prints the version and exits 0"), not internal ("version logic
+added"). **type** picks the Conventional Commit type `tiny-spec-build` uses for this
+task's code commit (`feat | fix | docs | refactor | test | chore | build | ci | perf | style`);
+set it when the task is clearly not a feature, otherwise omit and it defaults to `feat`.
+**req** ties the task to the requirement it satisfies (traceability). The **files** line
+is a hint to focus the executor and reviewer; it is not enforced, so approximate paths
+are fine.
+
+**design** is the explicit opt-in to the **visual gate** — the one field that changes
+how a task is graded. Set it when the task builds a surface described by a `D<n>` in
+`SPEC.md`; the reviewer then renders that surface, measures the selectors the entry
+names against the constitution's Design system tokens, and can **fail** the task on a
+numeric deviation or a missing state. Omit it and the task is graded exactly as any
+other. Two rules:
+
+- Set it only on tasks that actually build the visible surface — not on the API call or
+  the state store behind it. The gate is per-task, so this is how you keep the blast
+  radius where you want it.
+- Only set it if the constitution has a `visual:` verification command. Without one the
+  reviewer cannot render anything and will raise a blocker instead of a verdict.
+
+**pause** is the other field that changes what happens rather than what gets written —
+but where `design:` changes how a task is **graded**, `pause:` changes whether the build
+**continues**. Set it and `tiny-spec-build` halts *before* that task, leaving it
+unchecked, so a human reviews the approach while redirecting it is still cheap. The
+value is one line saying what to look at.
+
+Propose it only on work that is genuinely **irreversible or wide-blast-radius**:
+
+- a data migration, or anything that writes to real rows;
+- a destructive or bulk file operation;
+- pulling in a new third-party dependency;
+- an auth, permissions, or trust boundary;
+- a public API or schema contract other people's code depends on.
+
+**When in doubt, leave it out.** A pause the user didn't want is worse than no pause at
+all — it trains them to wave past the ones they did want, which is exactly the reflex
+that makes the mechanism useless the one time it matters. Most task lists should carry
+zero or one.
+
+**A caller may hand you a standing pause policy** — *"halt before anything that touches
+auth"*, *"stop before any schema migration"* (`tiny-spec-run` passes one through in a
+build-through run). Apply it to **this** task list: any task matching the description
+gets a `pause:` naming the policy that put it there, on top of whatever you'd have set
+anyway. A policy that matches nothing here is not an error — say so and move on, rather
+than stretching a task to fit it.
+
+Cover **every** part of the approach — together the tasks must deliver all `REQ-N`.
+Don't leave a requirement with no task. Likewise, if `SPEC.md` has a `## Design`
+section, every `D<n>` in it needs at least one task carrying that `design:` reference —
+a screen nobody is graded against is a screen that will be built wrong.
+
+## Step 4 — write `tasks.md`
+
+Write `.spec/<active>/tasks.md` with the structure below — all tasks `[ ]` unchecked,
+frontmatter `status: current`, `updated: <today>`:
+
+```markdown
+---
+status: current
+updated: <ISO date>
+---
+
+# Tasks — <project / feature name>
+
+> Executed top to bottom, one at a time. A checked `[x]` task is implemented AND
+> reviewed. `type:`, `req:`, `design:`, and `pause:` are optional; `files:` is a hint,
+> not an ownership contract. A task with `design:` is also graded against that screen's
+> `D<n>` entry and the constitution's Design system. A task with `pause:` halts the
+> build before it runs, so a human looks first.
+
+## Tasks
+
+- [ ] T1 — <one small, independently-checkable slice of work>
+  - acceptance: <one user-observable outcome that proves T1 is done>
+  - type: feat            # optional; Conventional Commit type for this task's commit (defaults to feat)
+  - req: REQ-1            # optional; the REQ-N this task delivers
+  - files: <path, path>
+
+- [ ] T2 — <next slice; assume T1's code exists>
+  - acceptance: <observable outcome>
+  - type: feat
+  - req: REQ-2
+  - design: D1            # optional; only on tasks that build the visible surface
+  - files: <path, path>
+
+- [ ] T3 — <…>
+  - acceptance: <observable outcome>
+  - pause: <optional; what to check before this runs — irreversible work only>
+  - files: <path, path>
+```
+
+## Update mode (SPEC changed → PLAN and tasks are stale)
+
+When `PLAN.md` or `tasks.md` is `status: stale`, reconcile **both in one pass** — they
+are one staleness unit, so never leave the run with them disagreeing:
 
 1. Read the latest `.spec/<active>/decisions.md` change entry to see what moved.
 2. Reconcile `.spec/<active>/PLAN.md` and the shared `.spec/constitution.md` — adjust
    only what the change requires; preserve the rest.
-3. Flip `.spec/<active>/tasks.md` to `status: stale` (if it exists) and extend the
-   `decisions.md` entry.
-4. Set `PLAN.md` `status: current`, bump `updated`.
+3. Reconcile `.spec/<active>/tasks.md` — add/alter/remove tasks to match the new
+   approach, preserving existing `T<n>` ids where the task still exists; new tasks get
+   the next free id.
+4. **Completed-work guardrail:** if a change touches a task already `[x]`, **uncheck it**
+   (`[ ]`) and record the unchecked ids in `.spec/<active>/decisions.md` for human
+   review, using the fixed skeleton. Never assume built work survived a change.
+
+   ```
+   ## D-NNN — <short title>
+   - type: change
+   - date: <ISO date>
+   - affects: T<n>, T<m>
+   - note: <which tasks were unchecked and why>
+   ```
+
+5. Set **both** `PLAN.md` and `tasks.md` to `status: current` and bump `updated`.
 
 ## When done
 
-Confirm the constitution is hardened and every `REQ-N` is covered, then point the
-user at `tiny-spec-tasks`.
+Confirm the constitution is hardened and every `REQ-N` is covered, then report the task
+count — and any `pause:` points you set, with their reason, so the user can drop one
+before it fires.
+
+Then point them at `tiny-spec-build` (one task at a time, reviewing as it goes), or
+`tiny-spec-run` to drive it through.
