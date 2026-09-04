@@ -34,7 +34,7 @@ alongside this skill (see the suite README).
    get injected **whole** into every executor and reviewer. Also note the `ticket`
    binding in `.spec/<active>/SPEC.md` — it supplies the commit `Refs:` footer.
 3. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
-   `tiny-spec-tasks` to reconcile first.
+   `tiny-spec-plan` to reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
 
 ## The per-task loop
@@ -170,7 +170,7 @@ Report the task outcome (built, reviewed, committed). Then:
 - **Interactive default:** continue to the next unchecked task. Pausing for the
   user between tasks is fine and expected.
 - If the user asked to **run it through** ("do it all", "build everything"), or
-  `tiny-spec-loop` invoked you, keep looping until one of the five terminal states
+  `tiny-spec-run` invoked you, keep looping until one of the five terminal states
   below is reached — committing per passed task as you go.
 
 **The task list is the budget.** The loop ends when the tasks end. There is no turn
@@ -223,7 +223,7 @@ in `tasks.md` saying why — an entry would restate what the file already tells 
 the log is for things that aren't otherwise visible. Report it, don't record it.
 
 The task the loop stopped at stays `[ ]`. That is the whole resume mechanism:
-re-running `tiny-spec-build` (or `tiny-spec-loop`) picks up at exactly that task with no
+re-running `tiny-spec-build` (or `tiny-spec-run`) picks up at exactly that task with no
 conversational context needed.
 
 ## Blockers (never hack around)
@@ -254,7 +254,7 @@ command** for a `design:` task, or when convergence (step 4) exhausts its attemp
    requirement is wrong/impossible), in update mode. Never resolve a missing `visual:`
    command by dropping the task's `design:` field — that turns a gap in the gate into
    a task that quietly claims a check it never got. After the upstream fix and a
-   `tiny-spec-tasks` reconcile, re-run `tiny-spec-build` — it resumes from the checkbox state.
+   `tiny-spec-plan` reconcile, re-run `tiny-spec-build` — it resumes from the checkbox state.
 
 A genuine fork the plan doesn't pin down → don't guess: present the options + your
 recommendation, get the user's call, record it in `decisions.md`, then continue.
