@@ -22,13 +22,15 @@ differently. Anchor hard to the previous scorecard.
 2. **The previous scorecard** — the **last line** of `docs/eval/scores.jsonl`
    (`tail -n 1`). This is your anchor: its per-criterion scores and evidence.
 3. **The suite source** — score against what the code/contract actually says today:
-   - `CONTRACTS.md` (formats, the build loop, blockers, staleness)
-   - `AGENTS.md` and `CLAUDE.md` (philosophy, anti-goals)
+   - each `tiny-spec-*/SKILL.md` — the sole contract for what it writes (formats, the
+     build loop, blockers, staleness). There is no separate contracts document.
+   - `AGENTS.md` and `CLAUDE.md` (philosophy, anti-goals, artifact ownership)
    - `README.md` (positioning, verification claims)
    - each `tiny-spec-*/SKILL.md` and `agents/tiny-spec-build-*.md`
    - `tiny_spec/manifest.json` (what actually ships)
    For a thorough pass you may dispatch an `Explore` agent to diff behaviour, but read
-   `CONTRACTS.md` and the two agent files directly — they back most scores.
+   `tiny-spec-build/SKILL.md`, `tiny-spec-run/SKILL.md` and the two agent files
+   directly — they back most scores.
 
 ## The 0–3 scale (from the rubric, do not redefine)
 
