@@ -10,8 +10,9 @@ of truth for how to work on this suite. A few things worth knowing up front:
   in doubt, leave it out.
 - **Skills are prompts, not code.** Editing a `SKILL.md` or agent file changes a
   prompt. There is no compiler or test to catch a misleading instruction, so keep
-  the formats consistent by hand and check [CONTRACTS.md](CONTRACTS.md) when you
-  touch an artifact's shape.
+  the formats consistent by hand — each `SKILL.md` is the sole contract for what it
+  writes, so when you touch an artifact's shape, reconcile every skill that reads or
+  writes it (see Artifact ownership in [AGENTS.md](AGENTS.md)).
 - **Verify at runtime.** Validate prompt changes by dry-running them in a throwaway
   directory or dispatching the real agents, rather than reasoning about them
   statically.
@@ -28,7 +29,7 @@ flow with the `claude` CLI, so they cost tokens and minutes. You have to run the
 `python3`, `git` (no global install needed — the harnesses vendor the repo's skills
 into each sandbox).
 
-- **Execution loop** (`create → plan → tasks → build`) — held-out grade of produced
+- **Execution loop** (`create → plan → build`) — held-out grade of produced
   code:
 
   ```sh
@@ -36,8 +37,8 @@ into each sandbox).
   docs/eval/harness/run.sh roman duration  # a subset while iterating
   ```
 
-- **Planning stage** (`tiny-spec-prd → tiny-spec-breakdown`) — structural checks +
-  an LLM judge on the produced `PRD.md`/`BREAKDOWN.md`:
+- **Planning stage** (`tiny-spec-scope`) — structural checks +
+  an LLM judge on the produced `BREAKDOWN.md`:
 
   ```sh
   docs/eval/harness/run-planning.sh        # all planning cases

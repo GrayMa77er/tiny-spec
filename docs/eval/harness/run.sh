@@ -43,7 +43,7 @@ echo ">> tiny-spec empirical eval  ($DATE @ $SHA)"
 echo ">> tasks: ${TASKS[*]}"
 echo ">> logs:  $LOGDIR"
 
-DRIVER='You are in a fresh project directory. Read TICKET.md, then implement it END TO END using the tiny-spec workflow, fully autonomously — do NOT ask me anything, make reasonable decisions and proceed. Steps: (1) use the tiny-spec-create skill for ad-hoc work (no external ticket) to capture the requirement from TICKET.md; (2) tiny-spec-plan; (3) tiny-spec-tasks; (4) tiny-spec-build, running every task straight through (run-it-through mode) until all tasks are checked or a blocker stops you. Deliver the code at the exact path the ticket specifies. Do not stop for confirmation at any point.'
+DRIVER='You are in a fresh project directory. Read TICKET.md, then implement it END TO END using the tiny-spec workflow, fully autonomously — do NOT ask me anything, make reasonable decisions and proceed. Steps: (1) use the tiny-spec-create skill for ad-hoc work (no external ticket) to capture the requirement from TICKET.md; (2) tiny-spec-plan; (3) tiny-spec-build, running every task straight through (run-it-through mode) until all tasks are checked or a blocker stops you. Deliver the code at the exact path the ticket specifies. Do not stop for confirmation at any point.'
 
 for task in "${TASKS[@]}"; do
   TDIR="$BM/$task"
@@ -56,7 +56,7 @@ for task in "${TASKS[@]}"; do
   git -C "$SB" config user.email eval@local; git -C "$SB" config user.name eval
   git -C "$SB" commit -q --allow-empty -m "init" || true
   mkdir -p "$SB/.claude/skills" "$SB/.claude/agents"
-  for s in tiny-spec-breakdown tiny-spec-create tiny-spec-plan tiny-spec-tasks tiny-spec-build; do
+  for s in tiny-spec-scope tiny-spec-create tiny-spec-plan tiny-spec-build; do
     [ -d "$REPO/$s" ] && cp -R "$REPO/$s" "$SB/.claude/skills/$s"
   done
   cp "$REPO/agents/"*.md "$SB/.claude/agents/" 2>/dev/null || true

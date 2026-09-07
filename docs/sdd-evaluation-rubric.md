@@ -141,6 +141,11 @@ tiny-spec lead with that home-field bias in mind, and re-score for your context.
 
 ## 5. Worked self-assessment: tiny-spec
 
+> **Note (1.0):** the citations below reference `CONTRACTS.md`, which was folded into
+> the individual `SKILL.md` files in 1.0. The rules they cite still hold — they now live
+> in the skill that owns each artifact. Re-run `/eval-suite` to re-score against the
+> current source.
+
 Scores below cite real facts in this repo (`README.md`, `CONTRACTS.md`). The profile
 is deliberately honest: tiny-spec is **strong on rigor, quality, and DX, and weak on
 empirical measurement** — by design, it bets on one independent reviewer over volumes

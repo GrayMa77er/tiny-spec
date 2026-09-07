@@ -6,9 +6,9 @@ so nothing here ships to users.
 
 | Eval | Question it answers | How | Drives |
 |------|---------------------|-----|--------|
-| **Static review** — `/eval-suite` | Does the *design* have the right mechanisms? | Reads `CONTRACTS.md`, agents, SKILL.md; scores 0–3 against the rubric. | Dimensions **B, C, D** |
+| **Static review** — `/eval-suite` | Does the *design* have the right mechanisms? | Reads every `SKILL.md` and both agents; scores 0–3 against the rubric. | Dimensions **B, C, D** |
 | **Empirical harness** — `harness/run.sh` | Does the *execution* stage produce working code, and does its own gate tell the truth? | Runs `create → plan → tasks → build` on benchmark tasks and grades the output with held-out tests. | Dimension **A** (auto-derived) |
-| **Planning harness** — `harness/run-planning.sh` | Does the *planning* stage produce a sound, faithful hand-off? | Runs `tiny-spec-prd → tiny-spec-breakdown` on loose ideas; grades the PRD/BREAKDOWN with structural checks + an LLM judge. | `planning-results.jsonl` (standalone) |
+| **Planning harness** — `harness/run-planning.sh` | Does the *planning* stage produce a sound, faithful hand-off? | Runs `tiny-spec-scope` on loose ideas; grades the BREAKDOWN with structural checks + an LLM judge. | `planning-results.jsonl` (standalone) |
 
 The rubric, criteria, weights, and worked rationale live in
 [`../sdd-evaluation-rubric.md`](../sdd-evaluation-rubric.md).
@@ -80,14 +80,14 @@ KEEP_SANDBOX=1 docs/eval/harness/run-planning.sh snip            # keep sandbox 
 ```
 
 Each case runs in a throwaway sandbox seeded with `IDEA.md` and the vendored skills.
-`claude -p` drives `tiny-spec-prd → tiny-spec-breakdown` (it must **not** scaffold
+`claude -p` drives `tiny-spec-scope` (it must **not** scaffold
 `.spec/` or run any later skill), then `grade_planning.py` scores the produced
-`PRD.md` + `BREAKDOWN.md`.
+`BREAKDOWN.md`.
 
 ### What gets measured
 
-- **structural conformance** (deterministic) — PRD has its required sections filled;
-  BREAKDOWN has a Decisions block, ≥1 Feature, Stories with a slug and ≥1 AC; the
+- **structural conformance** (deterministic) — BREAKDOWN has Problem and
+  Goal & non-goals filled, a Decisions block, ≥1 Feature, Stories with a slug and ≥1 AC; the
   planning skills left no `.spec/` behind.
 - **hand-off integrity** (LLM judge) — **coverage** (every PRD capability lands in ≥1
   story, nothing dropped) and **no fabrication** (every story traces to a capability,

@@ -5,8 +5,8 @@ Input: a JSON file (argv[1]) holding a list of per-case result objects emitted b
 grade_planning.py. Computes pass rates across the structural and judge dimensions,
 prints a human report, and appends the run detail.
 
-This is a STANDALONE scorecard for the planning stage (tiny-spec-prd →
-tiny-spec-breakdown). It deliberately does NOT touch docs/eval/scores.jsonl — that
+This is a STANDALONE scorecard for the planning stage (tiny-spec-scope).
+It deliberately does NOT touch docs/eval/scores.jsonl — that
 file scores the execution loop's correctness claim (Dimensions A–D); planning quality
 is a separate concern and keeping them apart stops one from masking the other.
 
@@ -51,7 +51,7 @@ def main():
         "no_fabrication_rate": rate("no_fabrication"),
         "atomicity_rate": rate("atomicity_ok"),
         "cross_cutting_ok_rate": rate("cross_cutting_placement_ok"),
-        "prd_faithful_rate": rate("prd_faithful_to_idea"),
+        "breakdown_faithful_rate": rate("breakdown_faithful_to_idea"),
     }
 
     with open(RESULTS, "a") as f:
@@ -67,7 +67,7 @@ def main():
     print(f"no fabrication        : {metrics['no_fabrication_rate']:.0%}")
     print(f"atomicity             : {metrics['atomicity_rate']:.0%}")
     print(f"cross-cutting placed  : {metrics['cross_cutting_ok_rate']:.0%}")
-    print(f"PRD faithful to idea  : {metrics['prd_faithful_rate']:.0%}")
+    print(f"faithful to idea      : {metrics['breakdown_faithful_rate']:.0%}")
     print("-" * 60)
     print("per-case:")
     for r in results:
