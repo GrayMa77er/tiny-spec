@@ -138,7 +138,7 @@ code with held-out tests the suite never sees, and checks the reviewer's own ver
 against that ground truth — the number that matters being **false-PASS rate**, how
 often the gate blesses code that is actually broken.
 
-Most recent run — 5 benchmark tasks, v0.4.0 (`7810074`), 2026-08-03:
+Most recent run — 5 benchmark tasks, v1.0.0 (`b18e32a`), 2026-09-07:
 
 | | |
 |---|---|
@@ -147,9 +147,11 @@ Most recent run — 5 benchmark tasks, v0.4.0 (`7810074`), 2026-08-03:
 | **false-PASS rate** | **0%** — it never called broken code done |
 | blocker rate | 0% |
 
-The same run a month earlier on `f973c85` scored identically, which is the more
-interesting result: the loop is at least stable across versions rather than tuned to a
-single commit.
+Two earlier runs — `7810074` (2026-08-03) and `f973c85` a month before it — scored
+identically, which is the more interesting result: the loop is stable across versions
+rather than tuned to a single commit. The 1.0 run matters most of the three, because
+1.0 rebuilt the planning chain around it — `tiny-spec-plan` now writes the task list
+that `tiny-spec-build` executes — and the gate came through unchanged.
 
 See [`docs/eval/README.md`](docs/eval/README.md) for the method and
 [`docs/sdd-evaluation-rubric.md`](docs/sdd-evaluation-rubric.md) for the scoring rubric
