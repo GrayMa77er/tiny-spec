@@ -7,7 +7,7 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [1.0.0] — 2026-09-03
+## [1.0.0] — 2026-09-07
 
 A refocus, not a feature release. Same core loop — one task, one commit, an independent
 reviewer running the real gate — reorganised around **two front doors, three core
