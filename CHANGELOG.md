@@ -7,6 +7,24 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [1.0.1] — 2026-09-11
+
+Documentation only. No skill, agent, or artifact format changed — upgrading is optional.
+
+### Changed
+
+- **README prose trimmed.** The argument sections had outgrown their weight. The
+  comparison footnote, the "why it's small" bullets, the design-judge and
+  `visual:`-command explanations, and the story-run notes were tightened to what each
+  actually claims.
+- **Eval results cite the version, not the commit.** The benchmark section pinned its
+  numbers to three commit SHAs, which say nothing to a reader and go stale every release.
+
+### Fixed
+
+- `tiny_spec.__version__` had been left at `0.5.0` since the 1.0 release; it now tracks
+  `pyproject.toml`.
+
 ## [1.0.0] — 2026-09-07
 
 A refocus, not a feature release. Same core loop — one task, one commit, an independent
