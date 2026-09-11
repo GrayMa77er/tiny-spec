@@ -78,54 +78,36 @@ receipt rather than the adjective:
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 12 | — | `.openspec.yaml` | `proposal` `design` `tasks` `specs/` |
 | [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 58 | 5 personas | 35 × `customize.toml` | `PRD` `architecture` `epics` `stories` `UX` `brief` `sprint-plan` |
 
-The whole of tiny-spec is **2,195 lines** of markdown across 7 skills and 2 agents.
-There is no config file, no build step, no orchestrator, and no CLI to initialize a
-project — the skills are the product. (That line count went *up* slightly in 1.0 while
-the skill count went down: `tiny-spec-adopt` is genuinely new capability, and merging
-four skills into two removed commands to learn rather than words to read.)
+The whole of tiny-spec is **2,195 lines** of markdown across 7 skills and 2 agents. No
+config file, no build step, no orchestrator, no CLI to initialize a project — the skills
+are the product.
 
-<sub>Counts taken from each project's own repository on 2026-08-03 by listing its
-command/skill/agent directories and templates, not from its marketing copy. Spec Kit:
-`templates/commands/` (10 files) and the artifact set named in `templates/plan-template.md`.
-OpenSpec: `skills/` (12 directories). BMAD: `SKILL.md` files on `main` (58), agent
-personas in `src/bmm-skills/agents/` (analyst, architect, dev, pm, ux-designer), and
-`customize.toml` files (35). These projects are all substantially more popular than
-tiny-spec — Spec Kit ~125k stars, OpenSpec ~64k, BMAD ~51k — and being smaller is a
-bet, not a proof of quality. Re-run the counts yourself before believing them.</sub>
+<sub>Counted on 2026-08-03 from each project's own repository, not its marketing copy —
+Spec Kit's `templates/commands/`, OpenSpec's `skills/`, BMAD's `SKILL.md` and
+`customize.toml` files on `main`. All three are far more popular than tiny-spec, and
+being smaller is a bet, not a proof of quality — re-run the counts yourself before
+believing them.</sub>
 
 ## Why it's small
 
-Most spec frameworks are generous by default:
-many phases, many agents, many generated documents. tiny-spec makes the opposite
-bet. Keep one safeguard, drop the rest.
-
-A green unit test suite is not the same as working software, so the reviewer
-exercises acceptance criteria end to end and a final smoke test confirms the whole
-spec. That independent review is the safeguard — not the volume of planning
-artifacts. One task, one commit, an external reviewer. Nothing gets added unless
-it earns its place.
+Most spec frameworks are generous by default: many phases, many agents, many generated
+documents. tiny-spec makes the opposite bet — keep one safeguard, drop the rest. That
+safeguard is the independent reviewer, which exercises acceptance criteria end to end,
+because a green unit test suite is not the same as working software.
 
 The case for staying small:
 
-- **Documents are context, and context isn't free.** Generating large `spec.md`,
-  `plan.md`, `research.md`, and `data-model.md` files costs tokens to write, then
-  costs context to carry. Every paragraph the agent has to hold is room it no
-  longer has for your actual code. tiny-spec keeps the spine small — a
-  constitution and a short memory — and injects only what each task needs.
-- **Real work is a ticket inside a system, not a greenfield repo.** Bigger kits
-  assume you're bootstrapping a project from a blank page. Day to day, you pick up
-  a ticket and change part of a system that already exists. tiny-spec binds to a
-  ticket, works one at a time, and references your task platform instead of
-  re-describing the world.
-- **Rigid pipelines fight the user.** Mandatory phases and required sections
-  impose ceremony on work that doesn't need it. tiny-spec's extra structure is
-  optional by design — add shape where it pays, skip it where it doesn't.
-- **More moving parts is more to maintain.** Orchestrators, ownership contracts,
-  checkpoint matrices, and config files are themselves a system you have to learn
-  and keep in sync. A few small skills and two agents are not.
-- **Generated docs can fake rigor.** A folder of polished planning artifacts looks
-  like progress, but it isn't proof. The proof is the reviewer running your real
-  tests before each commit.
+- **Documents are context, and context isn't free.** Every paragraph the agent has to
+  hold is room it no longer has for your actual code. tiny-spec keeps the spine small —
+  a constitution and a short memory — and injects only what each task needs.
+- **Real work is a ticket inside a system, not a greenfield repo.** tiny-spec binds to a
+  ticket and references your task platform instead of re-describing the world.
+- **Rigid pipelines fight the user.** Mandatory phases impose ceremony on work that
+  doesn't need it. The extra structure here is optional — add shape where it pays.
+- **More moving parts is more to maintain.** Orchestrators, ownership contracts, and
+  config files are themselves a system you have to keep in sync. Two agents are not.
+- **Generated docs can fake rigor.** A folder of polished planning artifacts looks like
+  progress, but the proof is the reviewer running your real tests before each commit.
 
 That's the whole trade: where larger kits add machinery, tiny-spec adds one
 independent reviewer and stops.
@@ -135,10 +117,10 @@ independent reviewer and stops.
 Smaller is easy to claim, so the suite ships a harness that measures it. `docs/eval/`
 runs tiny-spec headlessly on benchmark tasks in hermetic sandboxes, grades the produced
 code with held-out tests the suite never sees, and checks the reviewer's own verdict
-against that ground truth — the number that matters being **false-PASS rate**, how
-often the gate blesses code that is actually broken.
+against that ground truth. The number that matters is **false-PASS rate** — how often
+the gate blesses code that is actually broken.
 
-Most recent run — 5 benchmark tasks, v1.0.0 (`b18e32a`), 2026-09-07:
+Most recent run — 5 benchmark tasks on v1.0.0:
 
 | | |
 |---|---|
@@ -147,29 +129,24 @@ Most recent run — 5 benchmark tasks, v1.0.0 (`b18e32a`), 2026-09-07:
 | **false-PASS rate** | **0%** — it never called broken code done |
 | blocker rate | 0% |
 
-Two earlier runs — `7810074` (2026-08-03) and `f973c85` a month before it — scored
-identically, which is the more interesting result: the loop is stable across versions
-rather than tuned to a single commit. The 1.0 run matters most of the three, because
-1.0 rebuilt the planning chain around it — `tiny-spec-plan` now writes the task list
-that `tiny-spec-build` executes — and the gate came through unchanged.
+Two earlier versions scored identically, which is the more interesting result: the loop
+is stable across releases rather than tuned to one commit — including through 1.0, which
+rebuilt the planning chain underneath it.
 
 See [`docs/eval/README.md`](docs/eval/README.md) for the method and
-[`docs/sdd-evaluation-rubric.md`](docs/sdd-evaluation-rubric.md) for the scoring rubric
-this repo grades itself against. **Read both skeptically: it is my benchmark, of my own
-tool, scored by me.** The rubric says so itself — *"treat the tiny-spec column as
-self-assessment to pressure-test, not gospel."* The tasks are small and self-contained,
-so the harness measures the loop on well-specified work, not large-codebase performance.
-The harness is in the repo precisely so you don't have to take my word for it.
+[`docs/sdd-evaluation-rubric.md`](docs/sdd-evaluation-rubric.md) for the rubric. **Read
+both skeptically: it is my benchmark, of my own tool, scored by me**, on small
+self-contained tasks — so it measures the loop on well-specified work, not
+large-codebase performance. The harness is in the repo so you don't have to take my
+word for it.
 
 ## New to spec-driven development?
 
-Spec-driven development (SDD) means writing down *what* you want and *why* before
-any code exists, then letting that spec drive the build. Instead of prompting an
-agent and hoping, you hand it a small, explicit contract — the intent, a design,
-and an ordered list of tasks — and it implements against that. The payoff: the
-agent stops guessing. It knows what "done" looks like, you can review the plan
-before a single line is written, and the result is checked against the spec
-rather than vibes. tiny-spec is one small take on that idea.
+Spec-driven development (SDD) means writing down *what* you want and *why* before any
+code exists, then letting that spec drive the build. Instead of prompting an agent and
+hoping, you hand it a small, explicit contract — the intent, a design, and an ordered
+list of tasks. The payoff: the agent stops guessing, you review the plan before a line
+is written, and the result is checked against the spec rather than vibes.
 
 ## Quickstart
 
@@ -260,13 +237,12 @@ hardens it with concrete engineering rules, and `tiny-spec-build` injects it who
 every task. It holds your style, standards, invariants, definition of done, and
 verification commands.
 
-**On an existing codebase, deriving beats asking.** Your test command, your layout, and
-your conventions are already written down — in `package.json`, in CI, in your linter
-config, in the shape of the tree. `tiny-spec-adopt` reads them and marks each section
-as declared or inferred, so you know which parts to distrust. It then *runs* the
-verification commands it derived and reports which went green: a gate that has never
-been run is the most dangerous thing in the file, because it turns every future review
-into theatre.
+**On an existing codebase, deriving beats asking.** Your test command, layout, and
+conventions are already written down — in `package.json`, in CI, in your linter config,
+in the shape of the tree. `tiny-spec-adopt` reads them, marks each section as declared
+or inferred so you know which parts to distrust, then *runs* the verification commands
+it derived and reports which went green. A gate that has never been run turns every
+future review into theatre.
 
 Because it is project-wide the constitution can also go missing — deleted, or never
 committed — while your specs survive. Re-running `tiny-spec-adopt` (or
@@ -367,13 +343,12 @@ FINDINGS:
 
 Numbers first, and never a screenshot diff — pixel comparison goes flaky on font
 antialiasing and teams end up muting it. But no measurement catches an element that is
-present, on-token, and still not on screen — occluded, clipped, truncated, or the same
+present, on-token, and still not on screen: occluded, clipped, truncated, or the same
 color as what's behind it. So the last step reads a screenshot of each state next to
 your export and grades presence, legibility, and correspondence. **Where a number
-already settled the question the eye may only flag** — on-scale-but-cramped is never a
-fail — which keeps the two halves from contradicting each other. Measurable or visible
-violations fail; taste comes back as `flag:` notes so a bounded fix loop can't thrash. A
-task with no `design:` tag is graded exactly as before.
+already settled the question the eye may only flag**, which keeps the two halves from
+contradicting each other — measurable or visible violations fail, taste comes back as
+`flag:` notes. A task with no `design:` tag is graded exactly as before.
 
 <details>
 <summary>The <code>visual:</code> command (you write this once)</summary>
@@ -417,14 +392,12 @@ await b.close();
 ```
 
 The missing-selector branch **must print something** — that is what turns a renamed
-element into a failure instead of a silent skip. `top` is what the layout-order check
-reads, and `opacity`/`visibility` are worth printing because they turn the cheapest kind
-of invisible element into a numeric failure. The `SCREENSHOT` line is what the reviewer
-reads back to look at the render and catch the rest — occlusion, clipping, truncation,
-same-color-on-same-color — none of which any single property reports. Drop it and the
-numeric half still gates exactly as before, with the reviewer reporting `judge: not run`
-rather than quietly skipping it. Without a `visual:` command at all, a task tagged
-`design:` raises a blocker rather than passing quietly.
+element into a failure instead of a silent skip. `top` feeds the layout-order check, and
+`opacity`/`visibility` turn the cheapest kind of invisible element into a numeric
+failure. The `SCREENSHOT` line arms the judge; drop it and the numeric half still gates
+exactly as before, with the reviewer reporting `judge: not run` rather than quietly
+skipping it. Without a `visual:` command at all, a task tagged `design:` raises a
+blocker rather than passing quietly.
 
 </details>
 
@@ -506,10 +479,9 @@ honest trade: a breakdown runs unattended, a pasted list is supervised.
 | `fork` | a real either/or the plan doesn't answer |
 | `conflict` | a story's branch wouldn't merge cleanly |
 
-**Only `done` means the work is built** — and in a story run that means *all* of them.
-A run that stopped at story 2 of 7 reporting "done" is the single thing autonomous loops
-get wrong most often, so the state is always named, along with what got merged and how
-many stories are still untouched.
+**Only `done` means the work is built** — and in a story run, that means *all* of them.
+Stopping at story 2 of 7 and reporting "done" is what autonomous loops get wrong most
+often, so the state is always named alongside what merged and what's still untouched.
 
 **A halt stops the whole run, not just that story.** Later stories in a list you wrote
 top to bottom usually assume the earlier ones landed, so skipping ahead past a failure
@@ -536,27 +508,26 @@ never opens a PR. Merges are local, so a bad run is one `git reset` away; publis
 stays yours. If the gate goes red after a merge it leaves the merge alone and tells you
 the undo command rather than running it.
 
-**Walk away and come back.** Nothing is written down to track progress — it's derived:
-a story whose ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked
-task is in progress, no directory means not started. So asking `/tiny-spec-run` to build
-the backlog again tomorrow in a fresh session picks up exactly where it stopped. No
-run-state file, no lock, and no budget to configure: the story list *is* the budget.
+**Walk away and come back.** Progress isn't written down, it's derived: a story whose
+ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
+progress, no directory means not started. Ask again tomorrow in a fresh session and it
+picks up where it stopped. No run-state file, no lock, no budget to configure — the
+story list *is* the budget.
 
 **It never fixes a blocker for you.** A blocker means one of your documents is wrong,
 and a run allowed to rewrite the requirement its own task just failed would be grading
 its own homework. It reports and stops; the upstream edit is yours.
 
 **And it never decides to build on its own.** Whether a run stops before the build or
-goes all the way is fixed from your opening request and never revised — not by a stage's
-closing line, not by a follow-up message. Build is your review gate, so promoting
-yourself into it is the one thing a router doesn't get to do.
+goes all the way is fixed from your opening request and never revised. Build is your
+review gate, so promoting itself into it is the one thing a router doesn't get to do.
 
 ## Project layout
 
 Each skill is one self-contained `SKILL.md`, with every document skeleton inline in
-it — no companion template files, no absolute paths, and no shared parent required
-at runtime, so a skill works wherever you drop it. (It also means a run never stops
-to ask permission to read a template out of your Claude config directory.)
+it — no companion template files, no absolute paths, no shared parent required at
+runtime. A skill works wherever you drop it, and a run never stops to ask permission to
+read a template out of your Claude config directory.
 
 tiny-spec creates a `.spec/` directory in your project root, never inside a skill.
 It is namespaced per ticket, with a shared spine at the root:
