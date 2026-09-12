@@ -112,13 +112,19 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
    followed exactly, produce contract-conforming output.
 3. **Runtime-verify — never static-only.** The core belief here: **unit-green ≠
    working.** A passing test suite is necessary, not sufficient. The whole reason
-   `tiny-spec-build-reviewer` runs the real gate end-to-end is to catch this — so when
-   you change the build loop, prove it on a real task, don't infer it from the prose
-   reading correctly.
+   `tiny-spec-build-reviewer` exercises every task's acceptance end-to-end is to catch
+   this — so when you change the build loop, prove it on a real task, don't infer it from
+   the prose reading correctly.
 4. **Trip the safeguards on purpose** when you touch the build/executor/reviewer or
    router machinery. These must stay caught:
    - a task that **passes a narrow self-check but fails the gate / acceptance** → the
      reviewer must return `FAIL`, and `tiny-spec-build` must loop back (not tick);
+   - **gate scope escalates, never narrows:** a reviewer handed a `scoped` gate that
+     cannot establish the acceptance (needs a build artifact, stale install state) must
+     run the **full** gate and say so in `GATE:` — never pass on the thinner evidence.
+     And a task whose `CHANGES` touch dependency or build config must be dispatched
+     `full` by `tiny-spec-build` in the first place. The acceptance is exercised
+     end-to-end at **both** scopes; that part is never what gets scoped away;
    - an executor that hits a real **blocker** → it must STOP and report `blocked` (never
      hack past), and `tiny-spec-build` must leave the task `[ ]` and route upstream;
    - **convergence bound:** a task that stays red past 2 fix attempts must become a

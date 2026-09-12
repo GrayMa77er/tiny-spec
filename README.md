@@ -412,9 +412,18 @@ unnoticed.
 1. Plan the task against the constitution (inline, brief).
 2. Implement it with a fresh `tiny-spec-build-executor` agent.
 3. Review it with an independent `tiny-spec-build-reviewer` agent that runs the gate
-   end to end and grades against the constitution and the task's acceptance.
+   and grades against the constitution and the task's acceptance.
 4. On pass, commit the code plus a checklist tick. On fail, loop back to the
    executor with the findings. After two failed attempts the run halts `exhausted`.
+
+Every task's acceptance is exercised end to end, black-box, by the reviewer — that part
+never varies. What does vary is how much of the toolchain gets re-proven around it: a
+clean `install → build` runs on the first task, the last one, anything touching
+dependency or build config, and anything carrying `design:`; in between the reviewer runs
+lint and tests against the existing build. It escalates back to the full gate whenever the
+narrower one can't carry the verdict, and the authoritative clean run happens once more
+over the whole project as the final smoke. Re-installing from scratch on every task
+proved the same thing repeatedly and was the slowest part of the loop.
 
 ```mermaid
 flowchart TB
@@ -423,7 +432,7 @@ flowchart TB
     TASKS -->|pause: set| H[Halt — paused<br/>task stays unchecked]
     TASKS --> P[Plan task]
     P --> I[Implement<br/>executor]
-    I --> R[Review + run gate<br/>reviewer]
+    I --> R[Review + run gate<br/>full or scoped<br/>reviewer]
     I -->|blocker| B
     R -->|pass| C[Commit + tick]
     C --> TASKS

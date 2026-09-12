@@ -24,7 +24,10 @@ Everything you need and nothing you don't:
   so you don't re-learn a pitfall a past run already paid for;
 - **if the task carries `design:`** — that screen's `D<n>` entry from `SPEC.md` and
   the path to its committed export;
-- the specific existing files that are your starting point, named explicitly.
+- the specific existing files that are your starting point, named explicitly;
+- sometimes, **the files the previous task left behind** — paths only. Start there when
+  orienting: it is the most recently moved ground in the codebase and the most likely
+  place your task connects to.
 
 You are **blind to the workflow, not to the codebase.** You don't get the plan,
 other tasks, or shared state. But the named files are a launch point, not the whole
@@ -64,7 +67,11 @@ violated.
 6. You MAY run a **narrow self-check** of your own work (the one test file you
    wrote, a syntax/import check). You do **not** need to run the full gate — the
    independent **reviewer** runs the authoritative Verification commands next.
-   Leave the tree in a clean, buildable state for it.
+   **Leave the tree in a clean, buildable, installed state for it** — the reviewer may
+   run against the existing build rather than rebuilding from scratch, so a tree you
+   left half-migrated or with a stale artifact costs the task a review cycle. If you
+   changed dependencies or build configuration, apply them (install, regenerate the
+   lockfile) rather than leaving it for someone else, and say so in `CHANGES`.
 
 ## Hard constraints
 

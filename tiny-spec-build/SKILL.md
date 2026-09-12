@@ -68,7 +68,11 @@ Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
   `.spec/<active>/SPEC.md` plus its `export:` path, so the executor can look at the
   design instead of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
-  edits with the real current contents, not blind).
+  edits with the real current contents, not blind);
+- the **previous passed task's `CHANGES` list**, if there is one, labelled as what the
+  last task left behind. Every executor starts cold and re-derives the codebase; naming
+  the files that just moved is the cheapest way to cut that, and you already have the
+  list in hand. Paths only — not the previous task's description, findings, or report.
 
 Do **not** pass the plan, sibling tasks, or other chatter. It returns a structured
 report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
@@ -80,11 +84,29 @@ Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with:
 - the task id, description, and **acceptance**;
 - the **whole** `.spec/constitution.md`;
 - the list of changed files (from the executor's `CHANGES`) to read;
-- the **Verification commands** from the constitution to run;
+- the **Verification commands** from the constitution to run, and the **gate scope**
+  for this task — `full` or `scoped` (decide it as below; you have the run context,
+  the reviewer does not);
 - **if the task has a `design:` field** — the same `D<n>` entry and `export:` path
   you gave the executor, so it grades against the contract rather than its taste.
 
-It runs the real gate end-to-end, checks the code against the constitution's
+**Gate scope.** A clean `install → build` proves the same thing on task 7 that it proved
+on task 1 unless a task changed what it installs or builds, so running it every time buys
+little and costs the most wall-clock in the loop. Name the scope in the brief:
+
+- **`full`** — the whole gate from a clean state (install → lint → test → build → run).
+  Use it on: the **first** task of this run; any task whose `CHANGES` touch dependency or
+  build configuration (`package.json`/lockfiles, `pyproject.toml`, `go.mod`, `Cargo.toml`,
+  `Dockerfile`, CI config, build scripts); any task carrying `design:`; and the **last**
+  task in `tasks.md`.
+- **`scoped`** — otherwise. `lint:` + `test:` plus the acceptance exercised end-to-end,
+  black-box, exactly as on a full gate. The acceptance exercise is never scoped away; it
+  is the whole reason the reviewer exists.
+
+The reviewer may **escalate** `scoped` to `full` on its own and will say so — that
+direction is always safe. It may never go the other way.
+
+It runs the gate at the scope you named, checks the code against the constitution's
 **Definition of Done** and **invariants**, confirms the **acceptance** actually
 holds (exercised, not inferred), and returns `VERDICT: PASS | FAIL` + findings.
 On a `design:` task it also runs the constitution's `visual:` command, measures the
@@ -94,11 +116,15 @@ numbers can't reach, like an element that measures perfectly and shows up invisi
 It fails on what it measured or saw, and merely flags what is taste.
 
 > Why independent: unit-green ≠ working, and the author is the worst judge of its
-> own blind spots. The reviewer running the gate from a clean state is the
-> safeguard that keeps scope and quality honest without an ownership contract.
+> own blind spots. The reviewer exercising the acceptance black-box — on every task,
+> at either scope — is the safeguard that keeps scope and quality honest without an
+> ownership contract.
 
 ### 4. CONVERGE (on FAIL)
-Re-dispatch the **executor** with the reviewer's findings appended to its brief.
+Re-dispatch the **executor** with the reviewer's findings appended to its brief, then
+review again — recomputing the **gate scope** from the fix's `CHANGES`, and using `full`
+if the failure was in the gate itself or the reviewer escalated last time. A task that
+already failed once has earned the wider check.
 Bound this to **2 fix attempts**. If it still fails after that, stop and **halt
 `exhausted`** (see **Halting** below) — don't keep grinding or hand-fix past the loop
 silently. `exhausted` is recorded as a blocker, because a task that three attempts
@@ -274,6 +300,12 @@ When every task in `tasks.md` is `[x]`:
    setup — install/build, not a test-runner shortcut). There is no separate
    verify skill — this final smoke confirms the requirements actually work end-to-end, not
    just that tasks are ticked.
+
+   **This is the authoritative clean-state run for the whole build**, and it is never
+   scoped or skipped. Per-task gates run at the scope step 3 named; this one always runs
+   everything from clean. A build or install regression that a `scoped` task gate did not
+   re-prove surfaces here — which is why a red final smoke is a gap to fix or route
+   upstream, never a pass and never `done`.
 2. **Report** — the terminal state by name (`done` here, since every task is `[x]`
    and the smoke passed), what was built, the commits made (with the branch), and any
    open `decisions.md` items (blockers, tasks unchecked by a reconcile). If the final

@@ -138,25 +138,59 @@ past it into a task list — say what's unresolved and route back to `tiny-spec-
 ## Step 3 — slice the approach into tasks
 
 Walk the `## Approach` you just wrote and break it into tasks. No waves, no
-parallelism, no `owns:` contracts — tasks run one at a time, top to bottom. Each task is:
+parallelism, no `owns:` contracts — tasks run one at a time, top to bottom.
 
-- **Small and independently checkable** — one slice a single executor can finish and a
-  reviewer can grade in one pass. If you can't write a one-line acceptance for it, it's
-  too big — split it.
+**The unit is one coherent commit** — what a competent engineer does in one focused
+sitting and commits as a single unit of work. That typically touches several files and
+often satisfies several `REQ-N` at once. It is the size you would open as one reviewable
+change, not the smallest thing you could name.
+
+**Know what a task costs, so size has something to trade against.** Every task you write
+spends two cold-start agents that must re-orient in the codebase from scratch, a reviewer
+that runs the gate and exercises the acceptance end-to-end, and two commits. That
+overhead is **fixed** — it does not shrink for a small task. A task the executor
+finishes in thirty seconds still pays all of it. Size each task so the work inside it
+clearly outweighs the machinery around it.
+
+So:
+
+- **Split on independent failure, not on sentence length.** Split a task when it carries
+  two **unrelated** observable outcomes that could fail independently of each other. Do
+  **not** split because the acceptance got long — a good acceptance is usually several
+  clauses covering the happy path *and* its negatives. See `T4` in the `examples/todo-cli`
+  task list: two CLI commands, four requirements, and three negative cases, in one task,
+  with one acceptance. That is the calibration point, not the exception.
+- **One task may satisfy several `REQ-N`** — `req:` takes a list. Coverage means every
+  requirement has a *home*, not that every requirement gets its *own* task. **A 1:1
+  REQ→task mapping is the single most common way this list comes out too granular.**
+  Group the requirements that one coherent change delivers together.
 - **Ordered so each builds on the last.** Tasks run sequentially, so a later task may
   freely assume an earlier task's code already exists. Put foundational work (types,
   schema, scaffolding) first. Order by dependency, not by guesswork.
-- **Right-sized, not fragmented.** Don't split a cohesive change into five files' worth
-  of micro-tasks just to look granular. Earned ceremony: fewer, meaningful tasks beat
-  many trivial ones.
+
+**Smells that mean you sliced below the commit line** — fold each of these back into the
+task it belongs to:
+
+- a task that only defines types, interfaces, or schema with no behavior behind them;
+- a task that only adds tests for the task before it (the constitution's **Definition of
+  Done** already requires the tests to ship with the code);
+- one task per file, or one task per function;
+- a "wire it up" / "integrate the pieces" task trailing the pieces it wires.
+
+**Count is a smell, not a cap.** A story sized the way `tiny-spec-scope` describes
+usually lands in **3–6 tasks**. If you are past about eight, re-read the list: you have
+either sliced below the commit line, or the story itself was too big and should have been
+split upstream. Check the list against that; do **not** enforce a number, and never drop
+or merge coverage just to hit one.
 
 For each task, write:
 
 ```
 - [ ] T<n> — <imperative description>
-  - acceptance: <one user-observable outcome that proves it's done>
+  - acceptance: <one user-observable outcome that proves it's done — happy path and the
+                 negatives that bound it, in one entry>
   - type: feat            # optional; Conventional Commit type (defaults to feat)
-  - req: REQ-n            # optional; the REQ-N this task delivers
+  - req: REQ-n, REQ-n     # optional; the REQ-N this task delivers — a list, not one
   - design: D-n           # optional; the SPEC.md D<n> screen this task builds — arms the visual gate
   - pause: <why>          # optional; halt the build before this task so a human looks first
   - files: <comma-separated hint of files it will touch>
@@ -164,7 +198,11 @@ For each task, write:
 
 The **acceptance** is what the reviewer checks against — make it observable
 ("`spec --version` prints the version and exits 0"), not internal ("version logic
-added"). **type** picks the Conventional Commit type `tiny-spec-build` uses for this
+added"). It states **one outcome**, but one outcome is not one clause: spell out the
+happy path and the negatives that bound it in the same acceptance, separated by
+semicolons. A long acceptance is a well-specified task, not an oversized one — it is the
+*number of unrelated things that could fail* that decides whether to split, not the
+length of the line. **type** picks the Conventional Commit type `tiny-spec-build` uses for this
 task's code commit (`feat | fix | docs | refactor | test | chore | build | ci | perf | style`);
 set it when the task is clearly not a feature, otherwise omit and it defaults to `feat`.
 **req** ties the task to the requirement it satisfies (traceability). The **files** line
@@ -211,7 +249,9 @@ anyway. A policy that matches nothing here is not an error — say so and move o
 than stretching a task to fit it.
 
 Cover **every** part of the approach — together the tasks must deliver all `REQ-N`.
-Don't leave a requirement with no task. Likewise, if `SPEC.md` has a `## Design`
+Don't leave a requirement with no task. Coverage is about requirements having a home,
+not about the shape of the mapping: several `REQ-N` on one task is the normal case, and
+a task per requirement is the anti-pattern. Likewise, if `SPEC.md` has a `## Design`
 section, every `D<n>` in it needs at least one task carrying that `design:` reference —
 a screen nobody is graded against is a screen that will be built wrong.
 
@@ -236,24 +276,30 @@ updated: <ISO date>
 
 ## Tasks
 
-- [ ] T1 — <one small, independently-checkable slice of work>
-  - acceptance: <one user-observable outcome that proves T1 is done>
+- [ ] T1 — <one coherent commit's worth of foundational work; usually several files>
+  - acceptance: <the observable outcome; happy path; and the negative case that bounds it>
   - type: feat            # optional; Conventional Commit type for this task's commit (defaults to feat)
-  - req: REQ-1            # optional; the REQ-N this task delivers
-  - files: <path, path>
+  - req: REQ-1, REQ-2     # optional; the REQ-N this task delivers — several is normal
+  - files: <path, path, path>
 
-- [ ] T2 — <next slice; assume T1's code exists>
-  - acceptance: <observable outcome>
+- [ ] T2 — <next coherent change; assume T1's code exists>
+  - acceptance: <observable outcome; plus what it rejects and how it fails>
   - type: feat
-  - req: REQ-2
+  - req: REQ-3, REQ-4, REQ-5
   - design: D1            # optional; only on tasks that build the visible surface
   - files: <path, path>
 
 - [ ] T3 — <…>
   - acceptance: <observable outcome>
+  - req: REQ-6
   - pause: <optional; what to check before this runs — irreversible work only>
   - files: <path, path>
 ```
+
+The `req:` lists above are the shape to aim for, not filler: a handful of tasks each
+carrying the requirements one coherent change delivers. A skeleton filled in as
+`REQ-1`, `REQ-2`, `REQ-3` down a column of single-requirement tasks is the granularity
+failure described in Step 3.
 
 ## Update mode (SPEC changed → PLAN and tasks are stale)
 
