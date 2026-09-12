@@ -7,6 +7,48 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [1.1.0] — 2026-09-12
+
+Speed. The loop's correctness guarantee is unchanged — every task's acceptance is still
+exercised end-to-end, black-box, by an independent reviewer — but two things that made
+builds slower than they needed to be are fixed. No new knobs, artifacts, or format
+fields; the constitution is untouched, so upgrading is `uvx tiny-spec install` as usual.
+
+### Changed
+
+- **Tasks are sized to one coherent commit.** `tiny-spec-plan`'s slicing rule had one
+  concrete, testable bullet (*"if you can't write a one-line acceptance for it, it's too
+  big — split it"*) pulling granularity **down**, and a vaguer counterweight that lost
+  every argument against it. The unit is now stated outright — one coherent commit,
+  typically several files and several `REQ-N` — and the split test is inverted: split on
+  two **unrelated** outcomes that could fail independently, never because the acceptance
+  sentence got long. The planner is also told what a task costs (two cold-start agents, a
+  gate run, two commits, all fixed overhead) so size has something to trade against.
+  Added: explicit permission to put several `REQ-N` on one task, a smell list for slicing
+  below the commit line, and a 3–6-task calibration that is a smell to check, **not** a
+  cap to enforce.
+- **The `tasks.md` skeleton no longer models 1:1.** It showed `T1`/`REQ-1`, `T2`/`REQ-2`,
+  `T3` — the strongest implicit prior in the file, and the opposite of the worked
+  `examples/todo-cli` list, which bundles nine requirements into five tasks. It now
+  models the shape it asks for.
+- **The per-task gate has a scope.** A clean `install → build` proved the same thing on
+  task 7 that it proved on task 1, and re-running it every task, every fix attempt, was
+  the slowest part of the loop. `tiny-spec-build` now names a scope in the reviewer's
+  brief: `full` on the first task, the last task, anything touching dependency or build
+  config, and anything carrying `design:`; `scoped` (lint + test against the existing
+  build) otherwise. **The acceptance exercise is never scoped away** — that is the part
+  that catches false passes, and it runs identically at both scopes. The authoritative
+  clean run still happens over the whole project as the final smoke.
+- **Scope escalates, never narrows.** A reviewer handed `scoped` that cannot carry the
+  verdict — a missing or stale build artifact, inconsistent install state, an acceptance
+  it cannot exercise without building — runs the **full** gate and records why in `GATE:`.
+  Passing on evidence it judged insufficient is the one thing the role exists to prevent.
+- **Executors get the previous task's changed files.** Every executor starts cold and
+  re-derives the codebase; naming the ground that just moved is the cheapest way to cut
+  that. Paths only — no plan, no sibling task descriptions, no reports. Executors are
+  correspondingly asked to leave the tree installed and buildable, since the reviewer may
+  not rebuild from clean.
+
 ## [1.0.1] — 2026-09-11
 
 Documentation only. No skill, agent, or artifact format changed — upgrading is optional.

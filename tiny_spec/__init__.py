@@ -5,4 +5,4 @@ into your Claude Code config directory (``~/.claude/`` by default). It adds no
 runtime behavior to the suite itself.
 """
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
