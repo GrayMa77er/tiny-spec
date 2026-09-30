@@ -461,15 +461,38 @@ resumes from the checklist state.
 ### Working a whole list
 
 Ask `/tiny-spec-run` to build — "build the backlog", "work through the breakdown",
-"spec it out and build it" — and it takes a list of stories and works them one after
-another. Per story it does the same four moves:
+"spec it out and build it" — and it takes a list of stories and works them in batches.
+Per story it does the same four moves:
 
 ```
 cut a branch from main  →  walk the chain  →  tiny-spec-build  →  merge back to main
 ```
 
-Then the next story. Each branch is cut **fresh from main**, so story 3 sees stories 1
-and 2 already merged — which is what makes an ordered list build correctly.
+Each branch is cut **fresh from main**, so a later story sees the earlier ones already
+merged — which is what makes an ordered list build correctly.
+
+**Independent stories build at the same time.** A story can declare what it must follow
+with a `needs:` line in `BREAKDOWN.md`; everything with no unmet `needs:` forms a batch
+and builds **concurrently, one git worktree per story**, three at a time by default.
+The batch merges, then the next one starts.
+
+```
+## Feature: interface
+
+- Story: expose both helpers on a CLI     slug: cli
+  - AC: `textkit slugify "Hi There"` prints "hi-there"
+  - needs: slugify, wordwrap
+```
+
+Omit `needs:` when a story stands alone — that's the common case, and the field is meant
+to be rare. A `needs:` you didn't need costs you parallelism forever; one you missed
+costs a single merge conflict, which the run already catches and halts on. You can also
+just name the set yourself at invocation ("build these three at once"), which overrides
+the graph. A cycle, or a `needs:` naming a story that isn't there, stops the run rather
+than being guessed past.
+
+**Tasks *inside* a story never run in parallel.** They share files and each one assumes
+the last landed, so they stay strictly sequential. Parallelism is across stories only.
 
 **The list is `BREAKDOWN.md` by default** — its `- Story:` entries, in file order,
 each already carrying a `slug:` (the branch and directory name) and `AC:` lines. Paste
@@ -492,9 +515,13 @@ honest trade: a breakdown runs unattended, a pasted list is supervised.
 Stopping at story 2 of 7 and reporting "done" is what autonomous loops get wrong most
 often, so the state is always named alongside what merged and what's still untouched.
 
-**A halt stops the whole run, not just that story.** Later stories in a list you wrote
-top to bottom usually assume the earlier ones landed, so skipping ahead past a failure
-just produces a second, more confusing failure downstream.
+**A halt stops the lane it happened in, and ends the run after that batch.** Its siblings
+were declared independent, so they finish and merge — killing working lanes because one
+failed throws away good work. But the run does not start the next batch: later stories
+usually assume the earlier ones landed, so skipping ahead past a failure just produces a
+second, more confusing failure downstream. With more than one lane you get each story's
+own state, and the run's state is the worst of them — four green lanes and one `blocked`
+is a `blocked` run.
 
 **Pause points are technical, not per-story.** Any task can carry a `pause:` line, and
 the build halts *before* running it:
@@ -510,12 +537,15 @@ destructive file operations, a new dependency, an auth boundary, a public API co
 You can also give the run a standing policy up front ("halt before anything that touches
 auth") and it gets applied as each story's tasks are sliced.
 
-**What it will not do to your repo.** It runs exactly five git commands — `switch`,
-`switch -c`, `merge --no-ff`, `merge --abort`, and reads. It refuses to start on a dirty
-tree. It **never pushes**, never rebases, never resets, never deletes a branch, and
-never opens a PR. Merges are local, so a bad run is one `git reset` away; publishing
-stays yours. If the gate goes red after a merge it leaves the merge alone and tells you
-the undo command rather than running it.
+**What it will not do to your repo.** It runs exactly seven git commands — `switch`,
+`switch -c`, `merge --no-ff`, `merge --abort`, `worktree add`, `worktree list`, and
+reads. It refuses to start on a dirty tree, or if a worktree path it needs already
+exists. It **never pushes**, never rebases, never resets, never deletes a branch, never
+removes a worktree, and never opens a PR. Merges are local, so a bad run is one
+`git reset` away; publishing stays yours. If the gate goes red after a merge it leaves
+the merge alone and tells you the undo command rather than running it — and it hands
+back the `git worktree remove` commands for the lanes instead of running those either,
+since a halted lane's worktree is the tree you need to look at.
 
 **Walk away and come back.** Progress isn't written down, it's derived: a story whose
 ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
