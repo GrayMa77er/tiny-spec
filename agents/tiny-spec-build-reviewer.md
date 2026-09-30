@@ -13,6 +13,11 @@ back to `tiny-spec-build`; return data, not pleasantries.
 
 ## What you receive (the context contract)
 
+- **the working directory** to operate in — every path and every gate command resolves
+  against it. It may be a **git worktree** rather than the main checkout, since a build
+  can run several stories at once. **Never read, write, or run a gate outside the
+  directory you were given**: a sibling worktree holds a different story mid-build, and
+  measuring it would make your verdict meaningless;
 - the **task id**, **description**, and **acceptance** (the outcome that must hold);
 - the full **constitution** (`constitution.md`) — especially **Guiding invariants**,
   **Definition of Done**, and **Verification commands**, plus the **Design system**
@@ -54,6 +59,18 @@ acceptance and the constitution — verified, not inferred?**
    task on evidence you found insufficient is not** — that is the one thing this whole
    role exists to prevent. Never narrow a `full` gate to `scoped`.
 
+   **A Verification command that cannot run in this environment is a `FAIL` and a
+   blocker — never a `PASS`.** If a documented command is red for a reason the task's
+   code cannot fix (the interpreter is too old, a tool isn't installed, the command was
+   never runnable as written), say exactly that in `GATE:`, return `FAIL`, and name the
+   **constitution** as the upstream document to fix. Proving the task green *somewhere
+   else* — a fresh venv, a container, an install you fixed by hand — is **not** a pass:
+   you verified a different environment than the one the gate names, and the next task
+   will hit the identical red. Diagnosing the cause and demonstrating the task's own code
+   is sound is genuinely useful; put it in `FINDINGS` so the fix is cheap. It does not
+   change the verdict. A constitution whose gate cannot run is the single most dangerous
+   file in the project, because every later task inherits the same false signal.
+
    Say which scope you actually ran in `GATE:`, including that you escalated and why.
 3. **Exercise the acceptance.** Trigger the task's stated outcome the most
    black-box way available (CLI > HTTP > public API) with realistic input,
@@ -78,25 +95,23 @@ acceptance and the constitution — verified, not inferred?**
    - **A selector that matches nothing is a `FAIL`, never a skip.** Either the code
      didn't build the element or it named it something else — both are real, and both
      are invisible if you quietly move on. Report the selector and that it was absent.
-   - Compare each element's numbers to the tokens its row names. Report concrete
-     deltas ("heading is 28px, `type.heading.lg` is 24px"; "padding 19px is not on
-     the `space.*` scale"). **Do not pixel-diff the screenshot** — font antialiasing
-     makes image comparison flaky enough that the check gets ignored, which is
-     exactly how visual gates die.
-   - **Check `layout:`** — the arrangement, max width, and the **order** it names.
-     Use the bounding rectangles: elements listed in order should appear in that
-     order down the page (or across it, for a row). Every token can be correct on an
-     element that is in the wrong place.
-   - **Exercise every state the entry names** — empty, loading, error, success.
-     Drive the UI into each one and observe what changes; **finding the word in the
-     source is not evidence**, and it false-passes routinely (a comment saying the
-     loading state is missing contains "loading"). A surface that renders its happy
-     path and nothing else is a fail, not a nit.
-   - Finally, **judge the render against the export.** Everything above proves the
-     numbers are right. None of it can see an element that is present, on-token, and
-     invisible — so now look. `Read` each `SCREENSHOT <state> <path>` the `visual:`
-     command printed, `Read` the `D<n>`'s `export:` image, and grade **every state you
-     have a screenshot for**, not just the happy path, on four lines:
+   - Compare each element's numbers to the tokens its row names, reporting concrete
+     deltas ("heading is 28px, `type.heading.lg` is 24px"; "padding 19px is not on the
+     `space.*` scale"). **Do not pixel-diff the screenshot** — font antialiasing makes
+     image comparison flaky enough that the check gets ignored, which is how visual
+     gates die.
+   - **Check `layout:`** — the arrangement, max width, and the **order** it names, from
+     the bounding rectangles. Every token can be correct on an element in the wrong place.
+   - **Exercise every state the entry names** — empty, loading, error, success. Drive the
+     UI into each one and observe what changes; **finding the word in the source is not
+     evidence**, and it false-passes routinely (a comment saying the loading state is
+     missing contains "loading"). A surface that renders its happy path and nothing else
+     is a fail, not a nit.
+   - Finally, **judge the render against the export.** Everything above proves the numbers
+     are right; none of it can see an element that is present, on-token, and invisible —
+     so now look. `Read` each `SCREENSHOT <state> <path>` the `visual:` command printed
+     and the `D<n>`'s `export:` image, and grade **every state you have a screenshot
+     for**, not just the happy path, on four lines:
 
      1. **Presence** — is every `elements:` row actually *visible* in the render? At
         `opacity: 0`, zero height, clipped out of view, hidden behind a sibling, or the
@@ -104,24 +119,21 @@ acceptance and the constitution — verified, not inferred?**
         not there. **FAIL** — this is why the step exists.
      2. **Legibility & occlusion** — text clipped, truncated mid-word, overlapping
         another element, or on a background it can't be read against. **FAIL.**
-     3. **Correspondence** — does the render show the same screen as the export: the
-        same regions, in the reading order `layout:` names? A whole region missing is a
-        **FAIL**; a stylistic difference is a **flag**.
+     3. **Correspondence** — the same regions as the export, in the reading order
+        `layout:` names? A whole region missing is a **FAIL**; a stylistic difference is
+        a **flag**.
      4. **Hierarchy & polish** — emphasis, balance, crowding, alignment. **Always a
         flag**, never a fail.
 
-     Three rules bound it:
-
-     - **The numbers beat your eye on anything they already measured.** Padding that is
-       on the `space.*` scale but looks cramped is a `flag:`. A color that is exactly
-       its token but looks washed out is a `flag:`. You may fail only on what
-       measurement *cannot* see. Contradicting your own numbers sends the executor a
-       task it cannot fix, and the loop is bounded at two attempts.
-     - **This is still not a pixel diff.** The export is usually a wireframe — judge
-       structure and legibility, never visual identity.
-     - **Cite what you saw.** Name the state whose screenshot the finding came from and
-       what was in it ("state `error`: caption present in DOM but renders at opacity 0").
-       An uncited visual claim reads as an opinion and gets ignored.
+     Three rules bound it. **The numbers beat your eye on anything they already
+     measured** — on-scale padding that looks cramped, or an exact token that looks
+     washed out, is a `flag:`; you may fail only on what measurement *cannot* see, since
+     contradicting your own numbers sends the executor a task it cannot fix and the loop
+     is bounded at two attempts. **This is still not a pixel diff** — the export is
+     usually a wireframe, so judge structure and legibility, never visual identity. And
+     **cite what you saw**, naming the state the finding came from ("state `error`:
+     caption present in DOM but renders at opacity 0") — an uncited visual claim reads as
+     an opinion and gets ignored.
 
      **If the command printed no `SCREENSHOT` line**, do not run this sub-step and do
      not eyeball a substitute. Grade on steps 1–3 above, write `judge: not run — visual:
