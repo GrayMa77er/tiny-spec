@@ -18,19 +18,15 @@ sets `tasks.md`'s `status:`.
 
 Artifacts live under `.spec/`: the **shared** constitution at the root
 (`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md`/`tasks.md` under
-`.spec/<slug>/`. **Resolve the active ticket dir** from the current git branch: the
-`.spec/<slug>/` whose slug matches the branch name (one branch per ticket). If none
-matches, use the sole ticket dir if there's exactly one; else ask which. Both skeletons
-are inline below — write them from there, no file to read. Requires
-`.spec/<active>/SPEC.md`.
+`.spec/<slug>/`. Both skeletons are inline below — write them from there, no file to
+read. Requires `.spec/<active>/SPEC.md`.
 
-**Two cases pre-empt that order — ask instead of applying it:** more than one dir
-matches the branch (there is no defined tie-break, and inventing one here would
-silently disagree with every other skill), or ticket dirs exist while you are on
-`main`/`master` with no name match (the usual cause is a forgotten `git switch`, and
-the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo is a
-**degraded** case, not an ask case — branch match is simply unavailable, so fall
-through to sole-dir and ask as written.
+**Resolve the active ticket dir**, in order: the `.spec/<slug>/` whose slug matches the
+current git branch (one branch per ticket); else the sole ticket dir if exactly one
+exists; else ask. **Ask instead** when more than one dir matches the branch, or when
+ticket dirs exist while you are on `main`/`master` with no name match — neither has a
+safe tie-break. Detached HEAD or no git repo is **degraded**, not an ask: branch match is
+simply unavailable, so fall through to sole-dir and ask as written.
 
 ## Step 1 — harden the constitution (`constitution.md`)
 
@@ -175,10 +171,19 @@ task it belongs to:
 - a task that only adds tests for the task before it (the constitution's **Definition of
   Done** already requires the tests to ship with the code);
 - one task per file, or one task per function;
-- a "wire it up" / "integrate the pieces" task trailing the pieces it wires.
+- a "wire it up" / "integrate the pieces" task trailing the pieces it wires;
+- a **leading pure-scaffold task** — a skeleton, a dispatch stub, a module that imports
+  cleanly and does nothing. Fold it into the first task that gives it behavior;
+- a **trailing end-to-end verification task**. `tiny-spec-build`'s Completion step already
+  runs the whole gate against the whole project from a clean state, exercised the way a
+  user would. A task that re-does it buys nothing and costs the full per-task overhead.
+
+The shipped `examples/todo-cli` task list predates these two smells and shows both: its
+`T1` is a pure scaffold and its `T5` is an end-to-end verification pass. Today `T1` folds
+into `T2` and `T5` doesn't exist. Read that list for `T4`'s sizing, not for its edges.
 
 **Count is a smell, not a cap.** A story sized the way `tiny-spec-scope` describes
-usually lands in **3–6 tasks**. If you are past about eight, re-read the list: you have
+usually lands in **2–4 tasks**. If you are past about six, re-read the list: you have
 either sliced below the commit line, or the story itself was too big and should have been
 split upstream. Check the list against that; do **not** enforce a number, and never drop
 or merge coverage just to hit one.
