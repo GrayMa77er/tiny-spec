@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-scope
-description: The greenfield on-ramp — turn a rough idea, or an existing PRD, into BREAKDOWN.md at the project root - a flat list of Features → user Stories, each with draft acceptance criteria and a slug, plus a shared Decisions block. The one skill that works from a blank page. Does not scaffold .spec/ or touch the constitution — tiny-spec-create reads BREAKDOWN.md in seeded mode and does that. For an existing codebase use tiny-spec-adopt instead. The suite works without either.
+description: The greenfield on-ramp — turn a rough idea, or an existing PRD, into BREAKDOWN.md at the project root - a flat list of Features → user Stories, each with draft acceptance criteria, a slug, and an optional needs: naming the stories it must follow, plus a shared Decisions block. The one skill that works from a blank page. Does not scaffold .spec/ or touch the constitution — tiny-spec-create reads BREAKDOWN.md in seeded mode and does that. For an existing codebase use tiny-spec-adopt instead. The suite works without either.
 ---
 
 # tiny-spec-scope
@@ -135,6 +135,7 @@ Write `BREAKDOWN.md` at the **project root** (the user's cwd) with the structure
 - Story: <one user-observable capability>     slug: <ado-__ | kebab>
   - AC: <a single user-observable, testable outcome — becomes REQ-1 in this story's SPEC.md>
   - AC: <another — keep each atomic; no "and" hiding two capabilities>
+  - needs: <slug, slug>   <!-- optional; stories this one must be built after. Omit when independent. -->
   - design: <path(s) to the wireframe(s) covering this story — omit if it has no visual surface>
 - Story: <one user-observable capability>     slug: <ado-__ | kebab>
   - AC: <…>
@@ -170,6 +171,24 @@ dir. Leave its tracker-parent id blank for the user to fill after creating the i
 story it belongs to, so `tiny-spec-design` knows which files to open for that spec
 instead of re-deriving the mapping from filenames. A wireframe covering several stories
 is listed on each of them.
+
+**`needs:` is what lets stories build in parallel — so keep it honest and keep it rare.**
+It names the stories this one must be built *after*. `tiny-spec-run` uses it to group the
+backlog into batches: stories with no unmet `needs:` build concurrently, each in its own
+git worktree, and the next batch starts once they merge. Three rules:
+
+- **Name a story only for a real code dependency** — this story reads or edits files that
+  one writes, or builds on a schema, API, or type it introduces. A shared theme, a shared
+  `## Feature:` heading, or "it feels like it comes second" is **not** a dependency.
+- **When unsure, omit it.** The two errors are not symmetric. A `needs:` you didn't need
+  costs parallelism on every future run of this backlog, silently and forever. A `needs:`
+  you missed costs one merge conflict, which `tiny-spec-run` already detects and halts on.
+- **Never point across a cycle.** If two stories each need the other, they are one story —
+  merge them, or split the shared part out into a third that both need.
+
+A `## Feature:` heading carries no `needs:` — it is a grouping, not a work item. Most
+backlogs need the field on a minority of stories; a `needs:` on nearly every story means
+the carve is really a sequence, and you should say so rather than encode it here.
 
 **Slugs** mirror `tiny-spec-create`: derive from the platform key when bound — ADO
 `AB#77`→`ado-77`, GitHub `#42`→`gh-42`, Monday item→`monday-<id>`, Jira `PROJ-123`

@@ -39,6 +39,16 @@ adding a skill, agent, artifact, format field, or knob, the bar is: *does it cle
 for itself, or is it ceremony?* When in doubt, leave it out. A change that makes this
 bigger needs a strong reason; a change that makes it smaller usually doesn't.
 
+**Parallelism is allowed across stories, and forbidden within one.** This line is load-
+bearing, so hold it in both directions. *Across* stories: independent work builds
+concurrently, one git worktree per lane, grouped by the `needs:` field in `BREAKDOWN.md`
+and merged batch by batch. That earns its keep — the stories are separate branches
+touching separate files, and worktrees make the isolation real rather than promised.
+*Within* a story: tasks stay strictly sequential, top to bottom. They share files and
+each one assumes its predecessors landed, so parallelizing them would require `owns:`
+file contracts — the exact ceremony 1.0 deleted. Waves, a checkpoint matrix, and
+validators all remain out at **both** levels.
+
 **The router's stop point is decided once and never revised.** This is the single most
 important invariant in the suite, and the one most likely to be "helpfully" relaxed.
 `tiny-spec-run` fixes stop-before-build or build-through at Step 0 from the user's
@@ -55,9 +65,18 @@ the first time someone merges by hand.
 
 **The git surface is deliberately tiny.** `tiny-spec-run` is the only skill that runs
 git beyond committing, and it is capped at `switch`, `switch -c`, `merge --no-ff`,
-`merge --abort`, and reads. Pushing, rebasing, resetting, deleting branches, and opening
-PRs are all out — not because they're hard, but because they are outward-facing or
-destructive, and those stay the user's.
+`merge --abort`, `worktree add`, `worktree list`, and reads. Pushing, rebasing,
+resetting, deleting branches, removing worktrees, and opening PRs are all out — not
+because they're hard, but because they are outward-facing or destructive, and those stay
+the user's.
+
+> **Amendment (parallel stories).** `worktree add`/`worktree list` were added to that cap
+> when stories gained the ability to build concurrently — a worktree is what keeps two
+> lanes from colliding on the filesystem, and there is no way to get that isolation
+> without it. **`worktree remove` was deliberately left out**, on exactly the same
+> grounds as branch deletion: a halted lane's worktree holds the tree the user needs to
+> look at. `tiny-spec-run` reports the paths and the removal commands; the user runs
+> them. Do not "finish the feature" by adding cleanup.
 
 Three structural choices are **intended**, not drift — don't "simplify" them away:
 
@@ -141,7 +160,14 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      as built, and in a story run that means **every** story merged — a run that stopped
      at story 2 of 7 must not read like a finished backlog;
    - **no merge without `done`:** a story whose build halted must leave its branch
-     unmerged, and the run must stop rather than move to the next story;
+     unmerged. In a **sequential** run that halt stops the run. In a **parallel batch**
+     it stops only its own lane — the sibling lanes were declared independent and run to
+     completion — and the run then stops at the **end of that batch**, never starting the
+     next one. A halted lane must never be rounded up into a sibling's `done`;
+   - **lanes stay isolated:** every executor and reviewer is given a working directory
+     and must never read, write, or run a gate outside it. A `memory.md` write from
+     inside a lane is a bug — in multi-lane mode the file is written once, after the
+     batch merges, or every parallel batch ends in a merge conflict on it;
    - **the stop point holds:** a stop-before-build run must not enter `tiny-spec-build`,
      however a stage's closing line or a follow-up message is phrased;
    - **git stays narrow:** `tiny-spec-run` may only `switch`, `switch -c`,

@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-build
-description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
+description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Can be handed several lanes (one worktree + slug per independent story) and runs them concurrently, one task at a time within each. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
 ---
 
 # tiny-spec-build
@@ -19,16 +19,14 @@ alongside this skill (see the suite README).
 
 ## Inputs
 
-1. **Resolve the active ticket dir** from the current git branch: the `.spec/<slug>/`
-   whose slug matches the branch name (one branch per ticket). If none matches, use
-   the sole ticket dir if there's exactly one; else ask which. Call it `<active>`.
-   **Two cases pre-empt that order — ask instead of applying it:** more than one dir
-   matches the branch (there is no defined tie-break, and inventing one here would
-   silently disagree with every other skill), or ticket dirs exist while you are on
-   `main`/`master` with no name match (the usual cause is a forgotten `git switch`, and
-   the sole-dir fallback would otherwise swallow it). Detached HEAD or no git repo is a
-   **degraded** case, not an ask case — branch match is simply unavailable, so fall
-   through to sole-dir and ask as written.
+1. **Resolve the active ticket dir** (call it `<active>`), in order: the `.spec/<slug>/`
+   whose slug matches the current git branch (one branch per ticket); else the sole
+   ticket dir if exactly one exists; else ask. **Ask instead** when more than one dir
+   matches the branch, or when ticket dirs exist while you are on `main`/`master` with no
+   name match — neither has a safe tie-break. Detached HEAD or no git repo is
+   **degraded**, not an ask: fall through to sole-dir and ask as written.
+   In **multi-lane mode** (below) this step does not run: each lane is handed its
+   worktree and slug explicitly.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
    it exists (**shared**), and `.spec/<active>/tasks.md`. The constitution + memory
    get injected **whole** into every executor and reviewer. Also note the `ticket`
@@ -36,6 +34,52 @@ alongside this skill (see the suite README).
 3. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
    `tiny-spec-plan` to reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
+
+## Multi-lane mode (optional — several stories at once)
+
+A caller may hand you **lanes** instead of a single active dir: one or more
+`(worktree path, slug)` pairs, each an independent story in its own git worktree.
+`tiny-spec-run` does this for a batch of stories whose `needs:` say they don't depend on
+each other. **With one lane, or none, everything below is inert and this skill behaves
+exactly as it always has** — that is the common case and it must not drift.
+
+Given lanes, run them **in rounds**:
+
+1. For every live lane, pick its first `[ ]` task and build the executor brief exactly as
+   step 2 describes — resolved against **that lane's worktree**, not the main checkout.
+2. **Dispatch every lane's executor in one message**, so they run concurrently.
+3. **Dispatch every lane's reviewer in one message**, once the executors are back.
+4. Commit and tick per passing lane, in that lane's worktree.
+
+Then start the next round with whichever lanes are still live. A fast lane waits at the
+round boundary for a slow one; that barrier is deliberate, and much simpler to follow than
+letting lanes free-run.
+
+**Within a lane nothing changes.** Tasks still run one at a time, top to bottom, with the
+same convergence bound, the same gate scope rules, and the same halting states. There is
+no parallelism *inside* a story and no `owns:` contract — tasks in one story share files
+and assume their predecessors landed, which is exactly why they stay sequential.
+
+**A halt stops that lane only.** The other lanes run to completion; you report each lane's
+terminal state separately. The stories were declared independent, so killing working lanes
+because one failed throws away finished work for nothing.
+
+**Every dispatched agent is told its working directory**, and that all paths resolve
+against it. An executor or reviewer must never read or write another lane's worktree.
+
+### `memory.md` in multi-lane mode
+
+`.spec/memory.md` is **shared at the `.spec/` root**, and step 6 below writes to it. Two
+lanes appending to their own copy in their own worktree would conflict on *every* parallel
+batch — a guaranteed merge failure that has nothing to do with the code.
+
+So: **in multi-lane mode, lanes do not write `memory.md` at all.** Collect each lane's
+distilled lessons as it goes, and write them **once, in the main checkout on the
+integration branch, after the batch has merged** — pruning superseded entries there, as
+step 6 describes. Single-lane runs are unaffected and write it in place as before.
+
+The other artifacts are safe and need no special handling: `tasks.md` and `decisions.md`
+are per-story, and `constitution.md` is read-only for the whole build.
 
 ## The per-task loop
 
@@ -60,6 +104,9 @@ it short and concrete.
 ### 2. IMPLEMENT (dispatch `tiny-spec-build-executor`)
 Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
 
+- **the working directory** it must operate in — this lane's worktree, or the project
+  root in a single-lane run. Every path resolves against it, and it must never read or
+  write another lane's worktree;
 - the task id, description, and **acceptance**;
 - the `files:` hint;
 - the **whole** `.spec/constitution.md`;
@@ -69,10 +116,15 @@ Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
   design instead of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind);
-- the **previous passed task's `CHANGES` list**, if there is one, labelled as what the
-  last task left behind. Every executor starts cold and re-derives the codebase; naming
-  the files that just moved is the cheapest way to cut that, and you already have the
-  list in hand. Paths only — not the previous task's description, findings, or report.
+- the **accumulated `CHANGES` paths from every passed task in this story so far**,
+  labelled as the ground this story has already moved. Every executor starts cold and
+  re-derives the codebase from scratch — that re-derivation is the **largest single cost
+  in the loop**, far larger than the prompt text around it — and naming the files this
+  story has already touched is the cheapest way to cut it. You already have the lists in
+  hand. **Paths only**, deduplicated, most-recently-touched first — never the earlier
+  tasks' descriptions, findings, or reports. (The reviewer does *not* get this list: it
+  is scoped to the task's own changed files on purpose, and widening it would dilute the
+  independence that makes its verdict worth anything.)
 
 Do **not** pass the plan, sibling tasks, or other chatter. It returns a structured
 report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
@@ -81,6 +133,8 @@ report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
 ### 3. REVIEW (dispatch `tiny-spec-build-reviewer` — independent)
 Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with:
 
+- **the working directory** it must operate in — this lane's worktree, or the project
+  root in a single-lane run. It runs the gate there and touches no other lane;
 - the task id, description, and **acceptance**;
 - the **whole** `.spec/constitution.md`;
 - the list of changed files (from the executor's `CHANGES`) to read;
@@ -169,6 +223,9 @@ entry to the **shared** `.spec/memory.md` (the root — lessons are project-wide
 pruning any entry the new one supersedes. Skip code-style rules (→ shared
 `constitution.md`) and one-off history (→ the ticket's `decisions.md`). Keep it lean.
 
+**In multi-lane mode, do not write the file here.** Hold the entry and write it once
+after the batch merges — see **Multi-lane mode** above for why.
+
 On first use, create the file with this structure:
 
 ```markdown
@@ -212,7 +269,8 @@ way, which is why a loop and a hand-driven build can't drift apart.
 ## Halting
 
 Every build run ends in exactly **one** of five terminal states. Name it out loud in
-the closing report:
+the closing report — **per lane**, when there is more than one; a lane's halt never
+rounds up into another lane's `done`, and the run's own state is the worst of them:
 
 | State | Cause |
 |---|---|
