@@ -7,6 +7,63 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [1.2.0] — 2026-09-30
+
+Parallelism — across stories, never within one. Independent stories now build at the same
+time, each in its own git worktree, and the per-task loop inside a story is byte-for-byte
+what it was. One new optional format field (`needs:` in `BREAKDOWN.md`), two new git
+commands, no new skills, agents, artifacts, or state files. A single-story run behaves
+exactly as it did in 1.1.0.
+
+### Added
+
+- **`needs:` on a `BREAKDOWN.md` story** — the slugs it must be built after. `tiny-spec-run`
+  groups the backlog into batches from it: stories with no unmet `needs:` build
+  concurrently, the batch merges, the next starts. Omit it when a story stands alone; the
+  field is meant to be rare, and `tiny-spec-scope` is told to default to omitting, because
+  a `needs:` you didn't need costs parallelism forever while one you missed costs a single
+  merge conflict the run already catches.
+- **Multi-lane mode in `tiny-spec-build`.** A caller may hand it several
+  `(worktree path, slug)` lanes. It runs them in rounds — every lane's executor dispatched
+  together, then every lane's reviewer — committing per passed task per lane. Within a
+  lane nothing changed: still one task at a time, same convergence bound, same gate scope
+  rules, same terminal states.
+- **A parallel set named at invocation** ("build these three at once") overrides the
+  `needs:` graph for that run, the same way a pasted story list already overrides
+  `BREAKDOWN.md`.
+
+### Changed
+
+- **A halt is now per-lane.** It stops the lane it happened in; sibling lanes in the same
+  batch were declared independent and run to completion. The run then stops at the **end
+  of that batch** and never starts the next. With more than one lane, each story reports
+  its own terminal state and the run's state is the **worst** of them — four green lanes
+  and one `blocked` is a `blocked` run, never a `done` one with a footnote.
+- **The git surface grew by exactly two commands** — `worktree add` and `worktree list`.
+  `worktree remove` was deliberately left out, on the same grounds as branch deletion: a
+  halted lane's worktree is the tree you need to look at. The run reports the paths and
+  the removal commands; you run them.
+- **Tasks are sized harder.** Two smells added to `tiny-spec-plan`: a leading pure-scaffold
+  task with no behavior behind it, and a trailing end-to-end verification task (the build's
+  Completion step already runs the whole gate from clean against the whole project). The
+  calibration moved from 3–6 tasks to **2–4**, still a smell to check rather than a cap.
+- **Executors start warmer.** Each one now gets the accumulated changed paths from every
+  passed task in its story, not just the previous task's — paths only. Cold-start
+  re-derivation of the codebase is the largest single cost in the loop, and this is the
+  cheapest thing that cuts it. The reviewer deliberately does **not** get the list; its
+  narrow view is what makes its verdict worth anything.
+
+### Fixed
+
+- **An unrunnable Verification command is a blocker, not a pass.** A reviewer that finds a
+  documented gate command red for a reason the task's code cannot fix — the interpreter is
+  too old, a tool isn't installed, the command never worked as written — must return
+  `FAIL` and name the **constitution** as the document to fix. Proving the task green in a
+  fresh venv or a hand-fixed install is explicitly *not* a pass: that verifies a different
+  environment than the gate names, and every later task inherits the same false signal.
+  Found by running two reviewers concurrently against one environment and watching them
+  reach opposite verdicts on the identical failure.
+
 ## [1.1.0] — 2026-09-12
 
 Speed. The loop's correctness guarantee is unchanged — every task's acceptance is still
