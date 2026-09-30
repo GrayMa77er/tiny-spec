@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a story list, it drives each story branch → plan → build → merge until the list ends or something halts it. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
+description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a story list, it drives each story branch → plan → build → merge until the list ends or something halts it. Independent stories — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
 ---
 
 # tiny-spec-run
@@ -53,8 +53,8 @@ return to Step 2 after a stage, or between stories.
    the branch for the user.
 
 2. **Resolve the story list** (below) and play it back in order — slug and title — with
-   the state you derived for each. This is the user's chance to reorder, drop, or narrow
-   before anything is cut.
+   the state you derived for each, **grouped into the batches you will run**. This is the
+   user's chance to reorder, drop, narrow, or correct a dependency before anything is cut.
 
 3. **Take the pause policy.** Ask for, or accept, standing technical stop points for
    this run — *"halt before anything that touches auth"*, *"stop before any schema
@@ -62,6 +62,17 @@ return to Step 2 after a stage, or between stories.
    where it becomes a real `pause:` line on the matching task. Pause points are
    **technical**, not per-story: the thing worth looking at is a migration or an auth
    boundary, not a feature heading.
+
+4. **Fix the lane count.** Default **3**; take a number from the user if they gave one.
+   This is a concurrency limit on the machine, not a budget — the story list is still the
+   budget, and a batch wider than the lane count simply runs in successive fills. **One
+   lane must stay available**: any phrasing asking for one story at a time ("one at a
+   time", "no parallelism", "serially") sets it to 1, which collapses Step 4 to the
+   sequential behavior — no worktrees, no batching.
+
+   Then check one more precondition, once you know the slugs in the first batch: **no
+   target worktree path already exists.** Name the collisions and stop; do not reuse or
+   remove a directory you found.
 
 ## Step 1 — resolve the scope
 
@@ -126,7 +137,26 @@ on the integration branch at all, so "does the directory exist" can't tell "not 
 apart from "built on a branch you haven't merged" — reading each ref explicitly can.
 Sourcing step 1 from the integration branch is also what survives a deleted branch: once
 a story is merged, its ticked task list is part of `main` whether or not the branch that
-built it still exists.
+built it still exists. **This survives parallelism unchanged** — a worktree is just a
+branch, so a story built in a worktree but not yet merged lands on rule 2 exactly as one
+built in place.
+
+**Group the remaining stories into batches.** Level 0 is every unbuilt story whose
+`needs:` are empty or already built-and-merged; level 1 is every story whose `needs:` are
+all in level 0; and so on. Batches run **in order**; the stories inside one batch run
+**concurrently**, capped at the lane count.
+
+- **A parallel set the user named at invocation overrides the graph** for this run —
+  "build these three at once", or a pasted list they called independent. Explicit beats
+  derived, the same way a pasted story list already wins over `BREAKDOWN.md`. Say that you
+  are overriding, and name what the graph would have done.
+- **A cycle in `needs:` is a stop.** Print the cycle and stop. Never break it by picking
+  an order — `tiny-spec-scope` says two stories that need each other are really one, and
+  choosing for the user hides a carve that needs fixing.
+- **A `needs:` naming a slug that isn't in the list is a stop**, not a shrug. It is either
+  a typo or a story someone dropped, and both want a human.
+- **A batch of one is the sequential behavior** — Step 4 collapses to exactly what it did
+  before lanes existed. This is the common case for a single ticket and must not change.
 
 ## Step 2 — the ladder
 
@@ -146,67 +176,62 @@ re-evaluate against the new state on disk.
 | — | **no rung matched** | **stop** — report the exact state you found and ask; never improvise a stage |
 
 **Upstream beats downstream — that is what the table order encodes.** Always fix the
-earliest artifact in the chain that needs attention, whether it's stale *or* missing.
-Deriving a task list from a design you already know is wrong wastes the run, and then
-the reconcile has to uncheck completed work all over again.
+earliest artifact in the chain that needs attention, stale *or* missing. Deriving a task
+list from a design you already know is wrong wastes the run, and the reconcile then has
+to uncheck completed work all over again.
 
 **L0/L1 carry the greenfield/brownfield fork.** "Does this repo already contain source?"
-means: is there real code here beyond config and docs? If yes, the constitution should
-be *derived from that code* (`tiny-spec-adopt`) rather than interviewed out of the user
-— an interviewed constitution on an existing codebase is how you get a gate that names
-commands the project doesn't have. If the user is starting from an idea with no code
-yet, `tiny-spec-scope` is theirs to run first; it is not in the ladder (see below).
+means: real code beyond config and docs. If yes, the constitution must be *derived from
+that code* (`tiny-spec-adopt`) rather than interviewed out of the user — an interviewed
+constitution on an existing codebase is how you get a gate that names commands the
+project doesn't have. Starting from an idea with no code yet, `tiny-spec-scope` is the
+user's to run first; it is not in the ladder (see below).
 
-**L1 is a reseed, not a fresh start.** The constitution is project-wide, so it can go
-missing while a perfectly good `SPEC.md` sits next to it. Invoke the chosen skill in
-**reseed/refresh mode** — say so explicitly, and add: *do not re-interview from scratch,
-do not create a ticket dir, and do not touch `SPEC.md`.* If the constitution still
-doesn't exist afterwards, stop and tell the user; do not loop.
+**L1 is a reseed, not a fresh start**, and it **outranks L2**. The constitution is
+project-wide, so it can go missing while a perfectly good `SPEC.md` sits next to it.
+Invoke the chosen skill in **reseed/refresh mode** — say so explicitly, and add: *do not
+re-interview from scratch, do not create a ticket dir, and do not touch `SPEC.md`.* If the
+constitution still doesn't exist afterwards, stop and tell the user; do not loop. The next
+pass lands on L2 and creates the spec properly — a *different rung*, so the same-skill
+bound below does not fire.
 
-**L1 outranks L2** — a constitution gets reseeded even when the ticket dir or `SPEC.md`
-is also missing. The next pass then lands on L2 and creates the spec properly — and
-because that's a *different rung*, the same-skill bound below does not fire.
+**L3 is a stop, not a stage.** Nothing in the suite ever *sets* `SPEC.md` to stale — it is
+the root of the chain — so a stale SPEC means someone hand-edited it. Surface it and offer
+`tiny-spec-create` in update mode rather than assuming intent. A go-ahead **in the same
+turn** is enough to invoke it and carry on down the ladder; the stop exists to get a human
+decision, not to force a second command. (Update mode *clears* the flag on its way out, so
+this rung resolves rather than repeating.)
 
-**L3 is a stop, not a stage.** Nothing in the suite ever *sets* `SPEC.md` to stale — it
-is the root of the chain. A stale SPEC means someone hand-edited it, so surface it and
-offer `tiny-spec-create` in update mode rather than assuming intent. If the user says go
-ahead **in the same turn**, invoke it and carry on down the ladder — the stop is there
-to get a human decision, not to force a second command. (Update mode *clears* the flag
-on its way out, so this rung resolves rather than repeating.)
-
-**L4 is the one thing `run` checks that isn't a `status:` flag** — and it is
-deliberately *not* a validator. For each `D<n>` in the active `SPEC.md`, run
-`shasum -a 256 <export>` and compare with the `sha256:` the entry declares. You are
-checking whether an anchor still points at what it says it points at, not inferring
-whether two documents agree. A design that moved under a finished spec is otherwise
-completely invisible — no status flips, and the build reviews against a screen that no
-longer exists.
+**L4 is the one thing `run` checks that isn't a `status:` flag**, and it is deliberately
+*not* a validator: for each `D<n>` in the active `SPEC.md`, run `shasum -a 256 <export>`
+and compare with the `sha256:` the entry declares. You are checking whether an anchor
+still points at what it says it points at, not inferring whether two documents agree. A
+design that moved under a finished spec is otherwise completely invisible — no status
+flips, and the build reviews against a screen that no longer exists.
 
 - **Mismatch** → `tiny-spec-design` in re-anchor mode.
 - **Missing file** → **stop and tell the user**, naming the entry and the path. Don't
-  route it: a deleted export can mean a rename, a move, or a design that was withdrawn,
-  and each wants a different answer. Never quietly drop the entry.
+  route it: a deleted export can mean a rename, a move, or a withdrawn design, and each
+  wants a different answer. Never quietly drop the entry.
 - No `## Design` section, or every hash matches → the rung doesn't fire; fall through.
 
 **Any `status:` that isn't exactly `current`** — `stale`, missing, unreadable, or an
 unrecognized value like `draft` — counts as **stale**, on `SPEC.md`, `PLAN.md`, and
-`tasks.md` alike. Say so out loud. For `PLAN.md`/`tasks.md` that means reconciling
-(update mode preserves existing ids, so it's the non-destructive way to be wrong); for
-`SPEC.md` it means L3 — stop and ask.
+`tasks.md` alike. Say so out loud. `PLAN.md`/`tasks.md` → reconcile (update mode preserves
+existing ids, the non-destructive way to be wrong); `SPEC.md` → L3, stop and ask.
 
-**A `tasks.md` with no tasks at all is not "built"** — that's why L6 and L7 both require
-at least one task, and why an empty checklist matches neither. It means the
-`tiny-spec-plan` run produced nothing, so L5 catches it. If it comes back empty a second
-time, stop and tell the user — the plan has nothing derivable in it.
+**A `tasks.md` with no tasks at all is not "built"** — L6 and L7 both require at least one
+task, so an empty checklist matches neither and L5 catches it. Empty a second time → stop
+and tell the user; the plan has nothing derivable in it.
 
 `run` trusts the `status:` flags. It does **not** second-guess hand edits, diff
-timestamps, or validate the chain — there is no validator in this suite by design. (L4
-is not an exception: a hash is a value the spec itself declares about a file it names,
-so checking it is reading state, not judging consistency. Do not use it as a precedent
-for adding cross-document checks.) That means it inherits each stage's propagation: if
-`tiny-spec-plan` update mode doesn't flip `tasks.md`, `run` will walk right past it.
-That trust is the price of having no validator; when a run's result looks wrong, suspect
-the stage's propagation before the ladder.
+timestamps, or validate the chain — there is no validator in this suite by design. (L4 is
+not an exception: a hash is a value the spec itself declares about a file it names, so
+checking it is reading state, not judging consistency. Not a precedent for adding
+cross-document checks.) So it inherits each stage's propagation: if `tiny-spec-plan`
+update mode doesn't flip `tasks.md`, `run` walks right past it. That trust is the price of
+having no validator; when a run's result looks wrong, suspect the stage's propagation
+before the ladder.
 
 **`tiny-spec-scope` is not in the ladder.** It is a pre-spec on-ramp that writes
 `BREAKDOWN.md` at the project root, carries no `status:` frontmatter, and is the user's
@@ -253,39 +278,60 @@ to enter `tiny-spec-build` in a stop-before-build run.**
 ## Step 4 — build-through only: build and merge
 
 Reached only when Step 0 fixed the stop point at build-through and the ladder is at L6
-(or L7 with an unmerged branch). For the first story that isn't already built and merged:
+(or L7 with an unmerged branch). Work **one batch at a time**, in batch order. For every
+story in the current batch that isn't already built and merged:
 
-1. **Branch.** `git switch <slug>` if it already exists; otherwise
-   `git switch -c <slug> <integration>` — cut **fresh from the integration branch** so
-   this story sees every story merged before it. That is what makes an ordered list
-   build correctly: story 3 gets stories 1 and 2 already in its tree.
+1. **Lane.** Give each story its own **git worktree**, so lanes cannot collide on the
+   filesystem: `git worktree add ../<repo>-<slug> -b <slug> <integration>`, or
+   `git worktree add ../<repo>-<slug> <slug>` when the branch already exists. Cut **fresh
+   from the integration branch** so the story sees every story merged before it — that is
+   what makes an ordered backlog build correctly, and it is why batches merge before the
+   next one starts.
 
-2. **Ladder.** Walk Steps 1–3 for this story until it reaches L6. If it stops anywhere
-   else, that is a halt — report and stop the whole run. **Never walk the ladder twice
-   to push past its own stop:** each of those is a human decision it deliberately
-   declined to make, and running it again declines again.
+   With a single lane you may stay in the main checkout and `git switch` as before; a
+   worktree is only required when a batch has more than one story.
 
-3. **Build.** Invoke **`tiny-spec-build`**, once, briefed to run it through. It owns the
-   per-task loop and writes its own halt record. Anything other than `done` halts the
-   whole run — **do not merge a story that didn't finish**, and do not invoke build a
-   second time: it resumes from the checkbox state, so it lands on the very task that
-   just halted and halts there again.
+2. **Ladder.** Walk Steps 1–3 for each story, in its own worktree, until it reaches L6.
+   A story that stops anywhere else does **not** enter the build — its lane is halted;
+   see the halt rule below. **Never walk the ladder twice to push past its own stop:**
+   each of those is a human decision it deliberately declined to make, and running it
+   again declines again.
 
-4. **Merge — only on `done`.** In order:
+3. **Build.** Invoke **`tiny-spec-build`** **once for the whole batch**, briefed to run
+   through, and hand it every live lane as a `(worktree path, slug)` pair. It owns the
+   per-task loop, runs the lanes concurrently, and writes each story's halt record.
+   Do not invoke it a second time for a lane that halted: it resumes from the checkbox
+   state, so it lands on the very task that just halted and halts there again.
+
+4. **Merge — only the lanes that returned `done`, one at a time, in batch order.**
+   For each, in the main checkout:
    - `git switch <integration>`
    - `git merge --no-ff <slug>` — the merge commit keeps each story legible in history.
-   - **Conflict** → `git merge --abort`, then halt `conflict`.
-   - **Run the constitution's Verification commands on the merged result**, exercised
-     the way a user would. A story that was green alone can still break against work
-     merged before it, and that is exactly what this catches. Red → halt `blocked`.
+   - **Conflict** → `git merge --abort`, halt that story `conflict`, and carry on with
+     the rest of the batch. Report every conflicted story at the end.
+   - **Run the constitution's Verification commands on the merged result**, exercised the
+     way a user would. Red → halt `blocked`. **This check is load-bearing under
+     parallelism and is never skipped:** every lane gated against a tree that did not
+     contain its siblings, so the merged result is the first time they meet.
    - **Never push.** Merging locally keeps a bad run one `git reset` away; sending it to
      a remote is the user's call, and this suite makes no network calls.
 
-5. **Next story.** Return to Step 1. Do not re-run Step 0.
+5. **Next batch.** If **every** lane in this batch merged cleanly, return to Step 1 for
+   the next batch. Do not re-run Step 0. **If any lane halted, stop the run here** — a
+   later batch may well depend on the story that failed, and working out which stories
+   are still safe is exactly the machinery this suite refuses to grow. Report and let the
+   user decide.
 
-**A halt stops the whole run**, not just the current story. Later stories in a list
-written top to bottom usually assume the earlier ones landed, so skipping ahead past a
-failure produces a second, more confusing failure downstream.
+6. **Leave the worktrees.** Do **not** run `git worktree remove`. Cleanup is the user's,
+   for the same reason branch deletion is — a halted lane's worktree holds the tree they
+   need to look at. List every path you created in the closing report, with the
+   `git worktree remove` commands, and let them run it.
+
+**A halt stops the lane it happened in, and ends the run at the end of that batch.**
+Within a batch the other lanes run to completion: the stories were declared independent,
+so stopping the ones that are working buys nothing and throws away finished work. Across
+batches the old rule stands unchanged — later stories usually assume earlier ones landed,
+so never skip ahead past a failure.
 
 `tiny-spec-build` records its own halts (`blocked`, `exhausted`, `fork`) in the story's
 `decisions.md`. **You record nothing** — the merge-stage halts are already legible
@@ -309,11 +355,15 @@ L3 or on a bound, say exactly what stopped you and what the user needs to decide
 **Build-through.** Name, in this order:
 
 1. **The terminal state** — exactly one of `done`, `blocked`, `exhausted`, `paused`,
-   `fork`, `conflict`. Use the word.
-2. **Stories built and merged**, in order, with their merge commits.
-3. **The story it stopped on**, the task within it, and why in one line.
+   `fork`, `conflict`. Use the word. With more than one lane, report **each story's own
+   state**, and give the run's state as the **worst** of them: four green lanes and one
+   `blocked` is a `blocked` run, never a `done` one with a footnote.
+2. **Stories built and merged**, in batch order, with their merge commits.
+3. **The story or stories it stopped on**, the task within each, and why in one line.
 4. **Stories never started** — say how many are left, by name.
-5. **The one command that resolves it** — `tiny-spec-create`/`tiny-spec-plan` in update
+5. **Worktrees left on disk**, with the `git worktree remove` command for each. You do
+   not run them.
+6. **The one command that resolves it** — `tiny-spec-create`/`tiny-spec-plan` in update
    mode for `blocked`/`exhausted`, this skill again for `paused`, the decision the user
    owes you for a `fork`, or the conflicted paths for a `conflict`.
 
@@ -338,9 +388,11 @@ ticket that legitimately has no visual surface.
 - **Never write, edit, or flip anything.** No `status:`, no checkbox, no `decisions.md`
   entry, no code, no `BREAKDOWN.md` edit. Delegate or stop. A router that regenerates
   documents is a second source of truth.
-- **Never push, force, rebase, reset, or delete a branch.** The only git commands this
-  skill issues are `switch`, `switch -c`, `merge --no-ff`, `merge --abort`, and
-  read-only queries. Everything outward-facing or destructive is the user's.
+- **Never push, force, rebase, reset, delete a branch, or remove a worktree.** The only
+  git commands this skill issues are `switch`, `switch -c`, `merge --no-ff`,
+  `merge --abort`, `worktree add`, `worktree list`, and read-only queries. Everything
+  outward-facing or destructive stays the user's — `worktree remove` included, which is
+  why Step 4 hands those commands over instead of running them.
 - **Never merge a story whose build didn't return `done`.**
 - **Never invoke `tiny-spec-run`.** Re-entering means re-reading these steps, not
   calling yourself. Self-invocation compounds context and does not terminate.
