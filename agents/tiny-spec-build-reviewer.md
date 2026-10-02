@@ -15,8 +15,8 @@ back to `tiny-spec-build`; return data, not pleasantries.
 
 - **the working directory** to operate in — every path and every gate command resolves
   against it. It may be a **git worktree** rather than the main checkout, since a build
-  can run several stories at once. **Never read, write, or run a gate outside the
-  directory you were given**: a sibling worktree holds a different story mid-build, and
+  can run several features at once. **Never read, write, or run a gate outside the
+  directory you were given**: a sibling worktree holds a different feature mid-build, and
   measuring it would make your verdict meaningless;
 - the **task id**, **description**, and **acceptance** (the outcome that must hold);
 - the full **constitution** (`constitution.md`) — especially **Guiding invariants**,

@@ -9,7 +9,7 @@ A lean spec-driven flow with **two front doors**, one spine, and one router:
 ```
 GREENFIELD                      BROWNFIELD
 tiny-spec-scope                 tiny-spec-adopt
-idea → stories                  code → constitution
+idea → features                 code → constitution
 BREAKDOWN.md                    constitution.md
         \                        /
          v                      v
@@ -39,12 +39,12 @@ adding a skill, agent, artifact, format field, or knob, the bar is: *does it cle
 for itself, or is it ceremony?* When in doubt, leave it out. A change that makes this
 bigger needs a strong reason; a change that makes it smaller usually doesn't.
 
-**Parallelism is allowed across stories, and forbidden within one.** This line is load-
-bearing, so hold it in both directions. *Across* stories: independent work builds
+**Parallelism is allowed across features, and forbidden within one.** This line is load-
+bearing, so hold it in both directions. *Across* features: independent work builds
 concurrently, one git worktree per lane, grouped by the `needs:` field in `BREAKDOWN.md`
-and merged batch by batch. That earns its keep — the stories are separate branches
+and merged batch by batch. That earns its keep — the features are separate branches
 touching separate files, and worktrees make the isolation real rather than promised.
-*Within* a story: tasks stay strictly sequential, top to bottom. They share files and
+*Within* a feature: tasks stay strictly sequential, top to bottom. They share files and
 each one assumes its predecessors landed, so parallelizing them would require `owns:`
 file contracts — the exact ceremony 1.0 deleted. Waves, a checkpoint matrix, and
 validators all remain out at **both** levels.
@@ -56,10 +56,10 @@ opening request. No stage report, no rung, no later "do it all" may promote a
 stop-before-build run into a build-through run. Build is the user's review gate; a
 router that talks itself into building is the failure this design exists to prevent.
 
-**There is no budget and no state file.** The story list *is* the budget — the run ends
-when the stories end. A turn ceiling, a token cap, or a max-stories knob would each put
+**There is no budget and no state file.** The feature list *is* the budget — the run ends
+when the features end. A turn ceiling, a token cap, or a max-features knob would each put
 a weaker stopping rule beside the real one. And loop progress is *derived*:
-`git show <integration>:.spec/<slug>/PLAN.md` answers "is this story built and merged"
+`git show <integration>:.spec/<slug>/PLAN.md` answers "is this feature built and merged"
 without anything being written down. A progress file would be faster to read and wrong
 the first time someone merges by hand.
 
@@ -70,8 +70,8 @@ resetting, deleting branches, removing worktrees, and opening PRs are all out �
 because they're hard, but because they are outward-facing or destructive, and those stay
 the user's.
 
-> **Amendment (parallel stories).** `worktree add`/`worktree list` were added to that cap
-> when stories gained the ability to build concurrently — a worktree is what keeps two
+> **Amendment (parallel features).** `worktree add`/`worktree list` were added to that cap
+> when features gained the ability to build concurrently — a worktree is what keeps two
 > lanes from colliding on the filesystem, and there is no way to get that isolation
 > without it. **`worktree remove` was deliberately left out**, on exactly the same
 > grounds as branch deletion: a halted lane's worktree holds the tree the user needs to
@@ -158,9 +158,9 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      — and a conversational waiver must not be written back into the file;
    - **terminal state never rounded up:** a run that ends `blocked`, `exhausted`,
      `paused`, `fork`, or `conflict` must say so by name. Only `done` may report the work
-     as built, and in a story run that means **every** story merged — a run that stopped
-     at story 2 of 7 must not read like a finished backlog;
-   - **no merge without `done`:** a story whose build halted must leave its branch
+     as built, and in a feature run that means **every** feature merged — a run that stopped
+     at feature 2 of 7 must not read like a finished backlog;
+   - **no merge without `done`:** a feature whose build halted must leave its branch
      unmerged. In a **sequential** run that halt stops the run. In a **parallel batch**
      it stops only its own lane — the sibling lanes were declared independent and run to
      completion — and the run then stops at the **end of that batch**, never starting the

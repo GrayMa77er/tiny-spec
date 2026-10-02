@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a story list, it drives each story branch → plan → build → merge until the list ends or something halts it. Independent stories — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
+description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → plan → build → merge until the list ends or something halts it. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
 ---
 
 # tiny-spec-run
@@ -12,7 +12,7 @@ stand?* — and invokes the one skill that moves it forward. Then it re-asks.
 **Everything it decides comes from files on disk and from git.** There is no run-state
 file, no pointer, no lock. That is the property that makes it safe: a run abandoned
 halfway through an interview and resumed tomorrow lands on exactly the right rung, and
-a story list resumes correctly overnight. Do not "optimize" this into stored state.
+a feature list resumes correctly overnight. Do not "optimize" this into stored state.
 
 ## Step 0 — fix the stop point, once
 
@@ -22,7 +22,7 @@ Read the user's opening request and pick one:
 | The user asked for | Stop point |
 |---|---|
 | the flow, the spec, "pick the chain back up", "get it ready" | **stop-before-build** (default) |
-| the flow **and** the build — "spec it out and build it", "build the backlog", "work through the breakdown" — or handed a story list | **build-through** |
+| the flow **and** the build — "spec it out and build it", "build the backlog", "work through the breakdown" — or handed a feature list | **build-through** |
 
 **Anything short of an explicit ask to build is stop-before-build.** Build is the
 user's review gate — stopping before it is why this skill's default exists.
@@ -39,34 +39,34 @@ designs"), hand off to that skill and stop. `run` is for walking the chain, not 
 wrapping one stage.
 
 Step 0 is a **once-per-run** check on the opening request. Do not re-run it when you
-return to Step 2 after a stage, or between stories.
+return to Step 2 after a stage, or between features.
 
 ### Also at Step 0, if the stop point is build-through
 
 1. **Check the preconditions.** All three, before touching anything:
    - it is a git repo (`git rev-parse --is-inside-work-tree`);
    - the working tree is **clean** (`git status --porcelain` prints nothing) — a dirty
-     tree would get swept into the first story's commits;
+     tree would get swept into the first feature's commits;
    - an integration branch exists — `main`, or `master` if there is no `main`.
 
    Any of them failing → say which and stop. Do not offer to stash, commit, or create
    the branch for the user.
 
-2. **Resolve the story list** (below) and play it back in order — slug and title — with
+2. **Resolve the feature list** (below) and play it back in order — slug and title — with
    the state you derived for each, **grouped into the batches you will run**. This is the
    user's chance to reorder, drop, narrow, or correct a dependency before anything is cut.
 
 3. **Take the pause policy.** Ask for, or accept, standing technical stop points for
    this run — *"halt before anything that touches auth"*, *"stop before any schema
-   migration"*. Carry the wording verbatim into every story's `tiny-spec-plan` stage,
+   migration"*. Carry the wording verbatim into every feature's `tiny-spec-plan` stage,
    where it becomes a real `pause:` line on the matching task. Pause points are
-   **technical**, not per-story: the thing worth looking at is a migration or an auth
+   **technical**, not per-feature: the thing worth looking at is a migration or an auth
    boundary, not a feature heading.
 
 4. **Fix the lane count.** Default **3**; take a number from the user if they gave one.
-   This is a concurrency limit on the machine, not a budget — the story list is still the
+   This is a concurrency limit on the machine, not a budget — the feature list is still the
    budget, and a batch wider than the lane count simply runs in successive fills. **One
-   lane must stay available**: any phrasing asking for one story at a time ("one at a
+   lane must stay available**: any phrasing asking for one feature at a time ("one at a
    time", "no parallelism", "serially") sets it to 1, which collapses Step 4 to the
    sequential behavior — no worktrees, no batching.
 
@@ -104,23 +104,27 @@ simply unavailable — fall through to rules 2 and 3 as written, and mention tha
 
 Never create a ticket dir yourself — that is `tiny-spec-create`'s job.
 
-### Build-through: the story list
+### Build-through: the feature list
 
-**Default: `BREAKDOWN.md` at the project root**, in file order. Each `- Story:` under
-each `## Feature:` heading is one item; take its **`slug:`** — that names both the
-branch and the `.spec/<slug>/` dir. A `## Feature:` heading is a grouping, not an item:
-it carries no slug, so a Feature with three stories is three branches and three merges.
+**Default: `BREAKDOWN.md` at the project root**, in file order. Each `## Feature:`
+heading is one item; take its **`slug:`** — that names both the branch and the
+`.spec/<slug>/` dir. One feature is one branch and one merge.
+
+**A pre-2.0 `BREAKDOWN.md`** (with `- Story:` lines nested under the features) is a
+stop: say the format changed and point the user at `tiny-spec-scope` to regenerate it,
+or at flattening each story into its own `## Feature:` by hand. Don't guess which level
+was meant to be the unit.
 
 **A list pasted at invocation wins** over `BREAKDOWN.md` when the user gives one. Treat
-each line as a story title and derive a kebab-case slug from it. Such a story has **no
+each line as a feature title and derive a kebab-case slug from it. Such a feature has **no
 acceptance criteria**, so `tiny-spec-create` will run its full interview when it reaches
-that story — which is correct, not a failure: a one-line feature name is not enough to
+that feature — which is correct, not a failure: a one-line feature name is not enough to
 build from, and that interview *is* the human input the run stops for. Say so at Step 0
 so the user knows a pasted list is a supervised run, not a walk-away one.
 
 If neither exists, stop and say so. Never invent the list.
 
-**Where each story stands — derive, don't record.** For each slug, in order, ask git —
+**Where each feature stands — derive, don't record.** For each slug, in order, ask git —
 first match wins:
 
 1. **`git show <integration>:.spec/<slug>/PLAN.md`** succeeds, its `## Tasks` has at
@@ -132,29 +136,29 @@ first match wins:
    - fails, or `## Tasks` is empty → **planning incomplete** → resume at the **ladder**.
 3. Otherwise → **not started.** Run the full cycle.
 
-Ask **git**, not the working tree. A story that isn't merged yet has no `.spec/<slug>/`
+Ask **git**, not the working tree. A feature that isn't merged yet has no `.spec/<slug>/`
 on the integration branch at all, so "does the directory exist" can't tell "not started"
 apart from "built on a branch you haven't merged" — reading each ref explicitly can.
 Sourcing step 1 from the integration branch is also what survives a deleted branch: once
-a story is merged, its ticked task list is part of `main` whether or not the branch that
+a feature is merged, its ticked task list is part of `main` whether or not the branch that
 built it still exists. **This survives parallelism unchanged** — a worktree is just a
-branch, so a story built in a worktree but not yet merged lands on rule 2 exactly as one
+branch, so a feature built in a worktree but not yet merged lands on rule 2 exactly as one
 built in place.
 
-**Group the remaining stories into batches.** Level 0 is every unbuilt story whose
-`needs:` are empty or already built-and-merged; level 1 is every story whose `needs:` are
-all in level 0; and so on. Batches run **in order**; the stories inside one batch run
+**Group the remaining features into batches.** Level 0 is every unbuilt feature whose
+`needs:` are empty or already built-and-merged; level 1 is every feature whose `needs:` are
+all in level 0; and so on. Batches run **in order**; the features inside one batch run
 **concurrently**, capped at the lane count.
 
 - **A parallel set the user named at invocation overrides the graph** for this run —
   "build these three at once", or a pasted list they called independent. Explicit beats
-  derived, the same way a pasted story list already wins over `BREAKDOWN.md`. Say that you
+  derived, the same way a pasted feature list already wins over `BREAKDOWN.md`. Say that you
   are overriding, and name what the graph would have done.
 - **A cycle in `needs:` is a stop.** Print the cycle and stop. Never break it by picking
-  an order — `tiny-spec-scope` says two stories that need each other are really one, and
+  an order — `tiny-spec-scope` says two features that need each other are really one, and
   choosing for the user hides a carve that needs fixing.
 - **A `needs:` naming a slug that isn't in the list is a stop**, not a shrug. It is either
-  a typo or a story someone dropped, and both want a human.
+  a typo or a feature someone dropped, and both want a human.
 - **A batch of one is the sequential behavior** — Step 4 collapses to exactly what it did
   before lanes existed. This is the common case for a single ticket and must not change.
 
@@ -258,9 +262,9 @@ something new:
 
 **Briefs — pass them through verbatim.** In a build-through run you hand stages briefs:
 
-- a **create-stage brief**: *this is a story run; seed from the `BREAKDOWN.md` story
+- a **create-stage brief**: *this is a feature run; seed from the `BREAKDOWN.md` feature
   with slug `<slug>` and do not stop to confirm the requirements — its `AC:` lines are
-  already approved.* Omit the seeding clause for a pasted-list story; there is nothing
+  already approved.* Omit the seeding clause for a pasted-list feature; there is nothing
   to seed from and the interview is correct.
 - a **plan-stage brief**: the pause policy from Step 0, **word for word**, so the
   technical stop points land as `pause:` lines.
@@ -279,36 +283,36 @@ to enter `tiny-spec-build` in a stop-before-build run.**
 
 Reached only when Step 0 fixed the stop point at build-through and the ladder is at L6
 (or L7 with an unmerged branch). Work **one batch at a time**, in batch order. For every
-story in the current batch that isn't already built and merged:
+feature in the current batch that isn't already built and merged:
 
-1. **Lane.** Give each story its own **git worktree**, so lanes cannot collide on the
+1. **Lane.** Give each feature its own **git worktree**, so lanes cannot collide on the
    filesystem: `git worktree add ../<repo>-<slug> -b <slug> <integration>`, or
    `git worktree add ../<repo>-<slug> <slug>` when the branch already exists. Cut **fresh
-   from the integration branch** so the story sees every story merged before it — that is
+   from the integration branch** so the feature sees every feature merged before it — that is
    what makes an ordered backlog build correctly, and it is why batches merge before the
    next one starts.
 
    With a single lane you may stay in the main checkout and `git switch` as before; a
-   worktree is only required when a batch has more than one story.
+   worktree is only required when a batch has more than one feature.
 
-2. **Ladder.** Walk Steps 1–3 for each story, in its own worktree, until it reaches L6.
-   A story that stops anywhere else does **not** enter the build — its lane is halted;
+2. **Ladder.** Walk Steps 1–3 for each feature, in its own worktree, until it reaches L6.
+   A feature that stops anywhere else does **not** enter the build — its lane is halted;
    see the halt rule below. **Never walk the ladder twice to push past its own stop:**
    each of those is a human decision it deliberately declined to make, and running it
    again declines again.
 
 3. **Build.** Invoke **`tiny-spec-build`** **once for the whole batch**, briefed to run
    through, and hand it every live lane as a `(worktree path, slug)` pair. It owns the
-   per-task loop, runs the lanes concurrently, and writes each story's halt record.
+   per-task loop, runs the lanes concurrently, and writes each feature's halt record.
    Do not invoke it a second time for a lane that halted: it resumes from the checkbox
    state, so it lands on the very task that just halted and halts there again.
 
 4. **Merge — only the lanes that returned `done`, one at a time, in batch order.**
    For each, in the main checkout:
    - `git switch <integration>`
-   - `git merge --no-ff <slug>` — the merge commit keeps each story legible in history.
-   - **Conflict** → `git merge --abort`, halt that story `conflict`, and carry on with
-     the rest of the batch. Report every conflicted story at the end.
+   - `git merge --no-ff <slug>` — the merge commit keeps each feature legible in history.
+   - **Conflict** → `git merge --abort`, halt that feature `conflict`, and carry on with
+     the rest of the batch. Report every conflicted feature at the end.
    - **Run the constitution's Verification commands on the merged result**, exercised the
      way a user would. Red → halt `blocked`. **This check is load-bearing under
      parallelism and is never skipped:** every lane gated against a tree that did not
@@ -318,7 +322,7 @@ story in the current batch that isn't already built and merged:
 
 5. **Next batch.** If **every** lane in this batch merged cleanly, return to Step 1 for
    the next batch. Do not re-run Step 0. **If any lane halted, stop the run here** — a
-   later batch may well depend on the story that failed, and working out which stories
+   later batch may well depend on the feature that failed, and working out which features
    are still safe is exactly the machinery this suite refuses to grow. Report and let the
    user decide.
 
@@ -328,18 +332,18 @@ story in the current batch that isn't already built and merged:
    `git worktree remove` commands, and let them run it.
 
 **A halt stops the lane it happened in, and ends the run at the end of that batch.**
-Within a batch the other lanes run to completion: the stories were declared independent,
+Within a batch the other lanes run to completion: the features were declared independent,
 so stopping the ones that are working buys nothing and throws away finished work. Across
-batches the old rule stands unchanged — later stories usually assume earlier ones landed,
+batches the old rule stands unchanged — later features usually assume earlier ones landed,
 so never skip ahead past a failure.
 
-`tiny-spec-build` records its own halts (`blocked`, `exhausted`, `fork`) in the story's
+`tiny-spec-build` records its own halts (`blocked`, `exhausted`, `fork`) in the feature's
 `decisions.md`. **You record nothing** — the merge-stage halts are already legible
-without a log: a `conflict` leaves the story's branch unmerged and git itself reports
+without a log: a `conflict` leaves the feature's branch unmerged and git itself reports
 the conflicted paths, and a red gate after a merge is reported by the gate. A log entry
 restating what git already shows is a second source of truth with extra steps.
 
-**On a red gate after a merge, leave the merge in place.** Report it, name the story,
+**On a red gate after a merge, leave the merge in place.** Report it, name the feature,
 and tell the user that `git reset --hard HEAD~1` on the integration branch undoes it.
 Do not undo it yourself: fixing forward and rolling back are both reasonable, the choice
 is theirs, and discarding a real merge is not a call a router gets to make.
@@ -355,20 +359,20 @@ L3 or on a bound, say exactly what stopped you and what the user needs to decide
 **Build-through.** Name, in this order:
 
 1. **The terminal state** — exactly one of `done`, `blocked`, `exhausted`, `paused`,
-   `fork`, `conflict`. Use the word. With more than one lane, report **each story's own
+   `fork`, `conflict`. Use the word. With more than one lane, report **each feature's own
    state**, and give the run's state as the **worst** of them: four green lanes and one
    `blocked` is a `blocked` run, never a `done` one with a footnote.
-2. **Stories built and merged**, in batch order, with their merge commits.
-3. **The story or stories it stopped on**, the task within each, and why in one line.
-4. **Stories never started** — say how many are left, by name.
+2. **Features built and merged**, in batch order, with their merge commits.
+3. **The feature or features it stopped on**, the task within each, and why in one line.
+4. **Features never started** — say how many are left, by name.
 5. **Worktrees left on disk**, with the `git worktree remove` command for each. You do
    not run them.
 6. **The one command that resolves it** — `tiny-spec-create`/`tiny-spec-plan` in update
    mode for `blocked`/`exhausted`, this skill again for `paused`, the decision the user
    owes you for a `fork`, or the conflicted paths for a `conflict`.
 
-**Only `done` — every story merged — may report the work as built.** A run that halted
-has unbuilt stories in it, and a report that rounds `blocked`, `exhausted`, `paused`,
+**Only `done` — every feature merged — may report the work as built.** A run that halted
+has unbuilt features in it, and a report that rounds `blocked`, `exhausted`, `paused`,
 `fork`, or `conflict` up to done converts a stop the user could act on into a false
 completion they won't check. Say the state, then say what's left.
 
@@ -393,7 +397,7 @@ ticket that legitimately has no visual surface.
   `merge --abort`, `worktree add`, `worktree list`, and read-only queries. Everything
   outward-facing or destructive stays the user's — `worktree remove` included, which is
   why Step 4 hands those commands over instead of running them.
-- **Never merge a story whose build didn't return `done`.**
+- **Never merge a feature whose build didn't return `done`.**
 - **Never invoke `tiny-spec-run`.** Re-entering means re-reading these steps, not
   calling yourself. Self-invocation compounds context and does not terminate.
 - **Never resolve a halt yourself.** A blocker means an upstream document is wrong,
@@ -408,5 +412,5 @@ ticket that legitimately has no visual surface.
   asked, and running it again will not fix that — stop and tell the user. The count
   lives in this turn's context, not on disk; a resumed run starts it over, which is the
   intended trade for having no state file.
-- **There is no budget to set.** The story list is the budget: the run ends when the
-  stories end. No turn ceiling, no token cap, no max-stories knob.
+- **There is no budget to set.** The feature list is the budget: the run ends when the
+  features end. No turn ceiling, no token cap, no max-features knob.

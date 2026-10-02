@@ -15,7 +15,7 @@ there, then stops. It does **not** create a ticket dir, write a `SPEC.md`, switc
 branches, or modify a single line of source.
 
 **Starting from a blank page instead?** Use `tiny-spec-scope` — it interviews an idea
-into stories. The two are the suite's two front doors, and you generally want exactly
+into features. The two are the suite's two front doors, and you generally want exactly
 one of them.
 
 ## The one thing that matters most

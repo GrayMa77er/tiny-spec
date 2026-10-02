@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-build
-description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Can be handed several lanes (one worktree + slug per independent story) and runs them concurrently, one task at a time within each. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
+description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Can be handed several lanes (one worktree + slug per independent feature) and runs them concurrently, one task at a time within each. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
 ---
 
 # tiny-spec-build
@@ -36,11 +36,11 @@ alongside this skill (see the suite README).
    reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
 
-## Multi-lane mode (optional — several stories at once)
+## Multi-lane mode (optional — several features at once)
 
 A caller may hand you **lanes** instead of a single active dir: one or more
-`(worktree path, slug)` pairs, each an independent story in its own git worktree.
-`tiny-spec-run` does this for a batch of stories whose `needs:` say they don't depend on
+`(worktree path, slug)` pairs, each an independent feature in its own git worktree.
+`tiny-spec-run` does this for a batch of features whose `needs:` say they don't depend on
 each other. **With one lane, or none, everything below is inert and this skill behaves
 exactly as it always has** — that is the common case and it must not drift.
 
@@ -58,11 +58,11 @@ letting lanes free-run.
 
 **Within a lane nothing changes.** Tasks still run one at a time, top to bottom, with the
 same convergence bound, the same gate scope rules, and the same halting states. There is
-no parallelism *inside* a story and no `owns:` contract — tasks in one story share files
+no parallelism *inside* a feature and no `owns:` contract — tasks in one feature share files
 and assume their predecessors landed, which is exactly why they stay sequential.
 
 **A halt stops that lane only.** The other lanes run to completion; you report each lane's
-terminal state separately. The stories were declared independent, so killing working lanes
+terminal state separately. The features were declared independent, so killing working lanes
 because one failed throws away finished work for nothing.
 
 **Every dispatched agent is told its working directory**, and that all paths resolve
@@ -80,7 +80,7 @@ integration branch, after the batch has merged** — pruning superseded entries 
 step 6 describes. Single-lane runs are unaffected and write it in place as before.
 
 The other artifacts are safe and need no special handling: `PLAN.md` and `decisions.md`
-are per-story, and `constitution.md` is read-only for the whole build.
+are per-feature, and `constitution.md` is read-only for the whole build.
 
 ## The per-task loop
 
@@ -117,11 +117,11 @@ Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
   design instead of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind);
-- the **accumulated `CHANGES` paths from every passed task in this story so far**,
-  labelled as the ground this story has already moved. Every executor starts cold and
+- the **accumulated `CHANGES` paths from every passed task in this feature so far**,
+  labelled as the ground this feature has already moved. Every executor starts cold and
   re-derives the codebase from scratch — that re-derivation is the **largest single cost
   in the loop**, far larger than the prompt text around it — and naming the files this
-  story has already touched is the cheapest way to cut it. You already have the lists in
+  feature has already touched is the cheapest way to cut it. You already have the lists in
   hand. **Paths only**, deduplicated, most-recently-touched first — never the earlier
   tasks' descriptions, findings, or reports. (The reviewer does *not* get this list: it
   is scoped to the task's own changed files on purpose, and widening it would dilute the
