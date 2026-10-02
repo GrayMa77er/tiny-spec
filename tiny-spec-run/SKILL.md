@@ -123,13 +123,13 @@ If neither exists, stop and say so. Never invent the list.
 **Where each story stands — derive, don't record.** For each slug, in order, ask git —
 first match wins:
 
-1. **`git show <integration>:.spec/<slug>/tasks.md`** succeeds and every task is `[x]`
-   → **built and merged.** Skip it.
+1. **`git show <integration>:.spec/<slug>/PLAN.md`** succeeds, its `## Tasks` has at
+   least one task, and every task is `[x]` → **built and merged.** Skip it.
 2. Otherwise, if the branch exists (`git rev-parse --verify <slug>`), read
-   **`git show <slug>:.spec/<slug>/tasks.md`**:
+   **`git show <slug>:.spec/<slug>/PLAN.md`**, counting only `## Tasks`:
    - succeeds, every task `[x]` → **built, not merged** → resume at the **merge**.
    - succeeds, at least one `[ ]` → **in progress** → resume at the **build**.
-   - fails (no task list yet) → **planning incomplete** → resume at the **ladder**.
+   - fails, or `## Tasks` is empty → **planning incomplete** → resume at the **ladder**.
 3. Otherwise → **not started.** Run the full cycle.
 
 Ask **git**, not the working tree. A story that isn't merged yet has no `.spec/<slug>/`
@@ -170,7 +170,7 @@ re-evaluate against the new state on disk.
 | L2 | no ticket dir resolves, or `<active>/SPEC.md` missing | `tiny-spec-create` — **fresh** |
 | L3 | `SPEC.md` is `status: stale` | **stop and ask** |
 | L4 | `SPEC.md` has a `## Design` section and an export's `sha256` no longer matches | `tiny-spec-design` — **re-anchor** |
-| L5 | `<active>/PLAN.md` or `tasks.md` missing, stale, **or the checklist is empty** | `tiny-spec-plan` |
+| L5 | `<active>/PLAN.md` missing, stale, **or its `## Tasks` is empty** | `tiny-spec-plan` |
 | L6 | all current, **at least one task**, at least one `[ ]` | **stop** (stop-before-build) or **build** (build-through) |
 | L7 | all current, **at least one task**, every task `[x]` | **stop** — the work is built (build-through: merge) |
 | — | **no rung matched** | **stop** — report the exact state you found and ask; never improvise a stage |
@@ -216,11 +216,11 @@ flips, and the build reviews against a screen that no longer exists.
 - No `## Design` section, or every hash matches → the rung doesn't fire; fall through.
 
 **Any `status:` that isn't exactly `current`** — `stale`, missing, unreadable, or an
-unrecognized value like `draft` — counts as **stale**, on `SPEC.md`, `PLAN.md`, and
-`tasks.md` alike. Say so out loud. `PLAN.md`/`tasks.md` → reconcile (update mode preserves
-existing ids, the non-destructive way to be wrong); `SPEC.md` → L3, stop and ask.
+unrecognized value like `draft` — counts as **stale**, on `SPEC.md` and `PLAN.md`
+alike. Say so out loud. `PLAN.md` → reconcile (update mode preserves existing ids, the
+non-destructive way to be wrong); `SPEC.md` → L3, stop and ask.
 
-**A `tasks.md` with no tasks at all is not "built"** — L6 and L7 both require at least one
+**A `## Tasks` with no tasks at all is not "built"** — L6 and L7 both require at least one
 task, so an empty checklist matches neither and L5 catches it. Empty a second time → stop
 and tell the user; the plan has nothing derivable in it.
 
@@ -228,8 +228,8 @@ and tell the user; the plan has nothing derivable in it.
 timestamps, or validate the chain — there is no validator in this suite by design. (L4 is
 not an exception: a hash is a value the spec itself declares about a file it names, so
 checking it is reading state, not judging consistency. Not a precedent for adding
-cross-document checks.) So it inherits each stage's propagation: if `tiny-spec-plan`
-update mode doesn't flip `tasks.md`, `run` walks right past it. That trust is the price of
+cross-document checks.) So it inherits each stage's propagation: if `tiny-spec-create`
+update mode doesn't flip `PLAN.md`, `run` walks right past it. That trust is the price of
 having no validator; when a run's result looks wrong, suspect the stage's propagation
 before the ladder.
 

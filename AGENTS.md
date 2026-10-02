@@ -14,7 +14,7 @@ BREAKDOWN.md                    constitution.md
         \                        /
          v                      v
   tiny-spec-create → tiny-spec-plan → tiny-spec-build
-  SPEC.md            PLAN.md + tasks.md   per-task loop
+  SPEC.md            PLAN.md (+ Tasks)    per-task loop
                      + constitution
 
          tiny-spec-run     the one router, drives the above
@@ -59,7 +59,7 @@ router that talks itself into building is the failure this design exists to prev
 **There is no budget and no state file.** The story list *is* the budget — the run ends
 when the stories end. A turn ceiling, a token cap, or a max-stories knob would each put
 a weaker stopping rule beside the real one. And loop progress is *derived*:
-`git show <integration>:.spec/<slug>/tasks.md` answers "is this story built and merged"
+`git show <integration>:.spec/<slug>/PLAN.md` answers "is this story built and merged"
 without anything being written down. A progress file would be faster to read and wrong
 the first time someone merges by hand.
 
@@ -82,9 +82,10 @@ Three structural choices are **intended**, not drift — don't "simplify" them a
 
 - **Per-spec namespacing** under `.spec/<slug>/` with a shared
   `constitution.md`/`memory.md` spine.
-- **`PLAN.md` and `tasks.md` are two files but one staleness unit.** `tiny-spec-plan`
-  writes both in one pass. They stay separate files because `tiny-spec-build` rewrites
-  `tasks.md` constantly and mixing mutable execution state into design prose is worse.
+- **The task checklist is a `## Tasks` section of `PLAN.md`, not its own file.**
+  Design and checklist always went stale together, so they share one `status:` flag.
+  `tiny-spec-build` may change only the checkboxes and `updated:` in `PLAN.md` — never
+  the design prose. Don't split it back out (it was `tasks.md` before 2.0).
 - **Richer SPEC/PLAN templates** whose extra sections are all marked optional
   (`<!-- optional -->`) so they add shape without forcing ceremony. Keep new template
   sections optional unless a section truly must always be filled.
@@ -101,7 +102,7 @@ documented exception:
 | `.spec/constitution.md` § `Design system`, § `visual:` | `tiny-spec-design` |
 | `.spec/<slug>/SPEC.md` | `tiny-spec-create` |
 | `.spec/<slug>/SPEC.md` § `Design` (`D<n>`) | `tiny-spec-design` |
-| `.spec/<slug>/PLAN.md`, `tasks.md` | `tiny-spec-plan` |
+| `.spec/<slug>/PLAN.md` (incl. `## Tasks`; build ticks checkboxes only) | `tiny-spec-plan` |
 | `.spec/memory.md` | `tiny-spec-build` |
 | `.spec/<slug>/decisions.md` | no template — append-only, fixed inline skeleton |
 
@@ -153,7 +154,7 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
    - **completed-work guardrail:** an upstream change that touches a `[x]` task must
      **uncheck** it and log it for review;
    - **pause honored, and honored *early*:** a task carrying `pause:` must halt the build
-     **before** it runs — task still `[ ]`, no executor dispatched, `tasks.md` untouched
+     **before** it runs — task still `[ ]`, no executor dispatched, `PLAN.md` untouched
      — and a conversational waiver must not be written back into the file;
    - **terminal state never rounded up:** a run that ends `blocked`, `exhausted`,
      `paused`, `fork`, or `conflict` must say so by name. Only `done` may report the work

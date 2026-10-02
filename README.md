@@ -48,7 +48,7 @@ stories through to merged code. No config file, no build step.
    tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-build
    intent               design + tasks      per-task loop
    SPEC.md              PLAN.md             plan → implement
-                        tasks.md            → review → commit
+                        (+ ## Tasks)        → review → commit
 
    tiny-spec-run      one router. Walks the chain and stops before build —
                       or, asked to, builds each story and merges it.
@@ -73,7 +73,7 @@ receipt rather than the adjective:
 
 | | skills / commands | agents | config | artifacts per feature |
 |---|---|---|---|---|
-| **tiny-spec** | **7** (3 core + 1 router + 3 optional) | **2** | **none** | **`SPEC` `PLAN` `tasks`** |
+| **tiny-spec** | **7** (3 core + 1 router + 3 optional) | **2** | **none** | **`SPEC` `PLAN`** |
 | [GitHub Spec Kit](https://github.com/github/spec-kit) | 10 | — | `specify init` | `spec` `plan` `tasks` `checklist` `constitution` `research` `data-model` `contracts/` `quickstart` |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 12 | — | `.openspec.yaml` | `proposal` `design` `tasks` `specs/` |
 | [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 58 | 5 personas | 35 × `customize.toml` | `PRD` `architecture` `epics` `stories` `UX` `brief` `sprint-plan` |
@@ -225,8 +225,8 @@ or install one set at a time.
 ### See a finished run first
 
 [`examples/todo-cli/`](examples/todo-cli/) is a real run of the flow on one small
-ticket, committed verbatim — the `TICKET.md` that went in, the `SPEC.md`, `PLAN.md`,
-`tasks.md` and `constitution.md` the suite wrote, and the code and tests it produced.
+ticket, committed verbatim — the `TICKET.md` that went in, the `SPEC.md`, `PLAN.md`
+and `constitution.md` the suite wrote, and the code and tests it produced.
 The tests pass; you can clone it and run the gate yourself.
 
 ## How it works
@@ -427,7 +427,7 @@ proved the same thing repeatedly and was the slowest part of the loop.
 
 ```mermaid
 flowchart TB
-    SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[tasks.md<br/>checklist]
+    SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[PLAN.md ## Tasks<br/>checklist]
 
     TASKS -->|pause: set| H[Halt — paused<br/>task stays unchecked]
     TASKS --> P[Plan task]
@@ -548,7 +548,7 @@ back the `git worktree remove` commands for the lanes instead of running those e
 since a halted lane's worktree is the tree you need to look at.
 
 **Walk away and come back.** Progress isn't written down, it's derived: a story whose
-ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
+ticked `## Tasks` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
 progress, no directory means not started. Ask again tomorrow in a fresh session and it
 picks up where it stopped. No run-state file, no lock, no budget to configure — the
 story list *is* the budget.
@@ -576,7 +576,7 @@ It is namespaced per ticket, with a shared spine at the root:
   constitution.md           project-wide, shared across tickets
   memory.md                 operational lessons, shared across tickets
   <ticket-id>/              one directory per ticket (PROJ-123/, gh-42/, …)
-    SPEC.md  PLAN.md  tasks.md  decisions.md
+    SPEC.md  PLAN.md  decisions.md     (PLAN.md ends in the ## Tasks checklist)
 ```
 
 `BREAKDOWN.md` and `design/` sit at your project root rather than inside `.spec/`,

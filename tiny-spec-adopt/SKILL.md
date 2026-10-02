@@ -182,7 +182,7 @@ Say plainly that inferred sections need review before the first build.
 A constitution change invalidates work reviewed against the old one, so after applying
 any accepted change:
 
-For **each** ticket dir under `.spec/` whose `tasks.md` has checked tasks, set it
+For **each** ticket dir under `.spec/` whose `PLAN.md` has checked tasks, set it
 `status: stale` and log a `decisions.md` entry in that ticket, creating the file if
 absent:
 

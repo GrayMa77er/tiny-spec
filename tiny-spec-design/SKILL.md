@@ -203,7 +203,7 @@ flips, and the build reviews against a screen that no longer exists.
 
 **Propagating staleness** after any change to a `D<n>` or to the token system:
 
-1. Set `.spec/<active>/PLAN.md` and `tasks.md` to `status: stale` (if they exist).
+1. Set `.spec/<active>/PLAN.md` to `status: stale` (if it exists).
 2. Append a `decisions.md` entry to `.spec/<active>/decisions.md`, creating the file if
    absent:
 
@@ -216,8 +216,8 @@ flips, and the build reviews against a screen that no longer exists.
    ```
 
 3. **Completed-work guardrail.** If a changed `D<n>` is built by a task already `[x]`
-   in `tasks.md` (follow its `design:` field), **uncheck it** and name the unchecked ids
-   in the same `decisions.md` entry. `tiny-spec-build` resumes from the checkbox state,
+   in `PLAN.md`'s `## Tasks` (follow its `design:` field), **uncheck it** and name the
+   unchecked ids in the same `decisions.md` entry. `tiny-spec-build` resumes from the checkbox state,
    so a task left `[x]` is a task it will never revisit — never assume built work
    survived a design change.
 

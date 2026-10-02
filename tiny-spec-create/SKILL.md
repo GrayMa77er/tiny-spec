@@ -12,7 +12,7 @@ This is the front door of the per-ticket flow. A spec can be bound to a ticket o
 The suite works **one spec at a time**, namespaced per spec. Artifacts live under
 `.spec/` in the **project root** (the user's cwd) — never in this skill's directory. Two
 are **project-wide** and shared at the `.spec/` root (`constitution.md`, `memory.md`);
-the per-spec ones (`SPEC.md`, `PLAN.md`, `tasks.md`, `decisions.md`) live under
+the per-spec ones (`SPEC.md`, `PLAN.md`, `decisions.md`) live under
 `.spec/<slug>/`. The `SPEC.md` and `constitution.md` skeletons are inline below — write
 them from there, no files to read.
 
@@ -69,7 +69,7 @@ Otherwise (little or no code yet), do **only** this:
 3. **Flag downstream work as unverified — across every spec, not just the active one.**
    The constitution is project-wide, so *any* `[x]` task in *any* `.spec/*/` was built
    and reviewed against a document that did not exist. For each spec dir whose
-   `tasks.md` has checked tasks, set it `status: stale` and log a `decisions.md` entry
+   `PLAN.md` has checked tasks, set it `status: stale` and log a `decisions.md` entry
    in that spec (`type: change`) saying the constitution was reseeded and the completed
    tasks were never checked against it.
 4. Report what you seeded, say plainly that it was **inferred and needs review** (it
@@ -303,8 +303,8 @@ requirements (resolve the active dir by branch match):
 
 1. Edit `.spec/<active>/SPEC.md` in place — add/alter/remove `REQ-N`, preserving existing
    ids where the requirement still exists.
-2. Flip downstream **stale**: set `PLAN.md` and `tasks.md` frontmatter to `status: stale`
-   (if they exist).
+2. Flip downstream **stale**: set `PLAN.md` frontmatter to `status: stale` (if it
+   exists).
 3. Log it: append a `decisions.md` entry to `.spec/<active>/decisions.md`, using the
    fixed skeleton (`type: change`, the affected `REQ-N`). Create the file if absent:
 
@@ -317,7 +317,7 @@ requirements (resolve the active dir by branch match):
    ```
 
 4. **Completed-work guardrail.** If a changed `REQ-N` is delivered by a task already
-   `[x]` in `tasks.md` (follow its `req:` field), **uncheck it** and name the unchecked
+   `[x]` in `PLAN.md`'s `## Tasks` (follow its `req:` field), **uncheck it** and name the unchecked
    ids in the same `decisions.md` entry. `tiny-spec-build` resumes from the checkbox
    state, so a task left `[x]` is a task it will never revisit — never assume built work
    survived a requirement change.

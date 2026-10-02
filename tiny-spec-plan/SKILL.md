@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-plan
-description: Turn the active ticket's SPEC.md into a technical design and an executable task list — produce PLAN.md and tasks.md in one pass, and harden the shared constitution.md. tasks.md is a flat, ordered checklist executed sequentially by tiny-spec-build. Re-run in update mode to reconcile both after a SPEC change.
+description: Turn the active ticket's SPEC.md into a technical design and an executable task list — produce PLAN.md (design narrative plus a ## Tasks checklist) and harden the shared constitution.md. The ## Tasks section is a flat, ordered checklist executed sequentially by tiny-spec-build. Re-run in update mode to reconcile it after a SPEC change.
 ---
 
 # tiny-spec-plan
@@ -9,15 +9,13 @@ Decides **how** the requirements get built, slices that into the tasks that buil
 and — just as important — hardens the **constitution** (`constitution.md`) that every
 task will be implemented and reviewed against.
 
-It writes **two files in one pass**: `PLAN.md`, the stable design narrative, and
-`tasks.md`, the flat checklist `tiny-spec-build` executes and ticks. They are two files
-for a good reason — `tiny-spec-build` rewrites `tasks.md` constantly, and mixing mutable
-execution state into design prose would be worse — but they are **one staleness unit**.
-This skill always writes and reconciles both together, and it is the only skill that
-sets `tasks.md`'s `status:`.
+It writes **one file**, `PLAN.md`: the design narrative, ending in a `## Tasks`
+section — the flat checklist `tiny-spec-build` executes and ticks. Design and checklist
+go stale together, so they share one `status:` flag, and this skill is the only one that
+sets it. `tiny-spec-build` touches nothing in the file but the checkboxes and `updated:`.
 
 Artifacts live under `.spec/`: the **shared** constitution at the root
-(`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md`/`tasks.md` under
+(`.spec/constitution.md`), the per-ticket `SPEC.md`/`PLAN.md` under
 `.spec/<slug>/`. Both skeletons are inline below — write them from there, no file to
 read. Requires `.spec/<active>/SPEC.md`.
 
@@ -116,6 +114,10 @@ what level, and any fixtures/data needed.>
 
 <Design questions still unresolved. A question that blocks the task list must be
 answered here or routed back to tiny-spec-create before you slice.>
+
+## Tasks
+
+<Written in Step 3 — the ordered checklist tiny-spec-build executes.>
 ```
 
 - `## Approach` *(required)* — the design narrative: the shape of the solution, key
@@ -125,13 +127,14 @@ answered here or routed back to tiny-spec-create before you slice.>
   `tiny-spec-create`.
 - Optional sections (`Architecture`, `Risks & mitigations`, `Test strategy`,
   `Open questions`) where they add value — omit any that don't apply.
+- `## Tasks` *(required)* — always last; Step 3 fills it.
 
 Keep it proportional: a small change is a few paragraphs, not a phased epic.
 
 **An unresolved `## Open questions` entry that blocks the slice is a stop.** Don't guess
 past it into a task list — say what's unresolved and route back to `tiny-spec-create`.
 
-## Step 3 — slice the approach into tasks
+## Step 3 — slice the approach into `## Tasks`
 
 Walk the `## Approach` you just wrote and break it into tasks. No waves, no
 parallelism, no `owns:` contracts — tasks run one at a time, top to bottom.
@@ -182,10 +185,10 @@ The shipped `examples/todo-cli` task list predates these two smells and shows bo
 `T1` is a pure scaffold and its `T5` is an end-to-end verification pass. Today `T1` folds
 into `T2` and `T5` doesn't exist. Read that list for `T4`'s sizing, not for its edges.
 
-**Count is a smell, not a cap.** A story sized the way `tiny-spec-scope` describes
-usually lands in **2–4 tasks**. If you are past about six, re-read the list: you have
-either sliced below the commit line, or the story itself was too big and should have been
-split upstream. Check the list against that; do **not** enforce a number, and never drop
+**Count is a smell, not a cap.** A feature sized the way `tiny-spec-scope` describes
+usually lands in **2–5 tasks**. If you are past about six, re-read the list: you have
+either sliced below the commit line, or the feature itself was too big and should have
+been split upstream. Check the list against that; do **not** enforce a number, and never drop
 or merge coverage just to hit one.
 
 For each task, write:
@@ -260,26 +263,17 @@ a task per requirement is the anti-pattern. Likewise, if `SPEC.md` has a `## Des
 section, every `D<n>` in it needs at least one task carrying that `design:` reference —
 a screen nobody is graded against is a screen that will be built wrong.
 
-## Step 4 — write `tasks.md`
-
-Write `.spec/<active>/tasks.md` with the structure below — all tasks `[ ]` unchecked,
-frontmatter `status: current`, `updated: <today>`:
+Write the tasks into `PLAN.md`'s `## Tasks` section — all `[ ]` unchecked — with the
+structure below:
 
 ```markdown
----
-status: current
-updated: <ISO date>
----
-
-# Tasks — <project / feature name>
+## Tasks
 
 > Executed top to bottom, one at a time. A checked `[x]` task is implemented AND
 > reviewed. `type:`, `req:`, `design:`, and `pause:` are optional; `files:` is a hint,
 > not an ownership contract. A task with `design:` is also graded against that screen's
 > `D<n>` entry and the constitution's Design system. A task with `pause:` halts the
 > build before it runs, so a human looks first.
-
-## Tasks
 
 - [ ] T1 — <one coherent commit's worth of foundational work; usually several files>
   - acceptance: <the observable outcome; happy path; and the negative case that bounds it>
@@ -304,19 +298,17 @@ updated: <ISO date>
 The `req:` lists above are the shape to aim for, not filler: a handful of tasks each
 carrying the requirements one coherent change delivers. A skeleton filled in as
 `REQ-1`, `REQ-2`, `REQ-3` down a column of single-requirement tasks is the granularity
-failure described in Step 3.
+failure described above.
 
-## Update mode (SPEC changed → PLAN and tasks are stale)
+## Update mode (SPEC changed → PLAN is stale)
 
-When `PLAN.md` or `tasks.md` is `status: stale`, reconcile **both in one pass** — they
-are one staleness unit, so never leave the run with them disagreeing:
+When `PLAN.md` is `status: stale` (or its `## Tasks` is empty), reconcile it in one pass:
 
 1. Read the latest `.spec/<active>/decisions.md` change entry to see what moved.
-2. Reconcile `.spec/<active>/PLAN.md` and the shared `.spec/constitution.md` — adjust
-   only what the change requires; preserve the rest.
-3. Reconcile `.spec/<active>/tasks.md` — add/alter/remove tasks to match the new
-   approach, preserving existing `T<n>` ids where the task still exists; new tasks get
-   the next free id.
+2. Reconcile `.spec/<active>/PLAN.md`'s design sections and the shared
+   `.spec/constitution.md` — adjust only what the change requires; preserve the rest.
+3. Reconcile `## Tasks` — add/alter/remove tasks to match the new approach, preserving
+   existing `T<n>` ids where the task still exists; new tasks get the next free id.
 4. **Completed-work guardrail:** if a change touches a task already `[x]`, **uncheck it**
    (`[ ]`) and record the unchecked ids in `.spec/<active>/decisions.md` for human
    review, using the fixed skeleton. Never assume built work survived a change.
@@ -329,7 +321,12 @@ are one staleness unit, so never leave the run with them disagreeing:
    - note: <which tasks were unchecked and why>
    ```
 
-5. Set **both** `PLAN.md` and `tasks.md` to `status: current` and bump `updated`.
+5. Set `PLAN.md` to `status: current` and bump `updated`.
+
+**A legacy `tasks.md`** (written before 2.0, when the checklist was its own file): if
+`.spec/<active>/tasks.md` exists, move its tasks into `PLAN.md`'s `## Tasks` **verbatim —
+ids, fields, and `[x]` state preserved** — then delete `tasks.md`. Do this first, before
+reconciling, and never re-slice a legacy list just because you are moving it.
 
 ## When done
 

@@ -10,6 +10,9 @@ workflow generates before you run it on your own work.
 > retouched to match the current artifact formats — a doctored example would defeat
 > the point. Later versions add a `## Design` section to `SPEC.md` (unused here: this
 > is a CLI with no design surface) and richer status flags. The shape is the same.
+> One format move was applied after the fact: in 2.0 the checklist stopped being its
+> own `tasks.md` and became `PLAN.md`'s `## Tasks` section, so the original `tasks.md`
+> was moved there verbatim — same tasks, same ticks, no content edited.
 
 ## What's here
 
@@ -20,14 +23,13 @@ TICKET.md                     the input — a small "todo CLI" ask
                               definition of done, and the verification gate
   todo-cli/
     SPEC.md                   intent + REQ-1..REQ-9 (what "done" means)
-    PLAN.md                   the design and how each requirement is covered
-    tasks.md                  the ordered checklist, all ticked [x]
+    PLAN.md                   the design, how each requirement is covered, and
+                              the ordered ## Tasks checklist, all ticked [x]
 todo.py                       the produced CLI (stdlib only, 117 lines)
 test_todo.py                  the produced end-to-end test (129 lines)
 ```
 
-Read them in flow order: `TICKET.md` → `SPEC.md` → `PLAN.md` → `tasks.md` →
-`todo.py`. The `constitution.md` is the persistent context injected into every task.
+Read them in flow order: `TICKET.md` → `SPEC.md` → `PLAN.md` → `todo.py`. The `constitution.md` is the persistent context injected into every task.
 
 ## It passes its own gate
 
