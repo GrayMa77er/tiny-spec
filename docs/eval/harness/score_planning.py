@@ -77,8 +77,9 @@ def main():
             bits.append("structural")
         if r.get("dropped_capabilities"):
             bits.append(f"dropped={len(r['dropped_capabilities'])}")
-        if r.get("invented_stories"):
-            bits.append(f"invented={len(r['invented_stories'])}")
+        invented = r.get("invented_features") or r.get("invented_stories")  # pre-2.0 rows
+        if invented:
+            bits.append(f"invented={len(invented)}")
         if r.get("atomicity_ok") is False:
             bits.append("atomicity")
         flag = ("  <- " + ", ".join(bits)) if bits else ""

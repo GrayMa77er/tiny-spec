@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-create
-description: Start or update a spec — capture intent and requirements into .spec/<slug>/SPEC.md, optionally bound to a ticket (or ad-hoc). On first run, scaffolds .spec/ and seeds the shared constitution (constitution.md). If a BREAKDOWN.md (from tiny-spec-scope) is present, seeds the spec from a chosen story instead of a full interview. Re-run to update an existing spec in place.
+description: Start or update a spec — capture intent and requirements into .spec/<slug>/SPEC.md, optionally bound to a ticket (or ad-hoc). On first run, scaffolds .spec/ and seeds the shared constitution (constitution.md). If a BREAKDOWN.md (from tiny-spec-scope) is present, seeds the spec from a chosen feature instead of a full interview. Re-run to update an existing spec in place.
 ---
 
 # tiny-spec-create
@@ -12,7 +12,7 @@ This is the front door of the per-ticket flow. A spec can be bound to a ticket o
 The suite works **one spec at a time**, namespaced per spec. Artifacts live under
 `.spec/` in the **project root** (the user's cwd) — never in this skill's directory. Two
 are **project-wide** and shared at the `.spec/` root (`constitution.md`, `memory.md`);
-the per-spec ones (`SPEC.md`, `PLAN.md`, `tasks.md`, `decisions.md`) live under
+the per-spec ones (`SPEC.md`, `PLAN.md`, `decisions.md`) live under
 `.spec/<slug>/`. The `SPEC.md` and `constitution.md` skeletons are inline below — write
 them from there, no files to read.
 
@@ -69,7 +69,7 @@ Otherwise (little or no code yet), do **only** this:
 3. **Flag downstream work as unverified — across every spec, not just the active one.**
    The constitution is project-wide, so *any* `[x]` task in *any* `.spec/*/` was built
    and reviewed against a document that did not exist. For each spec dir whose
-   `tasks.md` has checked tasks, set it `status: stale` and log a `decisions.md` entry
+   `PLAN.md` has checked tasks, set it `status: stale` and log a `decisions.md` entry
    in that spec (`type: change`) saying the constitution was reseeded and the completed
    tasks were never checked against it.
 4. Report what you seeded, say plainly that it was **inferred and needs review** (it
@@ -86,42 +86,42 @@ This is a repair, not a new spec.
 **Fresh modes only** — reseed (rule 1) and update (rule 3) both outrank this.
 
 Before interviewing, check for **`BREAKDOWN.md`** at the project root (written by
-`tiny-spec-scope`). If it exists and the user is creating one of its stories, **seed from
+`tiny-spec-scope`). If it exists and the user is creating one of its features, **seed from
 it instead of running the full interview** — confirm, don't re-ask:
 
-1. **Pick the story.** Ask which story (or infer from the user's request); match it to
-   its `## Feature:` → `Story:` entry by slug or title.
-2. **Slug + binding.** Use the story's **slug** for `.spec/<slug>/`. Take the ticket
-   provider from the Decisions **Platform** and the **id** from the story's tracker
-   parent or the user (ask for the id if the placeholder is still blank; omit the
+1. **Pick the feature.** Ask which feature (or infer from the user's request); match it
+   to its `## Feature:` entry by slug or title.
+2. **Slug + binding.** Use the feature's **slug** for `.spec/<slug>/`. Take the ticket
+   provider from the Decisions **Platform** and the **id** from the feature's
+   `(tracker: …)` or the user (ask for the id if the placeholder is still blank; omit the
    `ticket:` block entirely if the platform is ad-hoc).
-3. **Requirements.** Promote the story's **`AC:` lines into `REQ-N`** — verbatim where
+3. **Requirements.** Promote the feature's **`AC:` lines into `REQ-N`** — verbatim where
    already atomic; split any that hide two capabilities behind an "and".
 4. **Constitution (first run only).** Seed `constitution.md` from the **`## Decisions`**
    block instead of interviewing stack/layout: Stack + Code-lives → **Style** and
    **Layout**; any verification hints → **Verification commands**; cross-cutting
    concerns → **Guiding invariants**. If `constitution.md` already exists, reuse it.
-5. **Designs.** If the story carries `design:` paths, note them and point the user at
+5. **Designs.** If the feature carries `design:` paths, note them and point the user at
    **`tiny-spec-design`** — that skill reads the files and writes this spec's `D<n>`
    entries against a token system. Don't describe the screens here.
 6. Confirm the captured `REQ-N` with the user, then write `SPEC.md` as below.
 
-Only the **project-wide** questions collapse — still confirm this story's binding and
+Only the **project-wide** questions collapse — still confirm this feature's binding and
 requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **full
 interview** below unchanged.
 
-**Exception — a story run.** If the caller says this is a **story run** and names the
-story's slug (`tiny-spec-run` does, in build-through mode), skip step 6's confirmation
+**Exception — a feature run.** If the caller says this is a **feature run** and names the
+feature's slug (`tiny-spec-run` does, in build-through mode), skip step 6's confirmation
 and write `SPEC.md` straight out. The `AC:` lines *are* the approval: the user reviewed
-them when they wrote or accepted `BREAKDOWN.md`, and re-confirming them once per story is
-asking the same question twice — across a seven-story run it is the difference between
+them when they wrote or accepted `BREAKDOWN.md`, and re-confirming them once per feature
+is asking the same question twice — across a seven-feature run it is the difference between
 walking away and being interrupted seven times. Report the captured `REQ-N` instead of
 asking about them.
 
 This waives **only** that confirmation. Everything that is a genuine question still stops
-the run: a story whose `AC:` lines contradict each other or the Decisions block, an `AC:`
+the run: a feature whose `AC:` lines contradict each other or the Decisions block, an `AC:`
 you cannot turn into a testable `REQ-N`, a missing ticket id the platform needs, a design
-export the story names that isn't on disk. Those are not ceremony — they are the human
+export the feature names that isn't on disk. Those are not ceremony — they are the human
 input the run is supposed to stop for. Never guess past one because a run is in progress.
 
 ## Pick the slug (resolve the active dir)
@@ -303,8 +303,8 @@ requirements (resolve the active dir by branch match):
 
 1. Edit `.spec/<active>/SPEC.md` in place — add/alter/remove `REQ-N`, preserving existing
    ids where the requirement still exists.
-2. Flip downstream **stale**: set `PLAN.md` and `tasks.md` frontmatter to `status: stale`
-   (if they exist).
+2. Flip downstream **stale**: set `PLAN.md` frontmatter to `status: stale` (if it
+   exists).
 3. Log it: append a `decisions.md` entry to `.spec/<active>/decisions.md`, using the
    fixed skeleton (`type: change`, the affected `REQ-N`). Create the file if absent:
 
@@ -317,7 +317,7 @@ requirements (resolve the active dir by branch match):
    ```
 
 4. **Completed-work guardrail.** If a changed `REQ-N` is delivered by a task already
-   `[x]` in `tasks.md` (follow its `req:` field), **uncheck it** and name the unchecked
+   `[x]` in `PLAN.md`'s `## Tasks` (follow its `req:` field), **uncheck it** and name the unchecked
    ids in the same `decisions.md` entry. `tiny-spec-build` resumes from the checkbox
    state, so a task left `[x]` is a task it will never revisit — never assume built work
    survived a requirement change.

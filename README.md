@@ -34,13 +34,13 @@ committed.
 That core is **three skills and two agents**. In front of it sit **two front doors** —
 pick the one that matches where you're starting. Over the top sits **one router**,
 `tiny-spec-run`, which drives the chain and, when you ask it to, works a whole list of
-stories through to merged code. No config file, no build step.
+features through to merged code. No config file, no build step.
 
 ```
    GREENFIELD                        BROWNFIELD
    starting from an idea             starting from a codebase
    tiny-spec-scope                   tiny-spec-adopt
-   idea → Features → Stories         real code → constitution
+   idea → Features                   real code → constitution
    BREAKDOWN.md                      constitution.md
             \                         /
              └───────────┬───────────┘
@@ -48,16 +48,16 @@ stories through to merged code. No config file, no build step.
    tiny-spec-create  →  tiny-spec-plan  →  tiny-spec-build
    intent               design + tasks      per-task loop
    SPEC.md              PLAN.md             plan → implement
-                        tasks.md            → review → commit
+                        (+ ## Tasks)        → review → commit
 
    tiny-spec-run      one router. Walks the chain and stops before build —
-                      or, asked to, builds each story and merges it.
+                      or, asked to, builds each feature and merges it.
    tiny-spec-design   optional. Wireframes → tokens + gradeable screens.
 ```
 
 **Pick one front door, once per project.** Starting from an idea with no code yet? Run
 `tiny-spec-scope` — it interviews the idea into a `BREAKDOWN.md`, a flat list of
-Features → Stories with draft acceptance criteria. Working in a codebase that already
+well-defined Features with draft acceptance criteria. Working in a codebase that already
 exists? Run `tiny-spec-adopt` — it reads your repo and derives the constitution from
 what's actually there: your real lint and test commands, your real layout, your real
 conventions. Have a single known ticket in a project that's already set up? Skip both
@@ -73,7 +73,7 @@ receipt rather than the adjective:
 
 | | skills / commands | agents | config | artifacts per feature |
 |---|---|---|---|---|
-| **tiny-spec** | **7** (3 core + 1 router + 3 optional) | **2** | **none** | **`SPEC` `PLAN` `tasks`** |
+| **tiny-spec** | **7** (3 core + 1 router + 3 optional) | **2** | **none** | **`SPEC` `PLAN`** |
 | [GitHub Spec Kit](https://github.com/github/spec-kit) | 10 | — | `specify init` | `spec` `plan` `tasks` `checklist` `constitution` `research` `data-model` `contracts/` `quickstart` |
 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | 12 | — | `.openspec.yaml` | `proposal` `design` `tasks` `specs/` |
 | [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 58 | 5 personas | 35 × `customize.toml` | `PRD` `architecture` `epics` `stories` `UX` `brief` `sprint-plan` |
@@ -160,7 +160,7 @@ uvx tiny-spec install
 Restart Claude Code so it picks up the new skills, then run the flow in your project:
 
 ```
-/tiny-spec-scope     # starting from an idea: interview it into stories (BREAKDOWN.md)
+/tiny-spec-scope     # starting from an idea: interview it into features (BREAKDOWN.md)
 /tiny-spec-adopt     # starting from a codebase: derive the constitution from real code
 /tiny-spec-create    # capture intent and requirements (binds a ticket, optional)
 /tiny-spec-plan      # design it, harden the constitution, slice the task list
@@ -182,10 +182,10 @@ forward. It writes nothing itself, it only delegates. By default it **stops befo
 Ask it to build and it goes all the way instead:
 
 ```
-/tiny-spec-run build the backlog     # per story: branch → plan → build → merge → next
+/tiny-spec-run build the backlog     # per feature: branch → plan → build → merge → next
 ```
 
-It reads your `BREAKDOWN.md` (or a list you paste) and works the stories one after
+It reads your `BREAKDOWN.md` (or a list you paste) and works the features one after
 another, merging each finished branch into `main` locally before starting the next —
 until it's done or reaches a **terminal state** it names out loud. See
 [Working a whole list](#working-a-whole-list). Which of the two it does is decided from
@@ -225,8 +225,8 @@ or install one set at a time.
 ### See a finished run first
 
 [`examples/todo-cli/`](examples/todo-cli/) is a real run of the flow on one small
-ticket, committed verbatim — the `TICKET.md` that went in, the `SPEC.md`, `PLAN.md`,
-`tasks.md` and `constitution.md` the suite wrote, and the code and tests it produced.
+ticket, committed verbatim — the `TICKET.md` that went in, the `SPEC.md`, `PLAN.md`
+and `constitution.md` the suite wrote, and the code and tests it produced.
 The tests pass; you can clone it and run the gate yourself.
 
 ## How it works
@@ -427,7 +427,7 @@ proved the same thing repeatedly and was the slowest part of the loop.
 
 ```mermaid
 flowchart TB
-    SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[tasks.md<br/>checklist]
+    SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[PLAN.md ## Tasks<br/>checklist]
 
     TASKS -->|pause: set| H[Halt — paused<br/>task stays unchecked]
     TASKS --> P[Plan task]
@@ -461,40 +461,39 @@ resumes from the checklist state.
 ### Working a whole list
 
 Ask `/tiny-spec-run` to build — "build the backlog", "work through the breakdown",
-"spec it out and build it" — and it takes a list of stories and works them in batches.
-Per story it does the same four moves:
+"spec it out and build it" — and it takes a list of features and works them in batches.
+Per feature it does the same four moves:
 
 ```
 cut a branch from main  →  walk the chain  →  tiny-spec-build  →  merge back to main
 ```
 
-Each branch is cut **fresh from main**, so a later story sees the earlier ones already
+Each branch is cut **fresh from main**, so a later feature sees the earlier ones already
 merged — which is what makes an ordered list build correctly.
 
-**Independent stories build at the same time.** A story can declare what it must follow
+**Independent features build at the same time.** A feature can declare what it must follow
 with a `needs:` line in `BREAKDOWN.md`; everything with no unmet `needs:` forms a batch
-and builds **concurrently, one git worktree per story**, three at a time by default.
+and builds **concurrently, one git worktree per feature**, three at a time by default.
 The batch merges, then the next one starts.
 
 ```
-## Feature: interface
+## Feature: expose both helpers on a CLI     slug: cli
 
-- Story: expose both helpers on a CLI     slug: cli
-  - AC: `textkit slugify "Hi There"` prints "hi-there"
-  - needs: slugify, wordwrap
+- AC: `textkit slugify "Hi There"` prints "hi-there"
+- needs: slugify, wordwrap
 ```
 
-Omit `needs:` when a story stands alone — that's the common case, and the field is meant
+Omit `needs:` when a feature stands alone — that's the common case, and the field is meant
 to be rare. A `needs:` you didn't need costs you parallelism forever; one you missed
 costs a single merge conflict, which the run already catches and halts on. You can also
 just name the set yourself at invocation ("build these three at once"), which overrides
-the graph. A cycle, or a `needs:` naming a story that isn't there, stops the run rather
+the graph. A cycle, or a `needs:` naming a feature that isn't there, stops the run rather
 than being guessed past.
 
-**Tasks *inside* a story never run in parallel.** They share files and each one assumes
-the last landed, so they stay strictly sequential. Parallelism is across stories only.
+**Tasks *inside* a feature never run in parallel.** They share files and each one assumes
+the last landed, so they stay strictly sequential. Parallelism is across features only.
 
-**The list is `BREAKDOWN.md` by default** — its `- Story:` entries, in file order,
+**The list is `BREAKDOWN.md` by default** — its `## Feature:` entries, in file order,
 each already carrying a `slug:` (the branch and directory name) and `AC:` lines. Paste
 a list at invocation instead and that wins; but a bare feature name has no acceptance
 criteria, so `tiny-spec-create` will interview you when it reaches it. That's the
@@ -504,26 +503,26 @@ honest trade: a breakdown runs unattended, a pasted list is supervised.
 
 | | |
 |---|---|
-| `done` | every story built **and merged** |
+| `done` | every feature built **and merged** |
 | `blocked` | an upstream document is wrong — go fix the spec or the plan |
 | `exhausted` | a task stayed red past two fix attempts |
 | `paused` | it reached a `pause:` point |
 | `fork` | a real either/or the plan doesn't answer |
-| `conflict` | a story's branch wouldn't merge cleanly |
+| `conflict` | a feature's branch wouldn't merge cleanly |
 
-**Only `done` means the work is built** — and in a story run, that means *all* of them.
-Stopping at story 2 of 7 and reporting "done" is what autonomous loops get wrong most
+**Only `done` means the work is built** — and in a feature run, that means *all* of them.
+Stopping at feature 2 of 7 and reporting "done" is what autonomous loops get wrong most
 often, so the state is always named alongside what merged and what's still untouched.
 
 **A halt stops the lane it happened in, and ends the run after that batch.** Its siblings
 were declared independent, so they finish and merge — killing working lanes because one
-failed throws away good work. But the run does not start the next batch: later stories
+failed throws away good work. But the run does not start the next batch: later features
 usually assume the earlier ones landed, so skipping ahead past a failure just produces a
-second, more confusing failure downstream. With more than one lane you get each story's
+second, more confusing failure downstream. With more than one lane you get each feature's
 own state, and the run's state is the worst of them — four green lanes and one `blocked`
 is a `blocked` run.
 
-**Pause points are technical, not per-story.** Any task can carry a `pause:` line, and
+**Pause points are technical, not per-feature.** Any task can carry a `pause:` line, and
 the build halts *before* running it:
 
 ```
@@ -535,7 +534,7 @@ the build halts *before* running it:
 `tiny-spec-plan` proposes these for genuinely irreversible work — migrations,
 destructive file operations, a new dependency, an auth boundary, a public API contract.
 You can also give the run a standing policy up front ("halt before anything that touches
-auth") and it gets applied as each story's tasks are sliced.
+auth") and it gets applied as each feature's tasks are sliced.
 
 **What it will not do to your repo.** It runs exactly seven git commands — `switch`,
 `switch -c`, `merge --no-ff`, `merge --abort`, `worktree add`, `worktree list`, and
@@ -547,11 +546,11 @@ the merge alone and tells you the undo command rather than running it — and it
 back the `git worktree remove` commands for the lanes instead of running those either,
 since a halted lane's worktree is the tree you need to look at.
 
-**Walk away and come back.** Progress isn't written down, it's derived: a story whose
-ticked `tasks.md` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
+**Walk away and come back.** Progress isn't written down, it's derived: a feature whose
+ticked `## Tasks` is on `main` is done, a `.spec/<slug>/` with an unchecked task is in
 progress, no directory means not started. Ask again tomorrow in a fresh session and it
 picks up where it stopped. No run-state file, no lock, no budget to configure — the
-story list *is* the budget.
+feature list *is* the budget.
 
 **It never fixes a blocker for you.** A blocker means one of your documents is wrong,
 and a run allowed to rewrite the requirement its own task just failed would be grading
@@ -576,7 +575,7 @@ It is namespaced per ticket, with a shared spine at the root:
   constitution.md           project-wide, shared across tickets
   memory.md                 operational lessons, shared across tickets
   <ticket-id>/              one directory per ticket (PROJ-123/, gh-42/, …)
-    SPEC.md  PLAN.md  tasks.md  decisions.md
+    SPEC.md  PLAN.md  decisions.md     (PLAN.md ends in the ## Tasks checklist)
 ```
 
 `BREAKDOWN.md` and `design/` sit at your project root rather than inside `.spec/`,

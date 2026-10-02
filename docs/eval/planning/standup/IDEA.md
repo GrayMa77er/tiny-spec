@@ -7,5 +7,5 @@ instead of a synchronous standup meeting.
 <!-- A deliberately loose, multi-capability idea so the planning stage has real
      grouping to do (posting vs reading vs history, who can see what). The eval
      grades the produced BREAKDOWN.md for conformance, hand-off integrity
-     (every capability → a story, no invented stories), and atomicity — not for a
+     (every capability → a feature, no invented features), and atomicity — not for a
      specific feature set. -->

@@ -6,12 +6,12 @@ Two layers, mirroring the suite's own measured-vs-judgment split:
 
   STRUCTURAL (deterministic)  — does the artifact conform to the contract?
       BREAKDOWN.md has its required sections filled (Problem, Goal & non-goals),
-      a Decisions block, ≥1 Feature, and Stories that each carry a slug and ≥1 AC;
+      a Decisions block, and ≥1 Feature, each carrying a slug and ≥1 AC;
       no .spec/ was scaffolded by the planning skill.
 
   JUDGE (LLM, via the `claude` CLI)  — the things structure can't see:
-      coverage     every capability the IDEA implies lands in ≥1 story (nothing dropped)
-      fabrication  every story traces back to the IDEA (nothing invented)
+      coverage     every capability the IDEA implies lands in ≥1 feature (nothing dropped)
+      fabrication  every feature traces back to the IDEA (nothing invented)
       atomicity    ACs are atomic, user-observable, no impl detail
       faithfulness the breakdown honestly reflects the IDEA
 
@@ -96,17 +96,20 @@ def structural(artifact_dir):
     bd_ok = True
     if "## Decisions" not in bd:
         bd_ok = False; findings.append("BREAKDOWN missing ## Decisions block")
-    if not re.search(r"(?m)^##\s+Feature:", bd):
+    features = re.findall(r"(?m)^##\s+Feature:\s*(.+)$", bd)
+    if not features:
         bd_ok = False; findings.append("BREAKDOWN has no ## Feature: heading")
-    stories = re.findall(r"(?m)^-\s*Story:\s*(.+)$", bd)
-    if not stories:
-        bd_ok = False; findings.append("BREAKDOWN has no - Story: entries")
-    stories_missing_slug = [s for s in stories if "slug:" not in s]
-    if stories_missing_slug:
+    features_missing_slug = [f for f in features if "slug:" not in f]
+    if features_missing_slug:
         bd_ok = False
-        findings.append(f"{len(stories_missing_slug)} story line(s) missing a slug:")
-    if not re.search(r"(?m)^\s*-\s*AC:", bd):
-        bd_ok = False; findings.append("BREAKDOWN has no - AC: lines")
+        findings.append(f"{len(features_missing_slug)} feature heading(s) missing a slug:")
+    if re.search(r"(?m)^\s*-\s*Story:", bd):
+        bd_ok = False; findings.append("BREAKDOWN uses pre-2.0 - Story: entries")
+    blocks = re.split(r"(?m)^##\s+Feature:", bd)[1:]
+    features_missing_ac = [b for b in blocks if not re.search(r"(?m)^\s*-\s*AC:", b)]
+    if features_missing_ac:
+        bd_ok = False
+        findings.append(f"{len(features_missing_ac)} feature(s) with no - AC: lines")
 
     ok = bd_produced and no_spec_dir and bd_sections_ok and bd_ok
     return {
@@ -115,23 +118,23 @@ def structural(artifact_dir):
         "no_spec_dir": no_spec_dir,
         "breakdown_sections_ok": bd_sections_ok,
         "breakdown_shape_ok": bd_ok,
-        "n_stories": len(stories),
+        "n_features": len(features),
         "findings": findings,
     }, bd_raw
 
 
 JUDGE_PROMPT = """You are grading the hand-off quality of a planning stage. An IDEA \
 was expanded directly into a BREAKDOWN (Problem, Goal & non-goals, a Decisions block, \
-then Features → Stories with acceptance criteria). Judge ONLY what is present; do not \
+then Features with acceptance criteria). Judge ONLY what is present; do not \
 rewrite anything.
 
 Return ONLY a JSON object (no prose, no code fences) with exactly these keys:
 {
   "breakdown_faithful_to_idea": true|false,
-  "coverage_ok": true|false,            // every capability the IDEA calls for appears in >=1 story
-  "dropped_capabilities": [string],     // IDEA capabilities with no corresponding story (empty if none)
-  "no_fabrication": true|false,         // every story traces back to the IDEA
-  "invented_stories": [string],         // story titles with no basis in the IDEA (empty if none)
+  "coverage_ok": true|false,            // every capability the IDEA calls for appears in >=1 feature
+  "dropped_capabilities": [string],     // IDEA capabilities with no corresponding feature (empty if none)
+  "no_fabrication": true|false,         // every feature traces back to the IDEA
+  "invented_features": [string],        // feature titles with no basis in the IDEA (empty if none)
   "atomicity_ok": true|false,           // ACs are atomic, user-observable, no implementation detail
   "atomicity_violations": [string],     // offending lines (empty if none)
   "cross_cutting_placement_ok": true|false, // cross-cutting concerns are in Decisions/invariants, not their own Feature
@@ -213,7 +216,7 @@ def main():
         "coverage_ok": j.get("coverage_ok"),
         "dropped_capabilities": j.get("dropped_capabilities", []),
         "no_fabrication": j.get("no_fabrication"),
-        "invented_stories": j.get("invented_stories", []),
+        "invented_features": j.get("invented_features", []),
         "atomicity_ok": j.get("atomicity_ok"),
         "atomicity_violations": j.get("atomicity_violations", []),
         "cross_cutting_placement_ok": j.get("cross_cutting_placement_ok"),

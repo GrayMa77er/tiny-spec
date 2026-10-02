@@ -1,17 +1,17 @@
 ---
 name: tiny-spec-build
-description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Can be handed several lanes (one worktree + slug per independent story) and runs them concurrently, one task at a time within each. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
+description: Build the spec — run the per-task loop plan→implement→review→commit, one task at a time. Implements with a fresh executor, grades with an independent reviewer running the real gate, commits per passed task, keeps a lean memory. Can be handed several lanes (one worktree + slug per independent feature) and runs them concurrently, one task at a time within each. Halts on a blocker, a spent convergence budget, a task's pause: point, or a genuine fork, and names which. Resumes from the checkbox state.
 ---
 
 # tiny-spec-build
 
-The heart of the flow. Walks the active ticket's `tasks.md` top to bottom and runs each task through a
-tight loop: **plan → implement → review → commit**. The constitution
+The heart of the flow. Walks the `## Tasks` checklist in the active ticket's `PLAN.md`
+top to bottom and runs each task through a tight loop: **plan → implement → review → commit**. The constitution
 (`constitution.md`) anchors every step; the thing that writes the code is never the
 thing that grades it.
 
 Artifacts live under `.spec/`: the **shared** constitution and memory at the root
-(`.spec/constitution.md`, `.spec/memory.md`), the per-ticket `tasks.md`/`SPEC.md`/
+(`.spec/constitution.md`, `.spec/memory.md`), the per-ticket `PLAN.md`/`SPEC.md`/
 `decisions.md` under `.spec/<ticket-id>/`. The `memory.md` skeleton is inline below —
 write it from there, no file to read. The two subagents dispatched below
 (`tiny-spec-build-executor`, `tiny-spec-build-reviewer`) are referenced by name — install them
@@ -28,18 +28,19 @@ alongside this skill (see the suite README).
    In **multi-lane mode** (below) this step does not run: each lane is handed its
    worktree and slug explicitly.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
-   it exists (**shared**), and `.spec/<active>/tasks.md`. The constitution + memory
-   get injected **whole** into every executor and reviewer. Also note the `ticket`
+   it exists (**shared**), and the `## Tasks` section of `.spec/<active>/PLAN.md`. The
+   constitution + memory get injected **whole** into every executor and reviewer. Also note the `ticket`
    binding in `.spec/<active>/SPEC.md` — it supplies the commit `Refs:` footer.
-3. Refuse to start if `tasks.md` is `status: stale` — tell the user to re-run
-   `tiny-spec-plan` to reconcile first.
+3. Refuse to start if `PLAN.md` is `status: stale`, or if `.spec/<active>/tasks.md`
+   still exists (a pre-2.0 checklist) — tell the user to re-run `tiny-spec-plan` to
+   reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
 
-## Multi-lane mode (optional — several stories at once)
+## Multi-lane mode (optional — several features at once)
 
 A caller may hand you **lanes** instead of a single active dir: one or more
-`(worktree path, slug)` pairs, each an independent story in its own git worktree.
-`tiny-spec-run` does this for a batch of stories whose `needs:` say they don't depend on
+`(worktree path, slug)` pairs, each an independent feature in its own git worktree.
+`tiny-spec-run` does this for a batch of features whose `needs:` say they don't depend on
 each other. **With one lane, or none, everything below is inert and this skill behaves
 exactly as it always has** — that is the common case and it must not drift.
 
@@ -57,11 +58,11 @@ letting lanes free-run.
 
 **Within a lane nothing changes.** Tasks still run one at a time, top to bottom, with the
 same convergence bound, the same gate scope rules, and the same halting states. There is
-no parallelism *inside* a story and no `owns:` contract — tasks in one story share files
+no parallelism *inside* a feature and no `owns:` contract — tasks in one feature share files
 and assume their predecessors landed, which is exactly why they stay sequential.
 
 **A halt stops that lane only.** The other lanes run to completion; you report each lane's
-terminal state separately. The stories were declared independent, so killing working lanes
+terminal state separately. The features were declared independent, so killing working lanes
 because one failed throws away finished work for nothing.
 
 **Every dispatched agent is told its working directory**, and that all paths resolve
@@ -78,8 +79,8 @@ distilled lessons as it goes, and write them **once, in the main checkout on the
 integration branch, after the batch has merged** — pruning superseded entries there, as
 step 6 describes. Single-lane runs are unaffected and write it in place as before.
 
-The other artifacts are safe and need no special handling: `tasks.md` and `decisions.md`
-are per-story, and `constitution.md` is read-only for the whole build.
+The other artifacts are safe and need no special handling: `PLAN.md` and `decisions.md`
+are per-feature, and `constitution.md` is read-only for the whole build.
 
 ## The per-task loop
 
@@ -88,12 +89,12 @@ reviewer passes.**
 
 **Before step 1, check the task's `pause:` field.** If it has one and the user hasn't
 waived it for this run, **halt `paused`** (see **Halting** below): leave the task
-`[ ]`, dispatch nothing, and don't touch `tasks.md`. A pause stops *before* the work so
+`[ ]`, dispatch nothing, and don't touch `PLAN.md`. A pause stops *before* the work so
 the approach gets reviewed while redirecting it is still cheap.
 
 A pause can be waived or added for the current run only, conversationally — "skip the
 pause on T5", "also stop before T9". Honor it for this run and **never write it back
-into `tasks.md`**: the file records the standing intent, not one run's override.
+into `PLAN.md`**: the file records the standing intent, not one run's override.
 
 ### 1. PLAN (inline, brief)
 Restate the task as a 2–4 step micro-plan against the constitution: which
@@ -116,11 +117,11 @@ Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
   design instead of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind);
-- the **accumulated `CHANGES` paths from every passed task in this story so far**,
-  labelled as the ground this story has already moved. Every executor starts cold and
+- the **accumulated `CHANGES` paths from every passed task in this feature so far**,
+  labelled as the ground this feature has already moved. Every executor starts cold and
   re-derives the codebase from scratch — that re-derivation is the **largest single cost
   in the loop**, far larger than the prompt text around it — and naming the files this
-  story has already touched is the cheapest way to cut it. You already have the lists in
+  feature has already touched is the cheapest way to cut it. You already have the lists in
   hand. **Paths only**, deduplicated, most-recently-touched first — never the earlier
   tasks' descriptions, findings, or reports. (The reviewer does *not* get this list: it
   is scoped to the task's own changed files on purpose, and widening it would dilute the
@@ -152,7 +153,7 @@ little and costs the most wall-clock in the loop. Name the scope in the brief:
   Use it on: the **first** task of this run; any task whose `CHANGES` touch dependency or
   build configuration (`package.json`/lockfiles, `pyproject.toml`, `go.mod`, `Cargo.toml`,
   `Dockerfile`, CI config, build scripts); any task carrying `design:`; and the **last**
-  task in `tasks.md`.
+  task in `## Tasks`.
 - **`scoped`** — otherwise. `lint:` + `test:` plus the acceptance exercised end-to-end,
   black-box, exactly as on a full gate. The acceptance exercise is never scoped away; it
   is the whole reason the reviewer exists.
@@ -194,8 +195,10 @@ Two commits, in order (keeps code history clean of planning churn), both in
    message `<type>(<scope>): <task description>`. The **type** is the task's `type:`
    field, defaulting to `feat`; **scope** is optional (a component, or the ticket
    id). A breaking change uses `!` and/or a `BREAKING CHANGE:` footer.
-2. **Bookkeeping commit** — tick the task `[x]` in `.spec/<active>/tasks.md` (bump
-   `updated`), add any `decisions.md` entry; message `chore(spec): tick T<n>`.
+2. **Bookkeeping commit** — tick the task `[x]` in `.spec/<active>/PLAN.md` (bump
+   `updated`), add any `decisions.md` entry; message `chore(spec): tick T<n>`. The
+   checkbox and `updated:` are the **only** things this skill ever changes in
+   `PLAN.md` — never the design prose, never a task's fields, never `status:`.
 
 **`Refs:` footer (ticket linking).** If `.spec/<active>/SPEC.md` has a `ticket`
 binding, append a `Refs:` footer to **both** commits so the platform auto-links the
@@ -303,7 +306,7 @@ event and reads as two records if you log it twice.
 
 **`done` and `paused` log nothing.** A green tree with every box ticked already says
 `done`. And a `paused` run stopped at a task whose `pause:` line is sitting right there
-in `tasks.md` saying why — an entry would restate what the file already tells you, and
+in `PLAN.md` saying why — an entry would restate what the file already tells you, and
 the log is for things that aren't otherwise visible. Report it, don't record it.
 
 The task the loop stopped at stays `[ ]`. That is the whole resume mechanism:
@@ -351,7 +354,7 @@ the halt is what makes the same fork readable hours later.
 
 ## Completion
 
-When every task in `tasks.md` is `[x]`:
+When every task in `## Tasks` is `[x]`:
 
 1. **Final smoke** — run the constitution's **Verification commands** once more
    against the whole project, exercised the way a user would (after the documented

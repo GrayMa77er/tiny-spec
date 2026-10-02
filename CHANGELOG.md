@@ -7,6 +7,41 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [2.0.0] — 2026-10-02
+
+Smaller. Two levels of structure that didn't pay for themselves are gone: the separate
+task file and the Story level of the breakdown. No new skills, agents, fields, or knobs.
+The build loop, the reviewer, parallel lanes, and every halting rule are unchanged.
+
+### Removed
+
+- **`tasks.md`.** The checklist is now the `## Tasks` section at the end of `PLAN.md`.
+  It was always written in the same pass as the plan and always went stale with it, so
+  two files and two `status:` flags were one thing kept in sync by hand. `tiny-spec-build`
+  changes only the checkboxes and `updated:` in `PLAN.md`, never the design prose, and
+  `tiny-spec-run` derives "built and merged" from `PLAN.md` in git.
+- **Stories in `BREAKDOWN.md`.** A `## Feature:` is now the unit of work. It carries the
+  `slug:`, the `AC:` lines, `needs:`, and `design:`, and becomes exactly one spec, one
+  branch, and one worktree lane. `tiny-spec-scope` no longer asks about tracker
+  hierarchy or a structure lens, which existed only to group stories.
+
+### Changed
+
+- **Task-count calibration** moved from 2–4 to **2–5 per feature**, since a feature runs a
+  bit larger than a story did. It is still something to check, not a cap.
+
+### Upgrading
+
+Re-run `uvx tiny-spec install` and restart Claude Code. Then:
+
+- **An in-flight spec with a `tasks.md`:** re-run `tiny-spec-plan` (or `tiny-spec-run`,
+  which routes there on its own). Update mode moves the tasks into `PLAN.md` verbatim,
+  keeping ids and ticks, and deletes `tasks.md`. `tiny-spec-build` refuses to start
+  while a `tasks.md` is still present.
+- **A `BREAKDOWN.md` with `- Story:` lines:** regenerate it with `tiny-spec-scope`, or
+  flatten each story by hand into `## Feature: <title>     slug: <slug>` with its `AC:`
+  lines beneath. `tiny-spec-run` stops on the old format instead of guessing.
+
 ## [1.2.0] — 2026-09-30
 
 Parallelism — across stories, never within one. Independent stories now build at the same

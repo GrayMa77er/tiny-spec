@@ -17,9 +17,9 @@ Everything you need and nothing you don't:
 
 - **the working directory** to operate in. Every path you read, write, or run a command
   against resolves against it. It may be a **git worktree** rather than the main checkout
-  — a build can run several stories at once, each in its own worktree. **Never read or
+  — a build can run several features at once, each in its own worktree. **Never read or
   write outside the directory you were given**, and never `cd` to a sibling worktree to
-  "check something": another story is being built there right now, and what you find will
+  "check something": another feature is being built there right now, and what you find will
   be wrong by the time you act on it;
 - the **task id**, **description**, and **acceptance** (the outcome that proves it done);
 - a **`files:` hint** — likely paths to touch (guidance, not a hard boundary);

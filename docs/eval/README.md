@@ -87,10 +87,10 @@ Each case runs in a throwaway sandbox seeded with `IDEA.md` and the vendored ski
 ### What gets measured
 
 - **structural conformance** (deterministic) — BREAKDOWN has Problem and
-  Goal & non-goals filled, a Decisions block, ≥1 Feature, Stories with a slug and ≥1 AC; the
+  Goal & non-goals filled, a Decisions block, ≥1 Feature, each with a slug and ≥1 AC; the
   planning skills left no `.spec/` behind.
 - **hand-off integrity** (LLM judge) — **coverage** (every PRD capability lands in ≥1
-  story, nothing dropped) and **no fabrication** (every story traces to a capability,
+  feature, nothing dropped) and **no fabrication** (every feature traces to a capability,
   nothing invented). These are the high-value signals; a case PASSes only if structural
   conformance holds *and* the judge confirms both.
 - **quality** (LLM judge, reported not gated) — atomicity / user-observable phrasing,

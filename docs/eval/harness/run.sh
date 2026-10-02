@@ -85,11 +85,12 @@ for task in "${TASKS[@]}"; do
 import json, os, sys, glob, re
 task, sb, grade_rc, run_rc, grade_out = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
 produced = os.path.exists(os.path.join(sb, "solution.py"))
-tasks_files = glob.glob(os.path.join(sb, ".spec", "*", "tasks.md"))
+tasks_files = glob.glob(os.path.join(sb, ".spec", "*", "PLAN.md"))
 dec_files = glob.glob(os.path.join(sb, ".spec", "*", "decisions.md"))
 suite_completed = False
 if tasks_files:
     txt = open(tasks_files[0]).read()
+    txt = txt.split("## Tasks", 1)[1] if "## Tasks" in txt else ""
     unchecked = re.search(r'(?m)^\s*-\s*\[ \]', txt)
     checked = re.search(r'(?m)^\s*-\s*\[x\]', txt, re.I)
     suite_completed = bool(checked) and not bool(unchecked)
