@@ -7,6 +7,37 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [2.1.0] — 2026-10-08
+
+Bringing a PRD now works end to end from `tiny-spec-run`. No new skills, agents, files,
+or format fields beyond one optional `Source:` line.
+
+### Added
+
+- **PRD on-ramp in `tiny-spec-run`.** With a PRD (`PRD.md` at the root, or a doc you name)
+  and no `BREAKDOWN.md`, the run invokes `tiny-spec-scope` first. In a build-through run,
+  scope commits `BREAKDOWN.md` so every worktree lane can read it.
+- **`Source:` in the breakdown's Decisions block** — the PRD a carve came from.
+  `tiny-spec-create` reads the relevant part per feature for context and to find the
+  gaps the `AC:` lines leave open.
+- **Plan approval in plan mode.** `tiny-spec-plan` can draft in Claude Code's plan mode
+  and write nothing until you approve. Without plan-mode tools, it asks in chat.
+- **`tiny-spec version`** prints the installed package version.
+
+### Changed
+
+- **Build-through runs are supervised by default.** Per feature, create asks one round
+  of gap questions and the plan waits for your approval before the build. A declined plan
+  halts that feature as `paused`. The old walk-away behavior is still there, but only
+  when the opening request asks for it ("walk away", "unattended", "overnight").
+
+### Upgrading
+
+Re-run `uvx tiny-spec install` and restart Claude Code. If `tiny-spec-breakdown`,
+`tiny-spec-prd`, or `tiny-spec-tasks` are still in `~/.claude/skills/` from an older
+release, delete them by hand. `tiny-spec uninstall` only removes what the current manifest
+lists, so it leaves them behind, and they compete with the current skills.
+
 ## [2.0.0] — 2026-10-02
 
 Smaller. Two levels of structure that didn't pay for themselves are gone: the separate
