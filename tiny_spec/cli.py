@@ -1,9 +1,10 @@
 """tiny-spec installer CLI.
 
-Two commands, stdlib only:
+Three commands, stdlib only:
 
     tiny-spec install      copy skills + agents into ~/.claude
     tiny-spec uninstall    remove the ones tiny-spec installed
+    tiny-spec version      print the installed package version
 
 Re-running ``install`` overwrites in place, so it doubles as an update. Pass
 ``--dir`` to target a Claude config dir other than ``~/.claude`` (handy for
@@ -22,6 +23,8 @@ import shutil
 import sys
 from importlib.resources import as_file, files
 from pathlib import Path
+
+from tiny_spec import __version__
 
 
 def _manifest() -> dict:
@@ -107,11 +110,16 @@ def build_parser() -> argparse.ArgumentParser:
             help="Claude config directory (default: ~/.claude)",
         )
 
+    sub.add_parser("version", help="print the tiny-spec version")
+
     return parser
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "version":
+        print(__version__)
+        return 0
     claude_dir: Path = args.dir.expanduser()
     if args.command == "install":
         return install(claude_dir)

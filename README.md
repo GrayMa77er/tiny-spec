@@ -197,8 +197,8 @@ to `design/` first; it reads what's there and asks which screens this ticket cov
 [Designs, if you have them](#designs-if-you-have-them) walks through it.
 
 Re-run `install` any time to update; `tiny-spec uninstall` removes only what it
-installed. Each skill is copied (not symlinked) so every install is
-self-contained.
+installed, and `tiny-spec version` prints the installed version. Each skill is
+copied (not symlinked) so every install is self-contained.
 
 <details>
 <summary>Manual install (no uv)</summary>
