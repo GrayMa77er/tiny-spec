@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-plan
-description: Turn the active ticket's SPEC.md into a technical design and an executable task list — produce PLAN.md (design narrative plus a ## Tasks checklist) and harden the shared constitution.md. The ## Tasks section is a flat, ordered checklist executed sequentially by tiny-spec-build. Re-run in update mode to reconcile it after a SPEC change.
+description: Turn the active ticket's SPEC.md into a technical design and an executable task list — produce PLAN.md (design narrative plus a ## Tasks checklist) and harden the shared constitution.md. The ## Tasks section is a flat, ordered checklist executed sequentially by tiny-spec-build. Can draft in plan mode and write nothing until the user approves (tiny-spec-run asks for this in a supervised run). Re-run in update mode to reconcile it after a SPEC change.
 ---
 
 # tiny-spec-plan
@@ -25,6 +25,26 @@ exists; else ask. **Ask instead** when more than one dir matches the branch, or 
 ticket dirs exist while you are on `main`/`master` with no name match — neither has a
 safe tie-break. Detached HEAD or no git repo is **degraded**, not an ask: branch match is
 simply unavailable, so fall through to sole-dir and ask as written.
+
+## When the caller wants to approve the plan first
+
+`tiny-spec-run` asks for this in a supervised build-through run, and a user may ask for
+it directly. **Then nothing is written until the plan is approved.** That includes both
+`PLAN.md` and the constitution changes. The approval is the plan existing on disk: a
+`PLAN.md` that was written before approval would be built by the next resumed run as if
+someone had said yes.
+
+1. **Draft in plan mode.** If your harness has plan-mode tools (Claude Code's
+   `EnterPlanMode` / `ExitPlanMode`; load them first if they are deferred), enter plan
+   mode, then do Steps 1–3 as research and drafting only. Read the spec, the constitution,
+   and the code, but write nothing.
+2. **Present the draft** through `ExitPlanMode`. Include the full `PLAN.md` you would
+   write (approach, requirement coverage, every task with its acceptance and any
+   `pause:`), followed by a short list of the constitution changes. Without plan-mode
+   tools, play the same thing back in chat and ask for a go-ahead.
+3. **Approved** → write `PLAN.md` and the constitution changes exactly as approved, then
+   finish as normal. **Feedback** → revise and present again. **The user says stop, or
+   skip this feature** → write nothing, and report that the plan was not approved.
 
 ## Step 1 — harden the constitution (`constitution.md`)
 
@@ -330,7 +350,8 @@ reconciling, and never re-slice a legacy list just because you are moving it.
 
 ## When done
 
-Confirm the constitution is hardened and every `REQ-N` is covered, then report the task
+If an approval was asked for and not given, say so plainly. Nothing was written, and
+re-running drafts the plan again. Otherwise, confirm the constitution is hardened and every `REQ-N` is covered, then report the task
 count — and any `pause:` points you set, with their reason, so the user can drop one
 before it fires.
 

@@ -56,6 +56,13 @@ opening request. No stage report, no rung, no later "do it all" may promote a
 stop-before-build run into a build-through run. Build is the user's review gate; a
 router that talks itself into building is the failure this design exists to prevent.
 
+The same holds for **supervised vs unattended**, also fixed at Step 0. A build-through
+run is supervised unless the opening request asks to walk away: each feature's open
+questions get asked, and its plan is approved in plan mode before it builds. The approval
+is not a flag. It is `PLAN.md` existing, because `tiny-spec-plan` writes nothing until the
+user approves, so a resumed run can never build a plan nobody said yes to. Don't add an
+`approved:` field; the file's existence already says it.
+
 **There is no budget and no state file.** The feature list *is* the budget — the run ends
 when the features end. A turn ceiling, a token cap, or a max-features knob would each put
 a weaker stopping rule beside the real one. And loop progress is *derived*:
@@ -171,6 +178,8 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      batch merges, or every parallel batch ends in a merge conflict on it;
    - **the stop point holds:** a stop-before-build run must not enter `tiny-spec-build`,
      however a stage's closing line or a follow-up message is phrased;
+   - **approval holds:** in a supervised run, a feature whose plan the user declined has
+     no `PLAN.md` and halts `paused`; it must never reach the build;
    - **git stays narrow:** `tiny-spec-run` may only `switch`, `switch -c`,
      `merge --no-ff`, `merge --abort`, and read. It must refuse to start a build-through
      run on a dirty tree, and must **never** push, force, rebase, reset, or delete a

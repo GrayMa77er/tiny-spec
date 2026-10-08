@@ -63,6 +63,12 @@ what's actually there: your real lint and test commands, your real layout, your 
 conventions. Have a single known ticket in a project that's already set up? Skip both
 and start at `tiny-spec-create`.
 
+**Already have a PRD?** Commit it as `PRD.md` (or name its path) and ask
+`/tiny-spec-run` to build it. The run carves the PRD into features with
+`tiny-spec-scope`, then for each feature it cuts a branch, specs it from the PRD and the
+breakdown (asking you only what they leave open), drafts the plan in plan mode for you to
+approve, and builds it once you do.
+
 Neither builds anything. They set the project up so the three core skills have
 something true to work from, and both write a regenerable file you can edit freely.
 
@@ -468,6 +474,18 @@ Per feature it does the same four moves:
 cut a branch from main  →  walk the chain  →  tiny-spec-build  →  merge back to main
 ```
 
+**It asks before it builds.** By default the run is **supervised**. Walking the chain for
+a feature means `tiny-spec-create` asks you, in one round, whatever the PRD and the
+breakdown leave open. Then `tiny-spec-plan` drafts the design and task list in Claude
+Code's plan mode and writes nothing until you approve it. Decline, and that feature stops
+unbuilt, ready to re-plan next run. With several features in a batch, you answer and
+approve them all up front, then the batch builds without stopping. Say "walk away" or
+"unattended" in your opening request to skip the questions and approvals and run
+overnight. Either way the choice is fixed for the whole run.
+
+**No breakdown yet?** If there's a `PRD.md` at the root, or you name a doc, the run carves
+it with `tiny-spec-scope` first and commits the `BREAKDOWN.md` so every branch can see it.
+
 Each branch is cut **fresh from main**, so a later feature sees the earlier ones already
 merged — which is what makes an ordered list build correctly.
 
@@ -496,8 +514,8 @@ the last landed, so they stay strictly sequential. Parallelism is across feature
 **The list is `BREAKDOWN.md` by default** — its `## Feature:` entries, in file order,
 each already carrying a `slug:` (the branch and directory name) and `AC:` lines. Paste
 a list at invocation instead and that wins; but a bare feature name has no acceptance
-criteria, so `tiny-spec-create` will interview you when it reaches it. That's the
-honest trade: a breakdown runs unattended, a pasted list is supervised.
+criteria, so `tiny-spec-create` will interview you in full when it reaches it, even in an
+unattended run.
 
 **Every run ends in exactly one of six states, and it says which:**
 

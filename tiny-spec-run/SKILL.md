@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → plan → build → merge until the list ends or something halts it. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
+description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → spec → plan → build → merge until the list ends or something halts it. With a PRD and no BREAKDOWN.md it runs tiny-spec-scope first. Build-through is supervised by default — each feature's open questions are asked and its plan is approved in plan mode before it builds — and unattended only when asked. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
 ---
 
 # tiny-spec-run
@@ -40,6 +40,19 @@ wrapping one stage.
 
 Step 0 is a **once-per-run** check on the opening request. Do not re-run it when you
 return to Step 2 after a stage, or between features.
+
+### Supervised or unattended — build-through only, also fixed once
+
+A build-through run is **supervised** by default: for each feature, `tiny-spec-create`
+asks you whatever the PRD and the breakdown leave open, and `tiny-spec-plan` drafts the
+plan in plan mode and **waits for your approval** before writing it. Only an approved
+plan reaches the build. The run is **unattended** only when the opening request says so
+— "walk away", "unattended", "overnight", "don't ask me anything" — and then the stages
+take their approvals from `BREAKDOWN.md` and stop only on genuine blockers.
+
+Like the stop point, this is read once from the opening request and never revised. A
+declined plan does not flip the run to unattended, and "just build it" mid-run does not
+waive the remaining approvals — that is a new invocation.
 
 ### Also at Step 0, if the stop point is build-through
 
@@ -106,6 +119,15 @@ Never create a ticket dir yourself — that is `tiny-spec-create`'s job.
 
 ### Build-through: the feature list
 
+**No `BREAKDOWN.md` yet, but a PRD?** If the user named a PRD or doc at invocation, or a
+`PRD.md` sits at the project root, and no list was pasted, carve it first: `git switch
+<integration>`, then invoke **`tiny-spec-scope`** with the brief *carve `<path>` into
+`BREAKDOWN.md`, then commit `BREAKDOWN.md` alone on the current branch.* The commit is
+what lets every lane see the list: a worktree cut from the integration branch only
+contains what's committed there. Scope's own playback is where the user approves the
+carve. Then continue below with the file it wrote. A PRD that isn't committed already
+failed the clean-tree check, which is correct, because a lane couldn't read it either.
+
 **Default: `BREAKDOWN.md` at the project root**, in file order. Each `## Feature:`
 heading is one item; take its **`slug:`** — that names both the branch and the
 `.spec/<slug>/` dir. One feature is one branch and one merge.
@@ -120,9 +142,10 @@ each line as a feature title and derive a kebab-case slug from it. Such a featur
 acceptance criteria**, so `tiny-spec-create` will run its full interview when it reaches
 that feature — which is correct, not a failure: a one-line feature name is not enough to
 build from, and that interview *is* the human input the run stops for. Say so at Step 0
-so the user knows a pasted list is a supervised run, not a walk-away one.
+so the user knows a pasted list will interview them even in an unattended run.
 
-If neither exists, stop and say so. Never invent the list.
+If there is no pasted list, no `BREAKDOWN.md`, and no PRD, stop and say so. Never invent
+the list.
 
 **Where each feature stands — derive, don't record.** For each slug, in order, ask git —
 first match wins:
@@ -169,6 +192,7 @@ re-evaluate against the new state on disk.
 
 | # | Condition | Action |
 |---|---|---|
+| LP | no ticket dir resolves, no `BREAKDOWN.md`, and a PRD exists (a `PRD.md` at the root, or a doc the user named) | `tiny-spec-scope` — carve it, and commit `BREAKDOWN.md` |
 | L0 | no `.spec/` at all | **does this repo already contain source?** yes → `tiny-spec-adopt`; no → `tiny-spec-create` (fresh) |
 | L1 | `.spec/` exists, `.spec/constitution.md` missing | repo has source → `tiny-spec-adopt`; else `tiny-spec-create` — **reseed only** |
 | L2 | no ticket dir resolves, or `<active>/SPEC.md` missing | `tiny-spec-create` — **fresh** |
@@ -237,10 +261,13 @@ update mode doesn't flip `PLAN.md`, `run` walks right past it. That trust is the
 having no validator; when a run's result looks wrong, suspect the stage's propagation
 before the ladder.
 
-**`tiny-spec-scope` is not in the ladder.** It is a pre-spec on-ramp that writes
-`BREAKDOWN.md` at the project root, carries no `status:` frontmatter, and is the user's
-call to run — there is nothing for a router to resolve. `tiny-spec-create` picks
-`BREAKDOWN.md` up on its own when it exists.
+**LP is the PRD on-ramp, and it outranks L0.** Someone who arrives with a PRD wants it
+carved into features before any one of them is specced. Otherwise L0/L2 would start a
+blank interview and leave the PRD unread. It fires only when there's no ticket dir and no
+`BREAKDOWN.md`, so it can't re-fire: once scope has written the file, the next pass falls
+through to L0, and `tiny-spec-create` then seeds from it (asking which feature, unless the
+user already said). Without a PRD, `tiny-spec-scope` is still the user's call to run from
+a bare idea. There is no document for a router to route from.
 
 ## Step 3 — how to invoke a stage
 
@@ -263,11 +290,15 @@ something new:
 **Briefs — pass them through verbatim.** In a build-through run you hand stages briefs:
 
 - a **create-stage brief**: *this is a feature run; seed from the `BREAKDOWN.md` feature
-  with slug `<slug>` and do not stop to confirm the requirements — its `AC:` lines are
-  already approved.* Omit the seeding clause for a pasted-list feature; there is nothing
-  to seed from and the interview is correct.
+  with slug `<slug>`; its `AC:` lines are already approved — don't re-confirm them.* Then
+  add one clause by supervision. **Supervised:** *read the PRD named in the Decisions
+  `Source:` for this feature and ask me, in one round, anything whose answer would change
+  a `REQ-N`.* **Unattended:** *do not stop to ask; stop only on a genuine blocker.* Omit
+  the seeding clause for a pasted-list feature. There is nothing to seed from, and the
+  full interview is correct in either mode.
 - a **plan-stage brief**: the pause policy from Step 0, **word for word**, so the
-  technical stop points land as `pause:` lines.
+  technical stop points land as `pause:` lines. **Supervised**, add: *get my approval
+  before writing anything — use plan mode.*
 
 Send each brief only to the stage it addresses. Do not summarize one, act on it
 yourself, or let it change which rung fires — the ladder is still yours, and a brief is
@@ -297,7 +328,12 @@ feature in the current batch that isn't already built and merged:
 
 2. **Ladder.** Walk Steps 1–3 for each feature, in its own worktree, until it reaches L6.
    A feature that stops anywhere else does **not** enter the build — its lane is halted;
-   see the halt rule below. **Never walk the ladder twice to push past its own stop:**
+   see the halt rule below. In a supervised run this is where the user's input happens,
+   one feature at a time: each feature's questions, then its plan approval. A batch
+   therefore collects every answer and approval up front, then builds without
+   interruption. **A plan the user declined leaves no `PLAN.md`**, so the feature stops at
+   L5 and its lane halts `paused`. Re-running picks it up at the plan, and the plan asks
+   again. **Never walk the ladder twice to push past its own stop:**
    each of those is a human decision it deliberately declined to make, and running it
    again declines again.
 
@@ -368,7 +404,8 @@ L3 or on a bound, say exactly what stopped you and what the user needs to decide
 5. **Worktrees left on disk**, with the `git worktree remove` command for each. You do
    not run them.
 6. **The one command that resolves it** — `tiny-spec-create`/`tiny-spec-plan` in update
-   mode for `blocked`/`exhausted`, this skill again for `paused`, the decision the user
+   mode for `blocked`/`exhausted`, this skill again for `paused` (including a declined
+   plan, which it re-drafts and asks about again), the decision the user
    owes you for a `fork`, or the conflicted paths for a `conflict`.
 
 **Only `done` — every feature merged — may report the work as built.** A run that halted
@@ -398,6 +435,9 @@ ticket that legitimately has no visual surface.
   outward-facing or destructive stays the user's — `worktree remove` included, which is
   why Step 4 hands those commands over instead of running them.
 - **Never merge a feature whose build didn't return `done`.**
+- **Never build an unapproved plan in a supervised run.** The approval is the plan
+  existing: `tiny-spec-plan` writes `PLAN.md` only once the user approves it. Never write
+  it for them, and never build from a draft.
 - **Never invoke `tiny-spec-run`.** Re-entering means re-reading these steps, not
   calling yourself. Self-invocation compounds context and does not terminate.
 - **Never resolve a halt yourself.** A blocker means an upstream document is wrong,

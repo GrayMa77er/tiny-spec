@@ -95,28 +95,42 @@ it instead of running the full interview** — confirm, don't re-ask:
    provider from the Decisions **Platform** and the **id** from the feature's
    `(tracker: …)` or the user (ask for the id if the placeholder is still blank; omit the
    `ticket:` block entirely if the platform is ad-hoc).
-3. **Requirements.** Promote the feature's **`AC:` lines into `REQ-N`** — verbatim where
+3. **Read the source.** If the Decisions block names a **`Source:`** (the PRD the carve
+   came from), read the parts of it that cover this feature. They feed `## Context` and
+   `## Non-goals`, and they are where you find the gaps the `AC:` lines leave open: an
+   edge case, an error behavior, a limit, or a place where the PRD and an `AC:` disagree.
+   If the file isn't there, carry on from `BREAKDOWN.md` alone and say so.
+4. **Requirements.** Promote the feature's **`AC:` lines into `REQ-N`** — verbatim where
    already atomic; split any that hide two capabilities behind an "and".
-4. **Constitution (first run only).** Seed `constitution.md` from the **`## Decisions`**
+5. **Constitution (first run only).** Seed `constitution.md` from the **`## Decisions`**
    block instead of interviewing stack/layout: Stack + Code-lives → **Style** and
    **Layout**; any verification hints → **Verification commands**; cross-cutting
    concerns → **Guiding invariants**. If `constitution.md` already exists, reuse it.
-5. **Designs.** If the feature carries `design:` paths, note them and point the user at
+6. **Designs.** If the feature carries `design:` paths, note them and point the user at
    **`tiny-spec-design`** — that skill reads the files and writes this spec's `D<n>`
    entries against a token system. Don't describe the screens here.
-6. Confirm the captured `REQ-N` with the user, then write `SPEC.md` as below.
+7. Ask about any gaps from step 3, confirm the captured `REQ-N` with the user, then
+   write `SPEC.md` as below.
 
 Only the **project-wide** questions collapse — still confirm this feature's binding and
 requirements. If there is **no `BREAKDOWN.md`**, or no entry matches, run the **full
 interview** below unchanged.
 
 **Exception — a feature run.** If the caller says this is a **feature run** and names the
-feature's slug (`tiny-spec-run` does, in build-through mode), skip step 6's confirmation
-and write `SPEC.md` straight out. The `AC:` lines *are* the approval: the user reviewed
-them when they wrote or accepted `BREAKDOWN.md`, and re-confirming them once per feature
-is asking the same question twice — across a seven-feature run it is the difference between
-walking away and being interrupted seven times. Report the captured `REQ-N` instead of
-asking about them.
+feature's slug (`tiny-spec-run` does, in build-through mode), skip step 7's confirmation
+of the `REQ-N`.
+
+- **Supervised** (the caller asks you to ask): put the gaps from step 3 to the user in
+  **one round**, and only the ones whose answer would change a `REQ-N`. Fold the answers
+  in, then write `SPEC.md`. No gaps → no questions; write it straight out.
+- **Unattended** (the caller says don't stop to ask): write `SPEC.md` straight out.
+  Record any gap you could not close as an `## Open questions` entry rather than
+  guessing at it.
+
+Either way, report the captured `REQ-N` rather than asking about them. The `AC:` lines
+*are* the approval: the user reviewed them when they wrote or accepted `BREAKDOWN.md`, and
+re-confirming them once per feature asks the same question twice. Across a seven-feature
+run, that is seven interruptions for nothing.
 
 This waives **only** that confirmation. Everything that is a genuine question still stops
 the run: a feature whose `AC:` lines contradict each other or the Decisions block, an `AC:`

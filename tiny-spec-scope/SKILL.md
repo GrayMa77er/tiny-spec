@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-scope
-description: The greenfield on-ramp — turn a rough idea, or an existing PRD, into BREAKDOWN.md at the project root - a flat list of well-defined Features, each with draft acceptance criteria, a slug, and an optional needs: naming the features it must follow, plus a shared Decisions block. The one skill that works from a blank page. Does not scaffold .spec/ or touch the constitution — tiny-spec-create reads BREAKDOWN.md in seeded mode and does that. For an existing codebase use tiny-spec-adopt instead. The suite works without either.
+description: The greenfield on-ramp — turn a rough idea, or an existing PRD, into BREAKDOWN.md at the project root - a flat list of well-defined Features, each with draft acceptance criteria, a slug, and an optional needs: naming the features it must follow, plus a shared Decisions block. The one skill that works from a blank page. Does not scaffold .spec/ or touch the constitution — tiny-spec-create reads BREAKDOWN.md in seeded mode and does that. For an existing codebase use tiny-spec-adopt (plus this skill, if you also have a PRD to carve). The suite works without either.
 ---
 
 # tiny-spec-scope
@@ -19,7 +19,10 @@ build directly, and its acceptance criteria are what the spec's requirements com
 
 **Starting from an existing codebase instead?** Use `tiny-spec-adopt` — it derives the
 constitution from the code that's already there. The two are the suite's two front
-doors, and you generally want exactly one of them.
+doors, and you generally want exactly one of them. The exception is a **PRD for new
+work on an existing codebase**: the PRD still needs carving into features, so run this
+too (`tiny-spec-run` does both on its own: adopt for the constitution, scope for the
+features).
 
 This skill does **not** scaffold `.spec/`, create or edit `constitution.md`, or invoke
 `tiny-spec-create`. It writes `BREAKDOWN.md` and stops. Keeping it at the project root
@@ -35,8 +38,9 @@ pre-spec planning the tracker owns, and it is freely regenerable.
 
 Anything the user has, or nothing at all. A one-line idea is enough.
 
-- **A `PRD.md` or any doc the user points at** — read it and use it as the anchor. Its
-  capability list is what you carve into features. A PRD you were handed means most of
+- **A `PRD.md` or any doc the user points at** — read it and use it as the anchor, and
+  record its path as `Source:` in the Decisions block. Its capability list is what you
+  carve into features. A PRD you were handed means most of
   the interview below is already answered: confirm, don't re-ask.
 - **Wireframes.** Glob a `design/` directory at the project root; also accept paths the
   user gives. **Visual inputs count as inputs** — `Read` renders images, so *look at*
@@ -135,6 +139,7 @@ Write `BREAKDOWN.md` at the **project root** (the user's cwd) with the structure
 - Platform: <ado | jira | github | monday | ad-hoc>   <!-- ad-hoc → kebab slugs, no tracker ids, no Refs footer -->
 - Scope: <whole product | epic | MVP slice — the boundary of this breakdown>
 - Cross-cutting: <non-functionals spanning features — auth, i18n, a11y, perf. These become constitution invariants or shared REQ, NOT their own feature.>
+- Source: <path to the PRD or doc this carve came from — omit if it came from an interview>   <!-- tiny-spec-create reads it per feature for context and gaps -->
 
 ## Feature: <one user-observable capability>     slug: <ado-__ | kebab>     (tracker: <fill after creating, e.g. AB#120>)
 
@@ -206,6 +211,11 @@ hides two capabilities behind an "and", split it. `tiny-spec-create` promotes th
 write them as though nobody will read them again before code exists.
 
 ## When done
+
+**If the caller asked you to commit** (`tiny-spec-run` does when it carves a PRD),
+commit `BREAKDOWN.md` alone — `git add BREAKDOWN.md` and
+`git commit -m "docs(scope): carve <name> into features" -- BREAKDOWN.md` — and nothing
+else in the tree.
 
 Print the carve — the features, each with its slug and `needs:` — and a **suggested
 first spec**. Then **stop**. Tell the user the next steps, which you do **not** perform:
