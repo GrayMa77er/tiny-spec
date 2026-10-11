@@ -15,7 +15,10 @@ Artifacts live under `.spec/`: the **shared** constitution and memory at the roo
 `decisions.md` under `.spec/<ticket-id>/`. The `memory.md` skeleton is inline below —
 write it from there, no file to read. The two subagents dispatched below
 (`tiny-spec-build-executor`, `tiny-spec-build-reviewer`) are referenced by name — install them
-alongside this skill (see the suite README).
+alongside this skill (see the suite README). Installed as the `tiny-spec` **plugin**, they
+are namespaced `tiny-spec:tiny-spec-build-executor` and `tiny-spec:tiny-spec-build-reviewer`;
+dispatch whichever form your agent list shows. Never substitute a general-purpose agent
+for a missing one — say it isn't installed and stop.
 
 ## Inputs
 
