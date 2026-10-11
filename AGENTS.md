@@ -216,6 +216,26 @@ each install is self-contained). The install set is declared in
 skill means editing the manifest and the matching path in `pyproject.toml`, nothing else.
 New skills/agents load at startup — restart the session after installing.
 
+**The repo is also a plugin** (`.claude-plugin/plugin.json` + `marketplace.json`). That is
+the third install path, and the only one a Claude Code Project's cloud threads can load.
+The plugin manifest lists the skill dirs and agent files explicitly, so a new or
+renamed skill means editing it alongside `manifest.json` and `pyproject.toml`. Plugin
+components are namespaced (`tiny-spec:tiny-spec-build-executor`). That is why
+`tiny-spec-build` dispatches "whichever form your agent list shows". Keep that line if you
+touch agent dispatch.
+
+**The viewers derive, they never record.** `tiny_spec/state.py` is the one derivation,
+a port of `tiny-spec-run`'s Step 1 "where each feature stands" rules. Change both
+together. `tiny-spec view` (browser) and the plugin's mod (`hooks/tiny-spec-view.js`,
+which runs `state.py` with `python3`) only render it. Neither writes a file, a store
+key, or a progress record. A viewer that started persisting run state would be the
+state file this suite refuses. `state.py` stays stdlib-only, Python 3.9, with no
+package-relative imports, because the mod runs it as a bare script from the plugin
+root. `hooks/hooks.json` carries an empty `"hooks": {}` beside `"modules"` on purpose.
+Claude Code before v2.1.287 (no mods) rejects a `hooks.json` without that record, and
+the rejection would take the skills down with it. Run `claude plugin validate
+.claude-plugin/plugin.json` after touching the plugin.
+
 **Removed skills are not uninstalled by a re-install.** `tiny-spec install` copies the
 manifest's entries; it does not delete skills that left the manifest. After a release
 that removes a skill, users must `tiny-spec uninstall` first or delete the stale

@@ -7,6 +7,27 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [Unreleased]
+
+### Added
+
+- **Plugin install.** The repo is now a Claude Code plugin and a one-plugin marketplace
+  (`/plugin marketplace add GrayMa77er/tiny-spec`). This is the path for Claude Code
+  Projects, whose cloud threads load plugins rather than `~/.claude/skills`.
+- **`tiny-spec view`**: a live, read-only browser view of the backlog with Run / Graph /
+  Report / Explorer tabs. It is derived from git and `.spec/` on every refresh. *watch PRs*
+  adds `git fetch` + `gh pr list`, so a run in a Project's cloud threads is visible
+  locally.
+- **`/tiny-spec` run view in Claude Code** (plugin, v2.1.287+): an above-prompt band
+  while a run is active, including how many executor/reviewer agents are running now,
+  plus the same four tabs in a pane.
+- **`tiny-spec state`** prints the derived state as JSON.
+
+### Changed
+
+- `tiny-spec-build` dispatches its agents by either name: plain, or plugin-namespaced
+  (`tiny-spec:tiny-spec-build-executor`).
+
 ## [2.1.0] — 2026-10-08
 
 Bringing a PRD now works end to end from `tiny-spec-run`. No new skills, agents, files,

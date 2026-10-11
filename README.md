@@ -228,6 +228,53 @@ or install one set at a time.
 
 </details>
 
+<details>
+<summary>Install as a Claude Code plugin (needed for Projects)</summary>
+
+The repo is also a plugin and a one-plugin marketplace. A plugin is the only way to load
+the suite into a [Claude Code Project](https://claude.com/blog/projects-redesigned),
+whose cloud threads load plugins rather than `~/.claude/skills`:
+
+```
+/plugin marketplace add GrayMa77er/tiny-spec
+/plugin install tiny-spec@tiny-spec
+```
+
+Installed this way, everything is namespaced: `/tiny-spec:tiny-spec-run`, and the agents
+are `tiny-spec:tiny-spec-build-executor` / `-reviewer` (the build skill dispatches either
+form). Pick **one** install method. A plugin plus `uvx tiny-spec install` loads every
+skill twice.
+
+The plugin also carries the in-session [run view](#watching-a-run) (`/tiny-spec`), which
+needs Claude Code v2.1.287 or later. Older versions load the skills and agents and skip
+the view.
+
+</details>
+
+### Watching a run
+
+A long build-through run is easier to follow with a view of it. There are two, and both
+read only git and `.spec/`. They write nothing and keep no state file, so you can close
+them at any point and lose nothing.
+
+- **In Claude Code: `/tiny-spec`** (plugin install, Claude Code v2.1.287+). A one-line
+  band above the prompt appears while a run is in flight, showing the batch, each active
+  feature's progress, and how many executor or reviewer agents are running *right now*.
+  `/tiny-spec` opens a pane with **Run / Graph / Report / Explorer** tabs.
+- **In a browser: `uvx tiny-spec view`**. It serves the same four tabs on `127.0.0.1` and
+  refreshes every few seconds. Tick *watch PRs* to also `git fetch` and `gh pr list`
+  once a minute, so a run happening in a Project's cloud threads shows up on your
+  laptop, branch by branch.
+
+| Tab | Shows |
+|---|---|
+| Run | Batches in the order the router runs them, each feature's state, `n/m` tasks, the next task, and its worktree or PR |
+| Graph | The `needs:` graph by depth, coloured by state, with the batch each feature lands in |
+| Report | The run's worst terminal state, what merged, what stopped and why, what waits on your merge, what never started, and the `git worktree remove` commands for merged lanes (printed, never run) |
+| Explorer | The constitution, then per feature: acceptance → `REQ-N` → covering tasks (gaps flagged), tasks, commits, `decisions.md` halts |
+
+`uvx tiny-spec state --pretty` prints the same derived state as JSON.
+
 ### See a finished run first
 
 [`examples/todo-cli/`](examples/todo-cli/) is a real run of the flow on one small
