@@ -1,10 +1,12 @@
-"""tiny-spec installer CLI.
+"""tiny-spec CLI.
 
-Three commands, stdlib only:
+Stdlib only:
 
     tiny-spec install      copy skills + agents into ~/.claude
     tiny-spec uninstall    remove the ones tiny-spec installed
     tiny-spec version      print the installed package version
+    tiny-spec view         live, read-only browser view of the backlog (see view.py)
+    tiny-spec state        the same derived state, as JSON (see state.py)
 
 Re-running ``install`` overwrites in place, so it doubles as an update. Pass
 ``--dir`` to target a Claude config dir other than ``~/.claude`` (handy for
@@ -112,6 +114,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("version", help="print the tiny-spec version")
 
+    view = sub.add_parser("view", help="open a live, read-only view of the backlog in a browser")
+    view.add_argument("--root", type=Path, default=Path.cwd(), metavar="PATH",
+                      help="project root (default: current directory)")
+    view.add_argument("--port", type=int, default=0, help="port to serve on (default: any free port)")
+    view.add_argument("--no-open", action="store_true", help="don't open a browser")
+
+    st = sub.add_parser("state", help="print where the backlog stands, as JSON")
+    st.add_argument("--root", type=Path, default=Path.cwd(), metavar="PATH",
+                    help="project root (default: current directory)")
+    st.add_argument("--remote", action="store_true", help="also git fetch + gh pr list")
+    st.add_argument("--pretty", action="store_true", help="indent the JSON")
+
     return parser
 
 
@@ -120,6 +134,17 @@ def main(argv=None) -> int:
     if args.command == "version":
         print(__version__)
         return 0
+    if args.command == "view":
+        from tiny_spec.view import serve
+
+        return serve(args.root.expanduser(), args.port, open_browser=not args.no_open)
+    if args.command == "state":
+        from tiny_spec import state
+
+        flags = ["--root", str(args.root.expanduser())]
+        flags += ["--remote"] if args.remote else []
+        flags += ["--pretty"] if args.pretty else []
+        return state.main(flags)
     claude_dir: Path = args.dir.expanduser()
     if args.command == "install":
         return install(claude_dir)
