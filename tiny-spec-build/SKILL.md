@@ -38,6 +38,20 @@ for a missing one — say it isn't installed and stop.
    still exists (a pre-2.0 checklist) — tell the user to re-run `tiny-spec-plan` to
    reconcile first.
 4. Pick the **first unchecked `[ ]`** task. If all are `[x]`, jump to **Completion**.
+5. **Fix the executor's model, once, for the whole run.** The first of these that gives
+   one wins:
+   1. a model named for the executor in this run's request or brief ("executor on
+      opus"), or a standing instruction in the user's CLAUDE.md
+      ("tiny-spec executor model: opus");
+   2. the `TINY_SPEC_EXECUTOR_MODEL` environment variable. Read it with `printenv
+      TINY_SPEC_EXECUTOR_MODEL`; empty output means unset;
+   3. nothing. The executor's own default (`model: sonnet` in its definition) applies.
+
+   Pass the result as the dispatch's `model` on **every** executor dispatch in the run:
+   every lane and every fix attempt. If step 3 applies, pass no `model`. **The reviewer never
+   gets it.** The reviewer keeps its own resolution, because grading is independent of
+   whatever wrote the code. Don't re-resolve mid-run, and name the model and where it
+   came from in the closing report.
 
 ## Multi-lane mode (optional — several features at once)
 
@@ -106,7 +120,8 @@ and **Verification commands** it must satisfy. This is the executor's brief — 
 it short and concrete.
 
 ### 2. IMPLEMENT (dispatch `tiny-spec-build-executor`)
-Spawn one **`tiny-spec-build-executor`** with a fresh, self-contained prompt:
+Spawn one **`tiny-spec-build-executor`**, with the model fixed in **Inputs** step 5 when
+there is one, and a fresh, self-contained prompt:
 
 - **the working directory** it must operate in — this lane's worktree, or the project
   root in a single-lane run. Every path resolves against it, and it must never read or

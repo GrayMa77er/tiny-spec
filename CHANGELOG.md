@@ -27,6 +27,10 @@ Claude Code.
 
 - `tiny-spec-build` dispatches its agents by either name: plain, or plugin-namespaced
   (`tiny-spec:tiny-spec-build-executor`).
+- **The executor runs on Sonnet by default**, where before it inherited your
+  conversation's model. You can override it per run ("executor on opus", passed through
+  by `tiny-spec-run`), or standing via `TINY_SPEC_EXECUTOR_MODEL` or a CLAUDE.md line.
+  The reviewer is unchanged and still uses your conversation's model.
 
 ## [2.1.0] — 2026-10-08
 

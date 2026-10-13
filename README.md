@@ -478,6 +478,20 @@ narrower one can't carry the verdict, and the authoritative clean run happens on
 over the whole project as the final smoke. Re-installing from scratch on every task
 proved the same thing repeatedly and was the slowest part of the loop.
 
+**The executor runs on Sonnet by default.** To change that for one run, say so in the
+request, e.g. `/tiny-spec-build executor on opus` (or `/tiny-spec-run build the backlog,
+executor on opus`). To make it stick, set `TINY_SPEC_EXECUTOR_MODEL`, in your shell or in
+the `env` block of `~/.claude/settings.json`:
+
+```json
+{ "env": { "TINY_SPEC_EXECUTOR_MODEL": "opus" } }
+```
+
+A model named in the request, or a line like `tiny-spec executor model: opus` in your
+CLAUDE.md, wins over the variable. Any model alias or full id works. The choice is fixed
+for the run and named in the closing report. The **reviewer is never affected**. It runs
+on your conversation's model, so the grade stays independent of what wrote the code.
+
 ```mermaid
 flowchart TB
     SPEC[SPEC.md<br/>intent] --> PLAN[PLAN.md<br/>design] --> TASKS[PLAN.md ## Tasks<br/>checklist]

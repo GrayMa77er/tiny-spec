@@ -185,6 +185,11 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      run on a dirty tree, and must **never** push, force, rebase, reset, or delete a
      branch. A red gate after a merge is reported with the undo command, never undone
      automatically;
+   - **the executor model never reaches the reviewer:** a run with "executor on opus"
+     (or `TINY_SPEC_EXECUTOR_MODEL` set) must dispatch every executor, fix attempts and
+     every lane included, with that `model`, and every reviewer **without** it.
+     Otherwise the override silently weakens or changes the grader. With neither set,
+     no `model` is passed and the executor's `model: sonnet` frontmatter applies;
    - **`tiny-spec-adopt` stays read-only:** it must never modify source, create a spec
      dir, or touch git — and it must never invent a verification command it didn't run.
 5. **Clean up.** Remove the sandbox. Never commit a `.spec/` from a test run or any build

@@ -2,6 +2,7 @@
 name: tiny-spec-build-executor
 description: Implements a single task — writes/modifies code to satisfy one task, adhering to the project's constitution, and reports what changed plus any decisions or blockers. Spawned (one per task) by tiny-spec-build. Does not plan, spawn other agents, or invoke skills.
 tools: Read, Write, Edit, Bash, Grep, Glob
+model: sonnet
 ---
 
 # tiny-spec-build-executor
