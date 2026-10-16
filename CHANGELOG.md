@@ -30,7 +30,13 @@ Claude Code.
 - **The executor runs on Sonnet by default**, where before it inherited your
   conversation's model. You can override it per run ("executor on opus", passed through
   by `tiny-spec-run`), or standing via `TINY_SPEC_EXECUTOR_MODEL` or a CLAUDE.md line.
-  The reviewer is unchanged and still uses your conversation's model.
+- **The reviewer runs on Sonnet by default too**, overridable the same way and
+  independently ("reviewer on opus", `TINY_SPEC_REVIEWER_MODEL`, or a CLAUDE.md line).
+- **Lower token spend in the build loop.** Briefs hand agents the paths to the
+  constitution, memory, and `design:` entry instead of pasting them, and both agents
+  read gate output as exit code plus tail rather than whole logs.
+- **The eval harness records cost.** Each task's dollars, turns, tokens, and per-model
+  spend land in `results.jsonl`, and the report shows the delta from that task's last run.
 
 ## [2.1.0] — 2026-10-08
 

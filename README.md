@@ -286,8 +286,8 @@ The tests pass; you can clone it and run the gate yourself.
 
 The constitution (`constitution.md`) is the spine. `tiny-spec-adopt` derives it from
 your codebase, or `tiny-spec-create` seeds it from a short interview; `tiny-spec-plan`
-hardens it with concrete engineering rules, and `tiny-spec-build` injects it whole into
-every task. It holds your style, standards, invariants, definition of done, and
+hardens it with concrete engineering rules, and every task's executor and reviewer read
+it whole. It holds your style, standards, invariants, definition of done, and
 verification commands.
 
 **On an existing codebase, deriving beats asking.** Your test command, layout, and
@@ -478,19 +478,28 @@ narrower one can't carry the verdict, and the authoritative clean run happens on
 over the whole project as the final smoke. Re-installing from scratch on every task
 proved the same thing repeatedly and was the slowest part of the loop.
 
-**The executor runs on Sonnet by default.** To change that for one run, say so in the
-request, e.g. `/tiny-spec-build executor on opus` (or `/tiny-spec-run build the backlog,
-executor on opus`). To make it stick, set `TINY_SPEC_EXECUTOR_MODEL`, in your shell or in
-the `env` block of `~/.claude/settings.json`:
+**Both agents run on Sonnet by default.** To change one for a single run, say so in the
+request, e.g. `/tiny-spec-build executor on opus` or `reviewer on opus` (or
+`/tiny-spec-run build the backlog, reviewer on opus`). To make it stick, set
+`TINY_SPEC_EXECUTOR_MODEL` or `TINY_SPEC_REVIEWER_MODEL`, in your shell or in the `env`
+block of `~/.claude/settings.json`:
 
 ```json
-{ "env": { "TINY_SPEC_EXECUTOR_MODEL": "opus" } }
+{ "env": { "TINY_SPEC_REVIEWER_MODEL": "opus" } }
 ```
 
-A model named in the request, or a line like `tiny-spec executor model: opus` in your
-CLAUDE.md, wins over the variable. Any model alias or full id works. The choice is fixed
-for the run and named in the closing report. The **reviewer is never affected**. It runs
-on your conversation's model, so the grade stays independent of what wrote the code.
+A model named in the request, or a line like `tiny-spec reviewer model: opus` in your
+CLAUDE.md, wins over the variable. Any model alias or full id works. Each choice is fixed
+for the run and named in the closing report. The two are **resolved independently**: an
+executor setting never changes the reviewer, or the other way round, so the grade stays
+independent of what wrote the code.
+
+**Keeping token spend down.** The orchestrating session (usually your conversation's
+model) is the expensive seat, so it never pastes the constitution or memory into a
+dispatch. It hands each agent file paths, and the agent reads them on Sonnet. Both agents
+run gates into a log and read back the exit code and tail, not the whole log. The eval
+harness records each benchmark task's cost, so a change that moves spend shows up next to
+the quality numbers.
 
 ```mermaid
 flowchart TB

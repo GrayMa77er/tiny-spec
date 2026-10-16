@@ -31,9 +31,11 @@ for a missing one — say it isn't installed and stop.
    In **multi-lane mode** (below) this step does not run: each lane is handed its
    worktree and slug explicitly.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
-   it exists (**shared**), and the `## Tasks` section of `.spec/<active>/PLAN.md`. The
-   constitution + memory get injected **whole** into every executor and reviewer. Also note the `ticket`
-   binding in `.spec/<active>/SPEC.md` — it supplies the commit `Refs:` footer.
+   it exists (**shared**), and the `## Tasks` section of `.spec/<active>/PLAN.md`. Every
+   executor and reviewer reads the constitution + memory **whole**, but by **path**, from
+   its own working directory. You never paste them into a brief (see **Briefs carry
+   paths** below). Also note the `ticket` binding in `.spec/<active>/SPEC.md`. It supplies
+   the commit `Refs:` footer.
 3. Refuse to start if `PLAN.md` is `status: stale`, or if `.spec/<active>/tasks.md`
    still exists (a pre-2.0 checklist) — tell the user to re-run `tiny-spec-plan` to
    reconcile first.
@@ -49,9 +51,15 @@ for a missing one — say it isn't installed and stop.
 
    Pass the result as the dispatch's `model` on **every** executor dispatch in the run:
    every lane and every fix attempt. If step 3 applies, pass no `model`. **The reviewer never
-   gets it.** The reviewer keeps its own resolution, because grading is independent of
-   whatever wrote the code. Don't re-resolve mid-run, and name the model and where it
-   came from in the closing report.
+   gets it.** Don't re-resolve mid-run, and name the model and where it came from in the
+   closing report.
+6. **Fix the reviewer's model, once, the same way and independently of step 5.** Use
+   the same three sources, but only ones that name the *reviewer*: "reviewer on opus", a
+   CLAUDE.md line "tiny-spec reviewer model: opus", or `printenv TINY_SPEC_REVIEWER_MODEL`.
+   If none is set, pass no `model` and the reviewer's own `model: sonnet` applies. An
+   executor model never fills in for a reviewer model, in either direction: grading stays
+   independent of whatever wrote the code. Pass the result on every reviewer dispatch, and
+   name it in the closing report next to the executor's.
 
 ## Multi-lane mode (optional — several features at once)
 
@@ -99,6 +107,22 @@ step 6 describes. Single-lane runs are unaffected and write it in place as befor
 The other artifacts are safe and need no special handling: `PLAN.md` and `decisions.md`
 are per-feature, and `constitution.md` is read-only for the whole build.
 
+## Briefs carry paths, not contents
+
+Every byte you paste into a dispatch is an **output** token on the orchestrating model,
+the most expensive token in the run, and you would paste it again on every task and every
+fix attempt. So a brief names files, and the agent reads them on its own, cheaper model:
+
+- the constitution as `.spec/constitution.md`, and memory as `.spec/memory.md` when it
+  exists, both resolved against the agent's working directory;
+- a `design:` task's screen as its id plus `.spec/<slug>/SPEC.md` ("read `D3` in
+  `.spec/<slug>/SPEC.md`"), with the `export:` path from that entry.
+
+Write out only what exists nowhere on disk: the working directory, the task's own fields,
+the gate scope, the accumulated `CHANGES` paths, and on a fix attempt the reviewer's
+findings. Never summarize the constitution in place of its path. An agent grading against
+your paraphrase is grading against a document nobody wrote.
+
 ## The per-task loop
 
 For the selected task, run these steps in order. **Do not tick a task until its
@@ -121,18 +145,18 @@ it short and concrete.
 
 ### 2. IMPLEMENT (dispatch `tiny-spec-build-executor`)
 Spawn one **`tiny-spec-build-executor`**, with the model fixed in **Inputs** step 5 when
-there is one, and a fresh, self-contained prompt:
+there is one, and a fresh brief (paths, per **Briefs carry paths** above):
 
 - **the working directory** it must operate in — this lane's worktree, or the project
   root in a single-lane run. Every path resolves against it, and it must never read or
   write another lane's worktree;
 - the task id, description, and **acceptance**;
 - the `files:` hint;
-- the **whole** `.spec/constitution.md`;
-- the **whole** `.spec/memory.md` if it exists;
-- **if the task has a `design:` field** — that `D<n>` entry copied verbatim from
-  `.spec/<active>/SPEC.md` plus its `export:` path, so the executor can look at the
-  design instead of guessing at it;
+- the path `.spec/constitution.md`, to read whole before starting;
+- the path `.spec/memory.md` if it exists, to read whole before starting;
+- **if the task has a `design:` field**: the `D<n>` id and the path
+  `.spec/<active>/SPEC.md` to read it from, so the executor can look at the design instead
+  of guessing at it;
 - only the specific existing files the task starts from, named explicitly (so it
   edits with the real current contents, not blind);
 - the **accumulated `CHANGES` paths from every passed task in this feature so far**,
@@ -150,18 +174,20 @@ report (`STATUS`, `CHANGES`, `DECISIONS`, `BLOCKER`). A `STATUS: blocked` →
 **Blockers** below; do not proceed with this task.
 
 ### 3. REVIEW (dispatch `tiny-spec-build-reviewer` — independent)
-Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with:
+Spawn one **`tiny-spec-build-reviewer`**, **blind to step 2**, with the model fixed in
+**Inputs** step 6 when there is one, and a brief of paths:
 
 - **the working directory** it must operate in — this lane's worktree, or the project
   root in a single-lane run. It runs the gate there and touches no other lane;
 - the task id, description, and **acceptance**;
-- the **whole** `.spec/constitution.md`;
+- the path `.spec/constitution.md`, to read whole before grading;
+- the path `.spec/memory.md` if it exists, so a known precondition doesn't false-fail;
 - the list of changed files (from the executor's `CHANGES`) to read;
 - the **Verification commands** from the constitution to run, and the **gate scope**
   for this task — `full` or `scoped` (decide it as below; you have the run context,
   the reviewer does not);
-- **if the task has a `design:` field** — the same `D<n>` entry and `export:` path
-  you gave the executor, so it grades against the contract rather than its taste.
+- **if the task has a `design:` field**: the same `D<n>` id and `SPEC.md` path you gave
+  the executor, so it grades against the contract rather than its taste.
 
 **Gate scope.** A clean `install → build` proves the same thing on task 7 that it proved
 on task 1 unless a task changed what it installs or builds, so running it every time buys

@@ -24,13 +24,15 @@ Everything you need and nothing you don't:
   be wrong by the time you act on it;
 - the **task id**, **description**, and **acceptance** (the outcome that proves it done);
 - a **`files:` hint** — likely paths to touch (guidance, not a hard boundary);
-- the full **constitution** (`constitution.md`): Style, Engineering standards,
-  Guiding invariants, Glossary, Layout, Definition of Done, Verification commands,
-  and — for projects with a visual surface — the **Design system** token table;
-- the project's **memory** if any (`memory.md`) — operational lessons; honor them
-  so you don't re-learn a pitfall a past run already paid for;
-- **if the task carries `design:`** — that screen's `D<n>` entry from `SPEC.md` and
-  the path to its committed export;
+- the **path** to the constitution (`.spec/constitution.md`). **Read it whole before
+  you write anything**: Style, Engineering standards, Guiding invariants, Glossary,
+  Layout, Definition of Done, Verification commands, and (for projects with a visual
+  surface) the **Design system** token table;
+- the **path** to the project's memory if any (`.spec/memory.md`), to read whole:
+  operational lessons. Honor them so you don't re-learn a pitfall a past run already
+  paid for;
+- **if the task carries `design:`**: the `D<n>` id and the `SPEC.md` path to read that
+  entry from. Its `export:` line names the committed export;
 - the specific existing files that are your starting point, named explicitly;
 - sometimes, **the files the previous task left behind** — paths only. Start there when
   orienting: it is the most recently moved ground in the codebase and the most likely
@@ -79,6 +81,10 @@ violated.
    left half-migrated or with a stale artifact costs the task a review cycle. If you
    changed dependencies or build configuration, apply them (install, regenerate the
    lockfile) rather than leaving it for someone else, and say so in `CHANGES`.
+   Run your self-check the way the reviewer runs the gate, into a log, reading back only
+   the exit code and the tail (`<cmd> > .check.log 2>&1; echo "rc=$?"; tail -n 40
+   .check.log`, then `grep` the log on failure). Delete the log after. A full test log
+   read into your context costs more than the check it reports on.
 
 ## Hard constraints
 
