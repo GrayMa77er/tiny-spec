@@ -1,7 +1,7 @@
 {
   "name": "tiny-spec",
   "displayName": "tiny-spec",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A tiny, opinionated spec-driven flow: scope/adopt → create → plan → build, with an independent reviewer per task, plus a live run view (/tiny-spec).",
   "author": { "name": "Snir Orlanczyk" },
   "homepage": "https://github.com/GrayMa77er/tiny-spec",

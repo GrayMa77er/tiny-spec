@@ -7,7 +7,12 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [Unreleased]
+## [2.2.0] — 2026-10-16
+
+tiny-spec now installs as a Claude Code plugin with a live run view, and a build costs
+far less: both agents default to Sonnet, and the orchestrator stops pasting the
+constitution into every dispatch. Re-installing matters this time. An older install keeps
+agents that inherit your conversation's model.
 
 ### Added
 
