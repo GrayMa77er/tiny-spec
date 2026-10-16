@@ -4,7 +4,8 @@ into the scorecard history.
 
 Input: a JSON file (path as argv[1]) holding a list of per-task result objects:
   {"task": str, "produced": bool, "suite_completed": bool, "blocker": bool,
-   "held_out_pass": bool, "notes": str}
+   "held_out_pass": bool, "notes": str,
+   "cost": {"usd", "turns", "input", "output", "cache_read", "cache_write", "by_model"} | null}
 
 What it does:
   1. Computes empirical metrics (held-out pass rate, suite/truth agreement,
@@ -76,7 +77,32 @@ def metrics(results):
         "false_fail_rate": rate(false_fail),
         "blocker_rate": rate(blockers),
         "produced_count": len(produced),
+        **cost_metrics(results),
     }
+
+
+def cost_metrics(results):
+    """Spend per run, from `claude -p --output-format json`. Absent on older results or
+    a task that died before its result object — reported as None, never as zero."""
+    costs = [r["cost"] for r in results if r.get("cost")]
+    if not costs:
+        return {"cost_usd_total": None, "cost_usd_mean": None}
+    total = sum(c["usd"] for c in costs)
+    return {
+        "cost_usd_total": round(total, 4),
+        "cost_usd_mean": round(total / len(costs), 4),
+        "output_tokens_total": sum(c["output"] for c in costs),
+    }
+
+
+def prior_task_cost(prior_runs, task):
+    """The most recent recorded cost for this task, so a change shows up as a delta on
+    like-for-like work (task sets differ between runs; run totals don't compare)."""
+    for run in reversed(prior_runs):
+        for t in run.get("tasks", []):
+            if t.get("task") == task and t.get("cost"):
+                return t["cost"]["usd"], run.get("git_sha")
+    return None, None
 
 
 def derive_A(m, prior_run_count):
@@ -184,6 +210,9 @@ def main():
     print(f"FALSE-PASS rate       : {m['false_pass_rate']:.0%}   <- suite said done but grader failed")
     print(f"false-fail rate       : {m['false_fail_rate']:.0%}")
     print(f"blocker rate          : {m['blocker_rate']:.0%}")
+    if m["cost_usd_total"] is not None:
+        print(f"cost                  : ${m['cost_usd_total']:.2f} total, ${m['cost_usd_mean']:.2f}/task, "
+              f"{m['output_tokens_total']:,} output tokens")
     print("-" * 60)
     print(f"derived Dimension A   : A1={A['A1']} A2={A['A2']} A3={A['A3']} A4={A['A4']}  (avg {dims['A']})")
     print(f"total                 : {total} / 100"
@@ -194,7 +223,15 @@ def main():
         verdict = "PASS" if r.get("held_out_pass") else "FAIL"
         sv = "done" if r.get("suite_completed") else ("BLOCKED" if r.get("blocker") else "incomplete")
         flag = "  <-- FALSE-PASS" if (r.get("suite_completed") and not r.get("held_out_pass")) else ""
-        print(f"  {r['task']:<10} grader={verdict:<4} suite={sv}{flag}")
+        c = r.get("cost")
+        spend = ""
+        if c:
+            spend = f"  ${c['usd']:.2f} {c['turns']} turns"
+            prev, prev_sha = prior_task_cost(prior_empirical, r["task"])
+            if prev:
+                spend += f" ({(c['usd'] - prev) / prev:+.0%} vs {prev_sha})"
+            spend += "  [" + ", ".join(f"{k} ${v:.2f}" for k, v in c["by_model"].items()) + "]"
+        print(f"  {r['task']:<10} grader={verdict:<4} suite={sv}{spend}{flag}")
 
 
 if __name__ == "__main__":

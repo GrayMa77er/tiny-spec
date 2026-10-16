@@ -1,0 +1,5 @@
+{
+  "description": "tiny-spec view — a live run pane and an above-prompt band, drawn from git state. Needs Claude Code v2.1.287+ (mods); older versions ignore it.",
+  "hooks": {},
+  "modules": ["./tiny-spec-view.js"]
+}

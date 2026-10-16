@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tiny-spec view</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+  --accent: #3b5bdb;
+  --merged: #2f9e44; --built: #66a80f; --review: #1c7ed6; --building: #f08c00;
+  --paused: #ae3ec9; --blocked: #e03131; --exhausted: #c2255c; --fork: #d9480f;
+  --planning: #868e96; --not-started: #adb5bd;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #151514; --panel: #1f1f1d; --ink: #ececea; --muted: #9a9a94; --line: #34342f; --accent: #748ffc; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 15px; margin: 0; letter-spacing: .02em; }
+header .meta { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+nav { display: flex; gap: 4px; margin-left: auto; }
+nav button { border: 1px solid transparent; background: none; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+nav button[aria-selected="true"] { color: var(--ink); border-color: var(--line); background: var(--bg); }
+label.toggle { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+main { padding: 18px 20px 40px; max-width: 1400px; margin: 0 auto; }
+.banner { border: 1px solid var(--line); border-left: 3px solid var(--blocked); background: var(--panel); padding: 8px 12px; margin-bottom: 10px; border-radius: 6px; }
+.banner.info { border-left-color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 10px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; border-top: 3px solid var(--c, var(--line)); }
+.card .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.card .title { font-weight: 600; }
+.slug, code { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--c, var(--accent)); }
+.small { font-size: 12px; color: var(--muted); }
+.note { font-size: 12px; border-left: 2px solid var(--c); padding-left: 8px; }
+a { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+pre.cmd { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; border-radius: 6px; font-family: var(--mono); font-size: 12px; overflow-x: auto; margin: 0 0 6px; }
+.split { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+.list button { display: flex; width: 100%; text-align: left; gap: 8px; align-items: center; border: 1px solid transparent; background: none; color: var(--ink); padding: 7px 9px; border-radius: 6px; cursor: pointer; font: inherit; }
+.list button[aria-selected="true"] { background: var(--panel); border-color: var(--line); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.task { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.task:last-child { border-bottom: none; }
+.muted { color: var(--muted); }
+svg text { fill: var(--ink); font: 12px system-ui, sans-serif; }
+svg .edge { stroke: var(--muted); fill: none; stroke-width: 1.4; }
+.graphwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; padding: 8px; }
+@media (max-width: 720px) { .split { grid-template-columns: 1fr; } nav { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>tiny-spec</h1>
+  <span class="meta" id="meta">loading…</span>
+  <nav role="tablist">
+    <button role="tab" data-tab="run" aria-selected="true">Run</button>
+    <button role="tab" data-tab="graph">Graph</button>
+    <button role="tab" data-tab="report">Report</button>
+    <button role="tab" data-tab="explorer">Explorer</button>
+  </nav>
+  <label class="toggle"><input type="checkbox" id="remote"> watch PRs (git fetch + gh, every 60s)</label>
+</header>
+<main id="main"></main>
+<script>
+const COLORS = ["merged","built","review","building","paused","blocked","exhausted","fork","planning","not-started"];
+const LABEL = { merged: "merged", built: "built · unmerged", review: "PR open · your merge", building: "building",
+  paused: "paused", blocked: "blocked", exhausted: "exhausted", fork: "fork", planning: "planning", "not-started": "not started" };
+const HALTED = new Set(["blocked", "exhausted", "fork", "paused"]);
+const css = s => `var(--${s})`;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ago = iso => { if (!iso) return ""; const s = (Date.now() - new Date(iso)) / 1000;
+  return s < 90 ? "just now" : s < 5400 ? `${Math.round(s / 60)}m ago` : s < 129600 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`; };
+const dur = (a, b) => { if (!a || !b) return "—"; const m = Math.round((new Date(b) - new Date(a)) / 60000);
+  return m < 60 ? `${m}m` : `${(m / 60).toFixed(1)}h`; };
+const chip = st => `<span class="chip"><span class="dot" style="background:${css(st)}"></span>${esc(LABEL[st] || st)}</span>`;
+
+let state = null, tab = "run", picked = null, remote = false, lastRemote = 0;
+try { tab = localStorage.getItem("ts-tab") || "run"; remote = localStorage.getItem("ts-remote") === "1"; } catch (e) {}
+if (["run", "graph", "report", "explorer"].includes(location.hash.slice(1))) tab = location.hash.slice(1);
+document.getElementById("remote").checked = remote;
+
+function prLink(f) {
+  if (!f.pr) return "";
+  const p = f.pr, kind = p.state === "MERGED" ? "merged" : p.isDraft ? "draft" : p.state.toLowerCase();
+  return `<a href="${esc(p.url)}" target="_blank" rel="noopener">PR #${p.number}</a> <span class="small">${kind}</span>`;
+}
+
+function card(f) {
+  const pct = f.total ? Math.round(100 * f.done_count / f.total) : 0;
+  const halt = f.halts && f.halts.length && HALTED.has(f.state) ? f.halts[f.halts.length - 1] : null;
+  const cur = f.current_task;
+  return `<div class="card" style="--c:${css(f.state)}">
+    <div class="top"><span class="title">${esc(f.title)}</span>${chip(f.state)}</div>
+    <span class="slug">${esc(f.slug)}${f.needs.length ? ` · needs ${f.needs.map(esc).join(", ")}` : ""}</span>
+    ${f.total ? `<div class="bar"><i style="width:${pct}%"></i></div>
+      <span class="small">${f.done_count}/${f.total} tasks${cur ? ` · next <b>${esc(cur.id)}</b> ${esc(cur.title)}` : ""}</span>` : ""}
+    ${f.state === "paused" && cur ? `<div class="note" style="--c:${css("paused")}">pause: ${esc(cur.pause)}</div>` : ""}
+    ${halt ? `<div class="note" style="--c:${css(f.state)}">${esc(halt.id)} ${esc(halt.title)} — ${esc(halt.note || "")}</div>` : ""}
+    <span class="small">${[f.worktree ? `worktree <code title="${esc(f.worktree)}">${esc(f.worktree.split("/").pop())}</code>` : "", prLink(f),
+      f.last_activity ? `last commit ${ago(f.last_activity)}` : ""].filter(Boolean).join(" · ")}</span>
+  </div>`;
+}
+
+function renderRun(s) {
+  const by = Object.fromEntries(s.features.map(f => [f.slug, f]));
+  const merged = s.features.filter(f => f.state === "merged");
+  let html = `<div class="chips">${COLORS.filter(c => s.counts[c]).map(c => `${chip(c)}<span class="small">${s.counts[c]}</span>`).join(" ")}</div>`;
+  s.batches.forEach((b, i) => {
+    html += `<h2>Batch ${i + 1} of ${s.batches.length}${i === 0 ? " · current" : ""}</h2><div class="grid">${b.map(x => card(by[x])).join("")}</div>`;
+  });
+  if (merged.length) html += `<h2>Merged</h2><div class="grid">${merged.map(card).join("")}</div>`;
+  if (!s.features.length) html += `<div class="banner info">No features yet — no BREAKDOWN.md and no .spec/&lt;slug&gt;/ dirs.</div>`;
+  return html;
+}
+
+function renderGraph(s) {
+  const cols = {};
+  s.features.forEach(f => (cols[f.depth] = cols[f.depth] || []).push(f));
+  const W = 200, H = 54, GX = 70, GY = 18, pos = {};
+  const ncol = Math.max(0, ...Object.keys(cols).map(Number)) + 1;
+  const nrow = Math.max(1, ...Object.values(cols).map(c => c.length));
+  Object.entries(cols).forEach(([d, fs]) => fs.forEach((f, i) => pos[f.slug] = { x: 20 + d * (W + GX), y: 30 + i * (H + GY) }));
+  const width = 40 + ncol * (W + GX), height = 50 + nrow * (H + GY);
+  let edges = "", nodes = "";
+  s.features.forEach(f => f.needs.forEach(n => {
+    const a = pos[n], b = pos[f.slug]; if (!a || !b) return;
+    const x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
+    edges += `<path class="edge" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 6},${y2}" marker-end="url(#arr)"/>`;
+  }));
+  s.features.forEach(f => {
+    const p = pos[f.slug], t = f.title.length > 26 ? f.title.slice(0, 25) + "…" : f.title;
+    nodes += `<g><rect x="${p.x}" y="${p.y}" width="${W}" height="${H}" rx="8" fill="var(--panel)" stroke="${css(f.state)}" stroke-width="2"/>
+      <rect x="${p.x}" y="${p.y}" width="6" height="${H}" rx="3" fill="${css(f.state)}"/>
+      <text x="${p.x + 16}" y="${p.y + 22}" font-weight="600">${esc(t)}</text>
+      <text x="${p.x + 16}" y="${p.y + 40}" style="fill:var(--muted)">${esc(LABEL[f.state])}${f.total ? ` · ${f.done_count}/${f.total}` : ""}${f.batch != null ? ` · b${f.batch + 1}` : ""}</text></g>`;
+  });
+  const heads = [...Array(ncol).keys()].map(d => `<text x="${20 + d * (W + GX)}" y="16" style="fill:var(--muted)">depth ${d}</text>`).join("");
+  return `<p class="small">Columns are depth in the <code>needs:</code> graph; <code>b<i>n</i></code> is the batch the router would run it in now.</p>
+    <div class="graphwrap"><svg width="${width}" height="${height}" role="img" aria-label="Feature dependency graph">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>${heads}${edges}${nodes}</svg></div>`;
+}
+
+function renderReport(s) {
+  const merged = s.features.filter(f => f.state === "merged");
+  const halted = s.features.filter(f => HALTED.has(f.state));
+  const review = s.features.filter(f => f.state === "review" || f.state === "built");
+  const notStarted = s.features.filter(f => f.state === "not-started" || f.state === "planning");
+  const worst = ["blocked", "exhausted", "fork", "paused"].find(x => s.counts[x]) ||
+    (review.length || notStarted.length || s.features.some(f => f.state === "building") ? "in progress" : "done");
+  let h = `<div class="banner ${worst === "done" ? "info" : ""}">Run state: <b>${esc(worst)}</b> — ${merged.length} of ${s.features.length} features merged.</div>`;
+  h += `<h2>Built and merged</h2>` + (merged.length ? `<table><tr><th>Feature</th><th>Merge</th><th>Commits</th><th>Duration</th></tr>${merged.map(f =>
+    `<tr><td>${esc(f.title)} <span class="slug">${esc(f.slug)}</span></td><td><code>${esc(f.merge ? f.merge.sha.slice(0, 7) : "—")}</code> ${esc(f.merge ? f.merge.subject : "")}</td>
+     <td>${f.commits.length}</td><td>${dur(f.started, f.merge ? f.merge.time : f.last_activity)}</td></tr>`).join("")}</table>` : `<p class="muted">None yet.</p>`);
+  h += `<h2>Stopped</h2>` + (halted.length ? `<table><tr><th>Feature</th><th>State</th><th>At</th><th>Why</th></tr>${halted.map(f => {
+    const last = f.halts && f.halts[f.halts.length - 1];
+    const why = f.state === "paused" ? `pause: ${f.current_task ? f.current_task.pause : ""}` : last ? `${last.note || last.title}` : "";
+    return `<tr><td>${esc(f.title)}</td><td>${chip(f.state)}</td><td>${esc(f.current_task ? f.current_task.id : "")}</td><td>${esc(why)}</td></tr>`;
+  }).join("")}</table>` : `<p class="muted">Nothing halted.</p>`);
+  h += `<h2>Built, not merged</h2><p class="small">With a PR open, the merge is yours; without one, re-running tiny-spec-run merges it.</p>` + (review.length ? `<table><tr><th>Feature</th><th>Branch</th><th>PR</th><th>Lessons</th></tr>${review.map(f =>
+    `<tr><td>${esc(f.title)}</td><td><code>${esc(f.ref)}</code></td><td>${prLink(f) || "—"}</td><td>${f.pr && f.pr.has_lessons ? "yes — folded in on next run" : "—"}</td></tr>`).join("")}</table>` : `<p class="muted">Nothing waiting.</p>`);
+  h += `<h2>Never started</h2>` + (notStarted.length ? `<p>${notStarted.map(f => `${esc(f.title)} <span class="slug">${esc(f.slug)}</span>`).join(" · ")}</p>` : `<p class="muted">None.</p>`);
+  h += `<h2>Worktree cleanup</h2>` + (s.cleanup.length ? `<p class="small">These features are merged. Their worktrees are yours to remove — tiny-spec never runs this.</p>
+    ${s.cleanup.map(c => `<pre class="cmd">${esc(c.command)}</pre>`).join("")}` : `<p class="muted">No merged worktrees left on disk.</p>`);
+  return h;
+}
+
+function renderExplorer(s) {
+  if (!picked || !s.features.find(f => f.slug === picked)) picked = s.features[0] && s.features[0].slug;
+  const f = s.features.find(x => x.slug === picked);
+  const list = s.features.map(x => `<button data-pick="${esc(x.slug)}" aria-selected="${x.slug === picked}">
+    <span class="dot" style="background:${css(x.state)}"></span>${esc(x.title)}</button>`).join("");
+  const con = s.constitution.exists ? `<div class="panel"><b>Constitution</b>
+    <p class="small">${s.constitution.headings.map(esc).join(" · ")}</p>
+    ${s.constitution.verification.length ? `<p class="small">Verification: ${s.constitution.verification.map(v => `<code>${esc(v)}</code>`).join(" ")}</p>` : ""}
+    <p class="small">memory.md: ${s.memory_entries} curated ${s.memory_entries === 1 ? "entry" : "entries"}</p></div>` : `<div class="banner info">No .spec/constitution.md yet.</div>`;
+  let body = "";
+  if (f) {
+    const tasksFor = r => f.tasks.filter(t => t.req.includes(r)).map(t => `${t.done ? "✓" : "○"} ${t.id}`).join(", ");
+    body = `<div class="panel"><div class="top" style="display:flex;justify-content:space-between"><b>${esc(f.title)}</b>${chip(f.state)}</div>
+      <p class="small">slug <code>${esc(f.slug)}</code>${f.ref ? ` · read from <code>${esc(f.ref)}</code>` : ""}${f.ticket ? ` · ticket ${esc(f.ticket)}` : ""}</p>
+      ${f.acs.length ? `<h2>Acceptance (BREAKDOWN)</h2><ul>${f.acs.map(a => `<li>${esc(a)}</li>`).join("")}</ul>` : ""}
+      <h2>Requirements → tasks</h2>${f.reqs.length ? `<table><tr><th>REQ</th><th>Requirement</th><th>Tasks</th></tr>${f.reqs.map(r =>
+        `<tr><td><code>${esc(r.id)}</code></td><td>${esc(r.text)}</td><td>${tasksFor(r.id) || (f.tasks.length ? `<span style="color:var(--blocked)">uncovered</span>` : "—")}</td></tr>`).join("")}</table>` : `<p class="muted">No SPEC.md on any ref yet.</p>`}
+      <h2>Tasks</h2>${f.tasks.length ? f.tasks.map(t => `<div class="task">${t.done ? "✓" : "○"} <b>${esc(t.id)}</b> ${esc(t.title)}
+        ${t.req.length ? `<span class="slug">${t.req.map(esc).join(", ")}</span>` : ""}
+        <div class="small">${esc(t.acceptance)}${t.pause ? ` · <b>pause:</b> ${esc(t.pause)}` : ""}${t.design ? ` · design ${esc(t.design)}` : ""}</div></div>`).join("") : `<p class="muted">No PLAN.md tasks yet.</p>`}
+      <h2>Commits</h2>${f.commits.length ? `<table>${f.commits.map(c => `<tr><td><code>${esc(c.sha)}</code></td><td>${esc(c.subject)}</td><td class="small">${ago(c.time)}</td></tr>`).join("")}</table>` : `<p class="muted">None.</p>`}
+      ${f.halts.length ? `<h2>decisions.md halts</h2>${f.halts.map(d => `<div class="note" style="--c:${css(d.state || "blocked")}">${esc(d.id)} ${esc(d.title)} · ${esc(d.state)} · ${esc(d.note)}</div>`).join("")}` : ""}
+    </div>`;
+  }
+  return `${con}<div class="split" style="margin-top:14px"><div class="list">${list}</div><div>${body}</div></div>`;
+}
+
+function render() {
+  if (!state) return;
+  const s = state;
+  document.getElementById("meta").textContent =
+    `${s.root} · on ${s.branch || "?"}${s.dirty ? " (dirty)" : ""} · into ${s.integration || "?"} · ${s.source || ""} · ${new Date(s.generated).toLocaleTimeString()}`;
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  let top = s.problems.map(p => `<div class="banner">${esc(p)}</div>`).join("");
+  if (s.remote.enabled && !s.remote.ok) top += `<div class="banner">PR watch is local-only right now — ${esc(s.remote.error)}</div>`;
+  const view = { run: renderRun, graph: renderGraph, report: renderReport, explorer: renderExplorer }[tab] || renderRun;
+  document.getElementById("main").innerHTML = top + view(s);
+}
+
+let remoteCache = null;
+async function poll() {
+  const wantRemote = remote && Date.now() - lastRemote > 60000;
+  try {
+    const r = await fetch(`/state.json${wantRemote ? "?remote=1" : ""}`, { cache: "no-store" });
+    const s = await r.json();
+    if (wantRemote) { lastRemote = Date.now(); remoteCache = s.remote; }
+    else if (remote && remoteCache) {
+      // Between remote refreshes, keep showing the last PR facts on top of fresh local state.
+      s.remote = remoteCache;
+      s.features.forEach(f => {
+        const pr = remoteCache.prs[f.slug]; if (!pr || f.pr) return;
+        f.pr = pr;
+        // Same rule as state.py: an open, non-draft PR means it is waiting on your merge.
+        if (pr.state === "OPEN" && !pr.isDraft && ["built", "building", "planning"].includes(f.state)) {
+          s.counts[f.state]--; f.state = "review"; s.counts.review = (s.counts.review || 0) + 1;
+        }
+      });
+    }
+    state = s; render();
+  } catch (e) {
+    document.getElementById("meta").textContent = "server stopped — re-run tiny-spec view";
+  }
+}
+
+document.querySelector("nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]"); if (!b) return;
+  tab = b.dataset.tab; history.replaceState(null, "", "#" + tab); try { localStorage.setItem("ts-tab", tab); } catch (err) {} render();
+});
+document.getElementById("main").addEventListener("click", e => {
+  const b = e.target.closest("button[data-pick]"); if (!b) return; picked = b.dataset.pick; render();
+});
+document.getElementById("remote").addEventListener("change", e => {
+  remote = e.target.checked; lastRemote = 0; remoteCache = null;
+  try { localStorage.setItem("ts-remote", remote ? "1" : "0"); } catch (err) {} poll();
+});
+poll(); setInterval(poll, 3000);
+</script>
+</body>
+</html>

@@ -7,6 +7,42 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [2.2.0] — 2026-10-16
+
+tiny-spec now installs as a Claude Code plugin with a live run view, and a build costs
+far less: both agents default to Sonnet, and the orchestrator stops pasting the
+constitution into every dispatch. Re-installing matters this time. An older install keeps
+agents that inherit your conversation's model.
+
+### Added
+
+- **Plugin install.** The repo is now a Claude Code plugin and a one-plugin marketplace
+  (`/plugin marketplace add GrayMa77er/tiny-spec`). This is the path for Claude Code
+  Projects, whose cloud threads load plugins rather than `~/.claude/skills`.
+- **`tiny-spec view`**: a live, read-only browser view of the backlog with Run / Graph /
+  Report / Explorer tabs. It is derived from git and `.spec/` on every refresh. *watch PRs*
+  adds `git fetch` + `gh pr list`, so a run in a Project's cloud threads is visible
+  locally.
+- **`/tiny-spec` run view in Claude Code** (plugin, v2.1.287+): an above-prompt band
+  while a run is active, including how many executor/reviewer agents are running now,
+  plus the same four tabs in a pane.
+- **`tiny-spec state`** prints the derived state as JSON.
+
+### Changed
+
+- `tiny-spec-build` dispatches its agents by either name: plain, or plugin-namespaced
+  (`tiny-spec:tiny-spec-build-executor`).
+- **The executor runs on Sonnet by default**, where before it inherited your
+  conversation's model. You can override it per run ("executor on opus", passed through
+  by `tiny-spec-run`), or standing via `TINY_SPEC_EXECUTOR_MODEL` or a CLAUDE.md line.
+- **The reviewer runs on Sonnet by default too**, overridable the same way and
+  independently ("reviewer on opus", `TINY_SPEC_REVIEWER_MODEL`, or a CLAUDE.md line).
+- **Lower token spend in the build loop.** Briefs hand agents the paths to the
+  constitution, memory, and `design:` entry instead of pasting them, and both agents
+  read gate output as exit code plus tail rather than whole logs.
+- **The eval harness records cost.** Each task's dollars, turns, tokens, and per-model
+  spend land in `results.jsonl`, and the report shows the delta from that task's last run.
+
 ## [2.1.0] — 2026-10-08
 
 Bringing a PRD now works end to end from `tiny-spec-run`. No new skills, agents, files,

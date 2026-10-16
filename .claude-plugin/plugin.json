@@ -1,0 +1,24 @@
+{
+  "name": "tiny-spec",
+  "displayName": "tiny-spec",
+  "version": "2.2.0",
+  "description": "A tiny, opinionated spec-driven flow: scope/adopt → create → plan → build, with an independent reviewer per task, plus a live run view (/tiny-spec).",
+  "author": { "name": "Snir Orlanczyk" },
+  "homepage": "https://github.com/GrayMa77er/tiny-spec",
+  "repository": "https://github.com/GrayMa77er/tiny-spec",
+  "license": "MIT",
+  "keywords": ["spec-driven-development", "skills", "agents"],
+  "skills": [
+    "./tiny-spec-scope",
+    "./tiny-spec-adopt",
+    "./tiny-spec-run",
+    "./tiny-spec-create",
+    "./tiny-spec-design",
+    "./tiny-spec-plan",
+    "./tiny-spec-build"
+  ],
+  "agents": [
+    "./agents/tiny-spec-build-executor.md",
+    "./agents/tiny-spec-build-reviewer.md"
+  ]
+}

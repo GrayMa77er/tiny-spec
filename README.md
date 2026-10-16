@@ -228,6 +228,53 @@ or install one set at a time.
 
 </details>
 
+<details>
+<summary>Install as a Claude Code plugin (needed for Projects)</summary>
+
+The repo is also a plugin and a one-plugin marketplace. A plugin is the only way to load
+the suite into a [Claude Code Project](https://claude.com/blog/projects-redesigned),
+whose cloud threads load plugins rather than `~/.claude/skills`:
+
+```
+/plugin marketplace add GrayMa77er/tiny-spec
+/plugin install tiny-spec@tiny-spec
+```
+
+Installed this way, everything is namespaced: `/tiny-spec:tiny-spec-run`, and the agents
+are `tiny-spec:tiny-spec-build-executor` / `-reviewer` (the build skill dispatches either
+form). Pick **one** install method. A plugin plus `uvx tiny-spec install` loads every
+skill twice.
+
+The plugin also carries the in-session [run view](#watching-a-run) (`/tiny-spec`), which
+needs Claude Code v2.1.287 or later. Older versions load the skills and agents and skip
+the view.
+
+</details>
+
+### Watching a run
+
+A long build-through run is easier to follow with a view of it. There are two, and both
+read only git and `.spec/`. They write nothing and keep no state file, so you can close
+them at any point and lose nothing.
+
+- **In Claude Code: `/tiny-spec`** (plugin install, Claude Code v2.1.287+). A one-line
+  band above the prompt appears while a run is in flight, showing the batch, each active
+  feature's progress, and how many executor or reviewer agents are running *right now*.
+  `/tiny-spec` opens a pane with **Run / Graph / Report / Explorer** tabs.
+- **In a browser: `uvx tiny-spec view`**. It serves the same four tabs on `127.0.0.1` and
+  refreshes every few seconds. Tick *watch PRs* to also `git fetch` and `gh pr list`
+  once a minute, so a run happening in a Project's cloud threads shows up on your
+  laptop, branch by branch.
+
+| Tab | Shows |
+|---|---|
+| Run | Batches in the order the router runs them, each feature's state, `n/m` tasks, the next task, and its worktree or PR |
+| Graph | The `needs:` graph by depth, coloured by state, with the batch each feature lands in |
+| Report | The run's worst terminal state, what merged, what stopped and why, what waits on your merge, what never started, and the `git worktree remove` commands for merged lanes (printed, never run) |
+| Explorer | The constitution, then per feature: acceptance → `REQ-N` → covering tasks (gaps flagged), tasks, commits, `decisions.md` halts |
+
+`uvx tiny-spec state --pretty` prints the same derived state as JSON.
+
 ### See a finished run first
 
 [`examples/todo-cli/`](examples/todo-cli/) is a real run of the flow on one small
@@ -239,8 +286,8 @@ The tests pass; you can clone it and run the gate yourself.
 
 The constitution (`constitution.md`) is the spine. `tiny-spec-adopt` derives it from
 your codebase, or `tiny-spec-create` seeds it from a short interview; `tiny-spec-plan`
-hardens it with concrete engineering rules, and `tiny-spec-build` injects it whole into
-every task. It holds your style, standards, invariants, definition of done, and
+hardens it with concrete engineering rules, and every task's executor and reviewer read
+it whole. It holds your style, standards, invariants, definition of done, and
 verification commands.
 
 **On an existing codebase, deriving beats asking.** Your test command, layout, and
@@ -430,6 +477,29 @@ lint and tests against the existing build. It escalates back to the full gate wh
 narrower one can't carry the verdict, and the authoritative clean run happens once more
 over the whole project as the final smoke. Re-installing from scratch on every task
 proved the same thing repeatedly and was the slowest part of the loop.
+
+**Both agents run on Sonnet by default.** To change one for a single run, say so in the
+request, e.g. `/tiny-spec-build executor on opus` or `reviewer on opus` (or
+`/tiny-spec-run build the backlog, reviewer on opus`). To make it stick, set
+`TINY_SPEC_EXECUTOR_MODEL` or `TINY_SPEC_REVIEWER_MODEL`, in your shell or in the `env`
+block of `~/.claude/settings.json`:
+
+```json
+{ "env": { "TINY_SPEC_REVIEWER_MODEL": "opus" } }
+```
+
+A model named in the request, or a line like `tiny-spec reviewer model: opus` in your
+CLAUDE.md, wins over the variable. Any model alias or full id works. Each choice is fixed
+for the run and named in the closing report. The two are **resolved independently**: an
+executor setting never changes the reviewer, or the other way round, so the grade stays
+independent of what wrote the code.
+
+**Keeping token spend down.** The orchestrating session (usually your conversation's
+model) is the expensive seat, so it never pastes the constitution or memory into a
+dispatch. It hands each agent file paths, and the agent reads them on Sonnet. Both agents
+run gates into a log and read back the exit code and tail, not the whole log. The eval
+harness records each benchmark task's cost, so a change that moves spend shows up next to
+the quality numbers.
 
 ```mermaid
 flowchart TB

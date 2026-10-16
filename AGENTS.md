@@ -157,7 +157,12 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
    - **convergence bound:** a task that stays red past 2 fix attempts must become a
      blocker, not an infinite grind;
    - **memory round-trip:** an operational lesson surfaced during a build must land as a
-     curated `memory.md` entry and be injected into the *next* executor/reviewer prompt;
+     curated `memory.md` entry, and the *next* executor and reviewer must be handed its
+     path and read it;
+   - **briefs carry paths, not contents:** a dispatch names `.spec/constitution.md`,
+     `.spec/memory.md`, and a `design:` task's `D<n>` id + `SPEC.md` path. It never pastes
+     or paraphrases them, and the agent reads them whole before working. Pasting is the
+     orchestrator's most expensive output, repeated every task;
    - **completed-work guardrail:** an upstream change that touches a `[x]` task must
      **uncheck** it and log it for review;
    - **pause honored, and honored *early*:** a task carrying `pause:` must halt the build
@@ -185,6 +190,13 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      run on a dirty tree, and must **never** push, force, rebase, reset, or delete a
      branch. A red gate after a merge is reported with the undo command, never undone
      automatically;
+   - **the executor model never reaches the reviewer:** a run with "executor on opus"
+     (or `TINY_SPEC_EXECUTOR_MODEL` set) must dispatch every executor, fix attempts and
+     every lane included, with that `model`, and every reviewer **without** it.
+     Otherwise the override silently weakens or changes the grader. With neither set,
+     no `model` is passed and the executor's `model: sonnet` frontmatter applies. The
+     reverse holds too: "reviewer on opus" (or `TINY_SPEC_REVIEWER_MODEL`) reaches every
+     reviewer dispatch and no executor;
    - **`tiny-spec-adopt` stays read-only:** it must never modify source, create a spec
      dir, or touch git — and it must never invent a verification command it didn't run.
 5. **Clean up.** Remove the sandbox. Never commit a `.spec/` from a test run or any build
@@ -215,6 +227,26 @@ each install is self-contained). The install set is declared in
 [tiny_spec/manifest.json](tiny_spec/manifest.json) — adding, renaming, or removing a
 skill means editing the manifest and the matching path in `pyproject.toml`, nothing else.
 New skills/agents load at startup — restart the session after installing.
+
+**The repo is also a plugin** (`.claude-plugin/plugin.json` + `marketplace.json`). That is
+the third install path, and the only one a Claude Code Project's cloud threads can load.
+The plugin manifest lists the skill dirs and agent files explicitly, so a new or
+renamed skill means editing it alongside `manifest.json` and `pyproject.toml`. Plugin
+components are namespaced (`tiny-spec:tiny-spec-build-executor`). That is why
+`tiny-spec-build` dispatches "whichever form your agent list shows". Keep that line if you
+touch agent dispatch.
+
+**The viewers derive, they never record.** `tiny_spec/state.py` is the one derivation,
+a port of `tiny-spec-run`'s Step 1 "where each feature stands" rules. Change both
+together. `tiny-spec view` (browser) and the plugin's mod (`hooks/tiny-spec-view.js`,
+which runs `state.py` with `python3`) only render it. Neither writes a file, a store
+key, or a progress record. A viewer that started persisting run state would be the
+state file this suite refuses. `state.py` stays stdlib-only, Python 3.9, with no
+package-relative imports, because the mod runs it as a bare script from the plugin
+root. `hooks/hooks.json` carries an empty `"hooks": {}` beside `"modules"` on purpose.
+Claude Code before v2.1.287 (no mods) rejects a `hooks.json` without that record, and
+the rejection would take the skills down with it. Run `claude plugin validate
+.claude-plugin/plugin.json` after touching the plugin.
 
 **Removed skills are not uninstalled by a re-install.** `tiny-spec install` copies the
 manifest's entries; it does not delete skills that left the manifest. After a release

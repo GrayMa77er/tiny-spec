@@ -65,11 +65,13 @@ for task in "${TASKS[@]}"; do
   # drive tiny-spec headlessly
   MODEL_ARG=(); [ -n "${CLAUDE_MODEL:-}" ] && MODEL_ARG=(--model "$CLAUDE_MODEL")
   # ${arr[@]+"${arr[@]}"} expands safely when empty under `set -u` on bash 3.2 (macOS)
-  ( cd "$SB" && $TIMEOUT_BIN claude -p "$DRIVER" \
+  # --output-format json: stdout is one result object carrying total_cost_usd, usage,
+  # num_turns, and per-model modelUsage (subagents included) — the cost side of the eval.
+  ( cd "$SB" && $TIMEOUT_BIN claude -p "$DRIVER" --output-format json \
       --dangerously-skip-permissions ${MODEL_ARG[@]+"${MODEL_ARG[@]}"} ) \
-      >"$LOGDIR/$task.log" 2>&1
+      >"$LOGDIR/$task.json" 2>"$LOGDIR/$task.log"
   RUN_RC=$?
-  [ $RUN_RC -ne 0 ] && echo "   (claude exited rc=$RUN_RC; see $LOGDIR/$task.log)"
+  [ $RUN_RC -ne 0 ] && echo "   (claude exited rc=$RUN_RC; see $LOGDIR/$task.json and $task.log)"
 
   # held-out grade
   if [ -f "$SB/solution.py" ]; then
@@ -81,9 +83,24 @@ for task in "${TASKS[@]}"; do
   echo "   grader: $GRADE_OUT"
 
   # introspect the suite's own verdict + emit one result object
-  python3 - "$task" "$SB" "$GRADE_RC" "$RUN_RC" "$GRADE_OUT" >>"$RESULTS_JSONL" <<'PY'
+  python3 - "$task" "$SB" "$GRADE_RC" "$RUN_RC" "$GRADE_OUT" "$LOGDIR/$task.json" >>"$RESULTS_JSONL" <<'PY'
 import json, os, sys, glob, re
 task, sb, grade_rc, run_rc, grade_out = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
+cost = None
+try:
+    run = json.load(open(sys.argv[6]))
+    u = run.get("usage", {})
+    cost = {
+        "usd": round(run.get("total_cost_usd", 0.0), 4),
+        "turns": run.get("num_turns"),
+        "input": u.get("input_tokens", 0),
+        "output": u.get("output_tokens", 0),
+        "cache_read": u.get("cache_read_input_tokens", 0),
+        "cache_write": u.get("cache_creation_input_tokens", 0),
+        "by_model": {m: round(v.get("costUSD", 0.0), 4) for m, v in run.get("modelUsage", {}).items()},
+    }
+except (OSError, ValueError):
+    pass  # timed out / crashed before the result object — cost stays unknown
 produced = os.path.exists(os.path.join(sb, "solution.py"))
 tasks_files = glob.glob(os.path.join(sb, ".spec", "*", "PLAN.md"))
 dec_files = glob.glob(os.path.join(sb, ".spec", "*", "decisions.md"))
@@ -105,6 +122,7 @@ print(json.dumps({
     "held_out_pass": grade_rc == 0,
     "notes": grade_out if grade_rc != 0 else "ok",
     "claude_rc": run_rc,
+    "cost": cost,
 }))
 PY
 

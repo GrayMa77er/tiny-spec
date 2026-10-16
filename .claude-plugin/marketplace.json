@@ -1,0 +1,14 @@
+{
+  "name": "tiny-spec",
+  "description": "The tiny-spec spec-driven development suite for Claude Code.",
+  "owner": {
+    "name": "Snir Orlanczyk"
+  },
+  "plugins": [
+    {
+      "name": "tiny-spec",
+      "source": "./",
+      "description": "A tiny, opinionated spec-driven flow for Claude Code, with a live run view."
+    }
+  ]
+}

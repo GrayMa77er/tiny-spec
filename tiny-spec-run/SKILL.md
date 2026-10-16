@@ -299,6 +299,10 @@ something new:
 - a **plan-stage brief**: the pause policy from Step 0, **word for word**, so the
   technical stop points land as `pause:` lines. **Supervised**, add: *get my approval
   before writing anything — use plan mode.*
+- a **build-stage brief**: if the opening request named a model for the executor or the
+  reviewer ("executor on opus", "reviewer on opus"), pass that phrase **word for word**.
+  Otherwise send nothing about models.
+  `tiny-spec-build` resolves the rest itself.
 
 Send each brief only to the stage it addresses. Do not summarize one, act on it
 yourself, or let it change which rung fires — the ladder is still yours, and a brief is
