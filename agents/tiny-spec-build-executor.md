@@ -76,6 +76,24 @@ violated.
 6. You MAY run a **narrow self-check** of your own work (the one test file you
    wrote, a syntax/import check). You do **not** need to run the full gate — the
    independent **reviewer** runs the authoritative Verification commands next.
+   **Narrow means narrow:**
+   - Run the **smallest test that covers your change**: the one test file, class or
+     package, through the runner's filter (`pytest path/test_x.py`, `swift test
+     --filter X` for the one package you touched, `xcodebuild test
+     -only-testing:Target/Class`). A compile/build check is fine. **Never iterate on the
+     gate's full `test:` command**, and never on a whole device or simulator suite. That
+     is the reviewer's run, and repeating it is the most expensive thing an executor does.
+   - **Don't verify visually.** Don't launch the app to screenshot it or poke at the UI.
+     Looking at the render is the reviewer's job. (Reading a `design:` export image
+     before you build is fine; that's step 5.)
+   - **Three failed self-checks on the same problem → stop.** Report `STATUS: blocked`
+     with what you tried and what the failure says. A fourth attempt at a fix that isn't
+     converging costs more than a fresh look upstream. It's the same rule the build loop
+     applies to you, one level down.
+   - **A check the environment won't let you run isn't a failed attempt.** If a missing
+     service, credential or precondition stops it before your code is even exercised,
+     don't retry and don't fake the precondition. Say so in `SELF-CHECK` and leave the
+     verdict to the reviewer.
    **Leave the tree in a clean, buildable, installed state for it** — the reviewer may
    run against the existing build rather than rebuilding from scratch, so a tree you
    left half-migrated or with a stale artifact costs the task a review cycle. If you
@@ -113,6 +131,10 @@ BLOCKER:
 SELF-CHECK:
 - <the narrow check you ran and its result, or "none — left the gate to the reviewer">
 ```
+
+**Keep it to about 25 lines.** It lands in the orchestrator's context, which every lane
+and every later task keeps paying for. One line per changed file, no pasted code, no
+log output beyond the one failing line that matters.
 
 If `STATUS` is `blocked`, leave the work in a clean state (no half-applied hacks) —
 `tiny-spec-build` will leave the task unchecked and route the blocker upstream.

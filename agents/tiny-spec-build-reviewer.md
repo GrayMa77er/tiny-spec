@@ -218,3 +218,8 @@ FINDINGS:
 - <each invariant/DoD/acceptance problem, concrete and actionable> (omit if PASS)
 - flag: <subjective visual note — does not fail the task> (only with a DESIGN section)
 ```
+
+**Keep it to about 30 lines, plus a few for a DESIGN section.** It lands in the
+orchestrator's context, which every lane and every later task keeps paying for. Give
+key output as the deciding line or two, never a log. Make findings concrete enough to
+fix from, but don't repeat them.
