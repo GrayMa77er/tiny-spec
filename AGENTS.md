@@ -220,6 +220,11 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      no `model` is passed and the executor's `model: sonnet` frontmatter applies. The
      reverse holds too: "reviewer on opus" (or `TINY_SPEC_REVIEWER_MODEL`) reaches every
      reviewer dispatch and no executor;
+   - **planning agents stay read-only and bounded:** `tiny-spec-plan`'s Step 0 research
+     agents and its Step 4 critic never write. Their briefs carry paths, not the pasted
+     spec or constitution. The draft `PLAN.md` handed to the critic is the one thing
+     pasted. The critic runs once per draft and never loops. A finding the author leaves
+     unaddressed is shown to the user with the draft, never silently dropped;
    - **`tiny-spec-adopt` stays read-only:** it must never modify source, create a spec
      dir, or touch git — and it must never invent a verification command it didn't run.
 5. **Clean up.** Remove the sandbox. Never commit a `.spec/` from a test run or any build

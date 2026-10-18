@@ -36,15 +36,37 @@ someone had said yes.
 
 1. **Draft in plan mode.** If your harness has plan-mode tools (Claude Code's
    `EnterPlanMode` / `ExitPlanMode`; load them first if they are deferred), enter plan
-   mode, then do Steps 1–3 as research and drafting only. Read the spec, the constitution,
-   and the code, but write nothing.
+   mode, then do Steps 0–4 as research and drafting only. Read the spec, the constitution,
+   and the code, but write nothing. The Step 0 and Step 4 agents are read-only, so they
+   run inside plan mode.
 2. **Present the draft** through `ExitPlanMode`. Include the full `PLAN.md` you would
    write (approach, requirement coverage, every task with its acceptance and any
-   `pause:`), followed by a short list of the constitution changes. Without plan-mode
-   tools, play the same thing back in chat and ask for a go-ahead.
+   `pause:`), followed by a short list of the constitution changes and any critic
+   finding you left unaddressed. Without plan-mode tools, play the same thing back in
+   chat and ask for a go-ahead.
 3. **Approved** → write `PLAN.md` and the constitution changes exactly as approved, then
    finish as normal. **Feedback** → revise and present again. **The user says stop, or
    skip this feature** → write nothing, and report that the plan was not approved.
+
+## Step 0 — map what the plan touches
+
+Before deciding anything, find out what the change actually lands on: where the affected
+code lives, how it is tested, what calls it, and which existing patterns to reuse. When
+the change reaches past a small area you already know, you may dispatch **read-only
+`Explore` agents** (or whichever read-only search agent your harness lists), one per
+independent question, usually one to three, in a single message so they run together.
+
+Each brief carries **paths, not contents**: `.spec/<active>/SPEC.md`,
+`.spec/constitution.md`, `.spec/memory.md` if it exists, and the one question. Ask each
+agent to read those files whole and return a compact, evidence-backed map: `file:line`
+locations, the patterns to reuse, and the risks it saw. Ask for the conclusion, not
+file dumps. Synthesize the maps, then read directly only the few files you need to
+confirm a decision. For a change small enough that you already know every file it
+touches, skip the dispatch and read them yourself.
+
+> This earns its place by keeping the planning context lean. In a `tiny-spec-run`
+> build-through every feature is planned in turn, and raw code reads from each one would
+> otherwise pile up in the main conversation. The agents stay read-only and write nothing.
 
 ## Step 1 — harden the constitution (`constitution.md`)
 
@@ -320,6 +342,32 @@ carrying the requirements one coherent change delivers. A skeleton filled in as
 `REQ-1`, `REQ-2`, `REQ-3` down a column of single-requirement tasks is the granularity
 failure described above.
 
+## Step 4 — one independent critique
+
+The author of a task list is the worst-placed reader to catch its slicing mistakes. So
+before anything is written or presented, dispatch **one** fresh read-only agent (`Plan`
+if your harness lists it, else `Explore`) as a critic. Its brief carries the
+`.spec/<active>/SPEC.md` and `.spec/constitution.md` paths, which it reads whole, plus
+the full draft `PLAN.md` text. The draft is pasted because in plan mode it is not on disk
+yet. Ask it to check, and to report only real problems:
+
+- every `REQ-N` in `SPEC.md` has a home in `## Requirement coverage` and on a task's
+  `req:`, and every `D<n>` has a task carrying that `design:`;
+- the Step 3 smells: a 1:1 REQ→task mapping, a types-only, tests-only, or wire-up task,
+  a leading pure-scaffold task, a trailing end-to-end verification task, more than about
+  six tasks;
+- each acceptance is user-observable and bounded by its negatives;
+- `pause:` sits only on irreversible or wide-blast-radius work, and a standing pause
+  policy, if one was handed in, was applied;
+- every gate command the plan relies on, `visual:` included, exists in the constitution.
+
+It returns a short findings list, or `CLEAN`. **One pass, advisory, no loop.** Fix the
+findings you agree with. If you disagree with a finding, keep it and say why. In the
+approval flow, list every unaddressed finding under the draft so the user sees it.
+Never drop one silently. The critic never writes and is never re-run on the revision.
+
+In update mode, run it only when `## Tasks` changed.
+
 ## Update mode (SPEC changed → PLAN is stale)
 
 When `PLAN.md` is `status: stale` (or its `## Tasks` is empty), reconcile it in one pass:
@@ -353,7 +401,7 @@ reconciling, and never re-slice a legacy list just because you are moving it.
 If an approval was asked for and not given, say so plainly. Nothing was written, and
 re-running drafts the plan again. Otherwise, confirm the constitution is hardened and every `REQ-N` is covered, then report the task
 count — and any `pause:` points you set, with their reason, so the user can drop one
-before it fires.
+before it fires. Say whether the critic ran, and name any finding you left open.
 
 Then point them at `tiny-spec-build` (one task at a time, reviewing as it goes), or
 `tiny-spec-run` to drive it through.

@@ -7,6 +7,18 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [Unreleased]
+
+### Changed
+
+- **`tiny-spec-plan` researches and critiques through subagents.** A new Step 0 sends
+  the code reading to read-only `Explore` agents, with path-only briefs, so raw file
+  reads stay out of the planning context. A new Step 4 sends the draft to one fresh,
+  read-only critic. It checks REQ/`D<n>` coverage, the slicing smells, the acceptances,
+  `pause:` use and gate commands. The pass is advisory and runs once. Any finding left
+  open is shown with the draft at approval. These are built-in agent types, so there's
+  nothing new to install.
+
 ## [2.3.0] — 2026-10-18
 
 Parallel builds stop eating the main conversation. A supervised batch now hands each

@@ -47,10 +47,10 @@ Derive, don't ask. Work through the four dimensions below. On anything larger th
 small repo this is a genuine fan-out, so you may dispatch **read-only `Explore` agents**,
 one per dimension, and synthesize their reports.
 
-> This is the only skill in the suite that dispatches agents for anything but the build
-> loop. It earns it: the alternative is either a shallow constitution or a long
-> interview about facts already on disk. It stays read-only, runs once per project, and
-> writes exactly one file.
+> Outside the build loop, only this skill and `tiny-spec-plan` dispatch agents, and both
+> dispatch read-only ones. Here it earns its place because the alternative is either a
+> shallow constitution or a long interview about facts already on disk. It stays
+> read-only, runs once per project, and writes exactly one file.
 
 **A declared source always beats inference.** If the project says something about itself,
 that wins over what you'd guess from reading code.
