@@ -85,6 +85,17 @@ the user's.
 > look at. `tiny-spec-run` reports the paths and the removal commands; the user runs
 > them. Do not "finish the feature" by adding cleanup.
 
+> **Amendment (session lanes).** Building every lane inside one conversation piled their
+> stage texts, plan approvals, agent reports and merges into one context. That got
+> large enough to dominate a run's cost. So a supervised batch hands each lane to its
+> own session instead. This adds no git command and no state: the main checkout cuts the
+> worktrees it already could, and progress is still derived from each `<slug>` branch.
+> A run inside a linked worktree detects that it is a lane from git itself
+> (`--git-dir` ≠ `--git-common-dir`), so there's nothing to record. Do not grow this
+> into the router spawning processes. The user opens the sessions. Before any parallel
+> lane is cut, the constitution must be committed on the integration branch. Otherwise
+> every greenfield lane seeds its own copy, and the merges conflict.
+
 Three structural choices are **intended**, not drift — don't "simplify" them away:
 
 - **Per-spec namespacing** under `.spec/<slug>/` with a shared
@@ -169,7 +180,7 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      **before** it runs — task still `[ ]`, no executor dispatched, `PLAN.md` untouched
      — and a conversational waiver must not be written back into the file;
    - **terminal state never rounded up:** a run that ends `blocked`, `exhausted`,
-     `paused`, `fork`, or `conflict` must say so by name. Only `done` may report the work
+     `paused`, `fork`, `conflict`, or `handoff` must say so by name. Only `done` may report the work
      as built, and in a feature run that means **every** feature merged — a run that stopped
      at feature 2 of 7 must not read like a finished backlog;
    - **no merge without `done`:** a feature whose build halted must leave its branch
@@ -179,8 +190,20 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      next one. A halted lane must never be rounded up into a sibling's `done`;
    - **lanes stay isolated:** every executor and reviewer is given a working directory
      and must never read, write, or run a gate outside it. A `memory.md` write from
-     inside a lane is a bug — in multi-lane mode the file is written once, after the
-     batch merges, or every parallel batch ends in a merge conflict on it;
+     inside a lane is a bug. That covers multi-lane mode and a lane session alike: the
+     lane logs `type: lesson` entries in its own `decisions.md`, and `tiny-spec-run`
+     has `tiny-spec-build` fold them into `memory.md` once the batch merges. Otherwise
+     every parallel batch ends in a merge conflict on that file;
+   - **a lane session never merges:** `tiny-spec-run` build-through inside a linked
+     worktree builds exactly one feature on branch `<slug>` and stops. It never switches
+     to the integration branch, merges, or adds a worktree. Merging is the main
+     checkout's job. A supervised batch wider than one feature must hand off with
+     `handoff` (worktrees cut, one line per lane printed), not build in the main
+     conversation;
+   - **the executor's self-check stays narrow:** it iterates on the smallest covering
+     test, never the gate's full `test:` or a whole simulator suite. It doesn't verify
+     visually, and it reports `blocked` after three failed self-checks on the same
+     problem;
    - **the stop point holds:** a stop-before-build run must not enter `tiny-spec-build`,
      however a stage's closing line or a follow-up message is phrased;
    - **approval holds:** in a supervised run, a feature whose plan the user declined has

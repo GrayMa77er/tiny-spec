@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → spec → plan → build → merge until the list ends or something halts it. With a PRD and no BREAKDOWN.md it runs tiny-spec-scope first. Build-through is supervised by default — each feature's open questions are asked and its plan is approved in plan mode before it builds — and unattended only when asked. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
+description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → spec → plan → build → merge until the list ends or something halts it. With a PRD and no BREAKDOWN.md it runs tiny-spec-scope first. Build-through is supervised by default — each feature's open questions are asked and its plan is approved in plan mode before it builds — and unattended only when asked. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch — a supervised batch hands each lane to its own session (run inside that worktree, this skill builds the one feature and leaves the merge to the main checkout). Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
 ---
 
 # tiny-spec-run
@@ -84,8 +84,67 @@ waive the remaining approvals — that is a new invocation.
    sequential behavior — no worktrees, no batching.
 
    Then check one more precondition, once you know the slugs in the first batch: **no
-   target worktree path already exists.** Name the collisions and stop; do not reuse or
-   remove a directory you found.
+   target worktree path is taken by something else.** A path that `git worktree list
+   --porcelain` shows checked out on branch `<slug>` is that feature's own lane from an
+   earlier run — reuse it. Any other existing path is a collision: name it and stop; do
+   not reuse or remove a directory you found.
+
+5. **Fix where lanes run — in sessions, or in this conversation.** Every lane built in
+   this conversation piles its stage texts, plan approvals, agent reports and merge
+   output into one context. So when a batch has **more than one** feature not yet merged:
+   - **Supervised** → **session lanes** (Step 4b). You cut the worktrees, print one line
+     per lane, and stop. Each lane session asks that feature's questions, gets its plan
+     approved and builds it in its own context. A run here merges them afterwards. The
+     user has to be present for the approvals anyway, so opening the sessions costs
+     nothing extra.
+   - **Unattended** → **conversation lanes** (Step 4), as before. Nobody is there to open
+     sessions, and the run carries on across batches by itself.
+
+   An explicit ask wins either way: "in separate sessions" picks session lanes, and "in
+   this session" or "in one conversation" picks conversation lanes. A batch of one always
+   builds here, sequentially. Like the stop point, this is read once and never revised.
+
+   **Before the first parallel lane is cut, in either mode, the constitution must
+   already be committed** on the integration branch (`git show
+   <integration>:.spec/constitution.md` succeeds). Otherwise each lane seeds its own
+   copy, and the merges conflict on it. That is the normal state of a greenfield project
+   right after `tiny-spec-scope`. If it's missing, run L0/L1's choice once, here on the
+   integration branch, in reseed mode. For `tiny-spec-create`, add: *seed only the
+   constitution; create no ticket dir; then commit `.spec/constitution.md` alone on the
+   current branch.* `tiny-spec-adopt` never touches git, so after it, stop and ask the
+   user to commit the file. Only then cut lanes.
+
+### Lane session — when this run is inside a linked worktree
+
+If the stop point is build-through, check whether this checkout is a **linked
+worktree**: `git rev-parse --path-format=absolute --git-dir --git-common-dir` prints two
+**different** paths. If so, this run is a **lane session**. It builds exactly **one**
+feature and hands the merge back to the main checkout. Typically that is a session the
+user opened from a line Step 4b printed, but a worktree the app made works the same way.
+**These steps replace Step 0 items 1–5** in a lane session. The pause policy and
+supervision come from the request, as the printed line carries them.
+
+1. **Preconditions:** a clean tree, and an integration branch that exists (its
+   checkout lives in the main folder; you only read it).
+2. **The feature:** the slug the request names, else the `BREAKDOWN.md` feature whose
+   slug matches the current branch (Step 1's token rule), else ask. A request that asked
+   for the whole backlog gets told that a lane session builds one feature, and that the
+   backlog is driven from the main checkout.
+3. **Its `needs:` must already be built and merged** (Step 1, rule 1, for each). If one
+   isn't, stop and name it. This lane was started before its prerequisites landed.
+4. **The branch must be `<slug>`**, because that is the name Step 1 derives state from.
+   On `<slug>` already → fine. No such branch → `git switch -c <slug>` (an app-made
+   worktree's own branch is left alone). The branch exists and is not checked out
+   elsewhere → `git switch <slug>`. It is checked out in another worktree → stop and
+   name that path.
+5. **Then the usual cycle for that one feature**: Step 1's state, the ladder (Steps
+   2–3) with the briefs and supervision from Step 0, then `tiny-spec-build` as a single
+   lane. Add to the build-stage brief: *this is a lane session — log lessons to
+   decisions.md, do not write `.spec/memory.md`.*
+6. **Stop at built. Never merge.** A lane session never switches to the integration
+   branch, never merges, and never adds a worktree. Its `done` means *this feature is
+   built and smoke-passed on branch `<slug>`, not merged*. Say exactly that, and tell
+   the user to run `tiny-spec-run` from the main checkout to merge.
 
 ## Step 1 — resolve the scope
 
@@ -302,7 +361,8 @@ something new:
 - a **build-stage brief**: if the opening request named a model for the executor or the
   reviewer ("executor on opus", "reviewer on opus"), pass that phrase **word for word**.
   Otherwise send nothing about models.
-  `tiny-spec-build` resolves the rest itself.
+  `tiny-spec-build` resolves the rest itself. In a lane session, add the lane clause
+  from **Lane session** step 5.
 
 Send each brief only to the stage it addresses. Do not summarize one, act on it
 yourself, or let it change which rung fires — the ladder is still yours, and a brief is
@@ -317,7 +377,9 @@ to enter `tiny-spec-build` in a stop-before-build run.**
 ## Step 4 — build-through only: build and merge
 
 Reached only when Step 0 fixed the stop point at build-through and the ladder is at L6
-(or L7 with an unmerged branch). Work **one batch at a time**, in batch order. For every
+(or L7 with an unmerged branch). With **session lanes**, a batch of more than one feature
+goes to **Step 4b** instead, without walking the ladder here. Work **one batch at a
+time**, in batch order. For every
 feature in the current batch that isn't already built and merged:
 
 1. **Lane.** Give each feature its own **git worktree**, so lanes cannot collide on the
@@ -360,6 +422,15 @@ feature in the current batch that isn't already built and merged:
    - **Never push.** Merging locally keeps a bad run one `git reset` away; sending it to
      a remote is the user's call, and this suite makes no network calls.
 
+   **Then fold the lanes' lessons, once per batch.** A lane never writes
+   `.spec/memory.md`, because every parallel batch would then conflict on that file.
+   It logs `type: lesson` entries in its own `decisions.md` instead. Once the batch's
+   merges are done, check (read-only) whether any feature merged in this batch has one:
+   `git grep -l "type: lesson" -- .spec/<slug>/decisions.md` for each. If any does,
+   invoke **`tiny-spec-build`** with the brief *fold the lane lessons from `<slugs>` into
+   memory*. It edits `memory.md` and commits it alone. If none do, invoke nothing. A
+   batch of one built sequentially wrote its memory in place, so it has none to fold.
+
 5. **Next batch.** If **every** lane in this batch merged cleanly, return to Step 1 for
    the next batch. Do not re-run Step 0. **If any lane halted, stop the run here** — a
    later batch may well depend on the feature that failed, and working out which features
@@ -388,6 +459,50 @@ and tell the user that `git reset --hard HEAD~1` on the integration branch undoe
 Do not undo it yourself: fixing forward and rolling back are both reasonable, the choice
 is theirs, and discarding a real merge is not a call a router gets to make.
 
+## Step 4b — session lanes: hand off, then merge
+
+Reached instead of Step 4 when Step 0 chose **session lanes** and the current batch has
+more than one feature not yet merged, including lanes already built and waiting to merge. Here you never walk the ladder or build a lane
+yourself. That work, and its context, belongs to the lane's session. Per batch, in
+batch order:
+
+1. **Sort the batch's features by Step 1's state:**
+   - **built and merged** → skip it;
+   - **built, not merged** → merge it (step 2);
+   - **its lane already exists** (`git worktree list --porcelain` shows branch `<slug>`
+     checked out in a linked worktree) and it is not built → **it belongs to its
+     session.** Leave it alone and report its state. If its `decisions.md` on `<slug>`
+     ends with a `blocker` or `halt` entry naming the task it stopped at, report that
+     halt by name. Otherwise report it as still in its lane;
+   - **anything else** → cut its lane, up to the lane count, counting lanes that already
+     exist: `git worktree add ../<repo>-<slug> -b <slug> <integration>`, or
+     `git worktree add ../<repo>-<slug> <slug>` when the branch already exists.
+2. **Merge every built lane** exactly as Step 4, step 4 describes: one at a time, in
+   batch order, with the conflict rule, the Verification commands on the merged result,
+   and the lesson fold afterwards. The lane's worktree stays on disk. Merging from the
+   main checkout is fine while a worktree has `<slug>` checked out.
+3. **Print one line per lane that is cut but not yet built**, ready to paste into a new
+   terminal (or open that folder as a session in the app — the folder is already a
+   worktree, so don't add another):
+
+   ```
+   cd ../<repo>-<slug> && claude "Use tiny-spec-run: lane <slug>, spec it out and build it."
+   ```
+
+   Inside the quotes, add word for word: `unattended` when the run is unattended, the
+   pause policy from Step 0, and any executor/reviewer model phrase. Those are the
+   only parts of this run a lane session can't work out from disk.
+4. **Every feature in the batch merged** → return to Step 1 for the next batch (do not
+   re-run Step 0). That cuts and prints the next batch's lanes, unless it is a batch of
+   one, which builds here sequentially. **Otherwise stop with `handoff`**: list the
+   lanes still out with each one's state, and tell the user to finish them and then
+   run `tiny-spec-run` here again to merge. Features the lane count left uncut get
+   their lanes on that run, as lanes free up. A recorded halt in a lane also stops the
+   run here, as in Step 4. Never start the next batch past it.
+
+Step 4's rules carry over unchanged: never merge a lane that isn't built, never remove a
+worktree, never push.
+
 ## When done
 
 **Stop-before-build.** Report, in order: the active ticket dir, which stages ran, and
@@ -399,9 +514,13 @@ L3 or on a bound, say exactly what stopped you and what the user needs to decide
 **Build-through.** Name, in this order:
 
 1. **The terminal state** — exactly one of `done`, `blocked`, `exhausted`, `paused`,
-   `fork`, `conflict`. Use the word. With more than one lane, report **each feature's own
+   `fork`, `conflict`, `handoff`. Use the word. With more than one lane, report **each feature's own
    state**, and give the run's state as the **worst** of them: four green lanes and one
-   `blocked` is a `blocked` run, never a `done` one with a footnote.
+   `blocked` is a `blocked` run, never a `done` one with a footnote. `handoff` (Step 4b:
+   lanes are out in their sessions) ranks below every halt and above `done`. Nothing is
+   wrong, but nothing it names is merged yet. Print the lane lines again in this report.
+   A **lane session** reports its own feature's state instead. Its `done` means built on
+   `<slug>` and not merged (**Lane session** step 6).
 2. **Features built and merged**, in batch order, with their merge commits.
 3. **The feature or features it stopped on**, the task within each, and why in one line.
 4. **Features never started** — say how many are left, by name.
@@ -410,7 +529,8 @@ L3 or on a bound, say exactly what stopped you and what the user needs to decide
 6. **The one command that resolves it** — `tiny-spec-create`/`tiny-spec-plan` in update
    mode for `blocked`/`exhausted`, this skill again for `paused` (including a declined
    plan, which it re-drafts and asks about again), the decision the user
-   owes you for a `fork`, or the conflicted paths for a `conflict`.
+   owes you for a `fork`, the conflicted paths for a `conflict`, or for `handoff` the
+   lane lines, then this skill again from the main checkout.
 
 **Only `done` — every feature merged — may report the work as built.** A run that halted
 has unbuilt features in it, and a report that rounds `blocked`, `exhausted`, `paused`,
@@ -439,6 +559,9 @@ ticket that legitimately has no visual surface.
   outward-facing or destructive stays the user's — `worktree remove` included, which is
   why Step 4 hands those commands over instead of running them.
 - **Never merge a feature whose build didn't return `done`.**
+- **A lane session never merges.** Inside a linked worktree, a build-through run builds
+  its one feature and stops. It never switches to the integration branch, merges, or
+  adds a worktree. Merging is the main checkout's job.
 - **Never build an unapproved plan in a supervised run.** The approval is the plan
   existing: `tiny-spec-plan` writes `PLAN.md` only once the user approves it. Never write
   it for them, and never build from a draft.

@@ -7,6 +7,36 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [Unreleased]
+
+### Changed
+
+- **Supervised parallel batches run one session per lane.** `tiny-spec-run` cuts the
+  worktrees, prints one `claude` line per lane, and stops with the new `handoff` state.
+  Inside a worktree, a build-through run is a **lane session**: it specs, plans and
+  builds its one feature on branch `<slug>` and never merges. A later run in the main
+  checkout merges every built lane. Before this, the main conversation carried every
+  lane's stage texts, approvals and agent reports. Unattended runs still build lanes in
+  one conversation, and "in separate sessions" / "in this session" picks either way.
+- **Lanes log lessons to their own `decisions.md`** (`type: lesson`), and
+  `tiny-spec-build` folds them into `memory.md` after the batch merges. This replaces
+  holding them in the conversation until the merge.
+- **`memory.md` gets pruned** once it passes about 30 entries.
+- **The executor's self-check stays narrow.** It uses the smallest covering test, never
+  the full `test:` command or a whole simulator suite, and does no visual checks. It
+  reports `blocked` after three failed self-checks on the same problem.
+- **Executor and reviewer reports have a line budget** (~25 / ~30 lines). They land in
+  the orchestrator's context on every task.
+
+### Fixed
+
+- **Parallel greenfield lanes no longer each seed their own constitution.** Before it
+  cuts the first parallel lane, `tiny-spec-run` makes sure `.spec/constitution.md` is
+  committed on the integration branch. If it isn't, `tiny-spec-create` seeds and commits
+  it once. Previously each lane wrote its own copy, and the merges conflicted.
+- A re-run no longer stops on a feature's own worktree from an earlier run. A path
+  checked out on branch `<slug>` is reused, and only a foreign path is a collision.
+
 ## [2.2.0] — 2026-10-16
 
 tiny-spec now installs as a Claude Code plugin with a live run view, and a build costs

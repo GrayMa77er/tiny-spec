@@ -76,7 +76,10 @@ Otherwise (little or no code yet), do **only** this:
    gets injected whole into every executor and reviewer, so a wrong Verification
    commands block silently corrupts every future gate), note that `SPEC.md`/`PLAN.md`
    and the branch were left untouched, and point the user at `tiny-spec-plan` to harden
-   it. Then stop.
+   it. **If the caller asked you to commit** (`tiny-spec-run` does before it cuts
+   parallel lanes, so each lane sees one constitution), commit it alone: `git add
+   .spec/constitution.md` and `git commit -m "docs(spec): seed constitution" --
+   .spec/constitution.md`. Then stop.
 
 Do **not** run the interview, create a spec dir, switch branches, or touch `SPEC.md`.
 This is a repair, not a new spec.

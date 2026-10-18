@@ -564,6 +564,24 @@ with a `needs:` line in `BREAKDOWN.md`; everything with no unmet `needs:` forms 
 and builds **concurrently, one git worktree per feature**, three at a time by default.
 The batch merges, then the next one starts.
 
+**In a supervised run, each lane gets its own session.** Building several features in
+one conversation makes that conversation huge. Every feature's interview, plan approval,
+agent reports and merge pile into it. So when a supervised batch has more than one
+feature, the run cuts the worktrees, prints one line per lane, and stops (`handoff`):
+
+```
+cd ../myapp-slugify && claude "Use tiny-spec-run: lane slugify, spec it out and build it."
+```
+
+Each lane session asks that feature's questions, gets its plan approved, builds it on
+its own branch, and stops. It never merges. When the lanes are built, run
+`tiny-spec-run` again in the main checkout. It merges them, checks the merged result,
+and hands off the next batch. Lessons each lane learns are logged in its own
+`decisions.md` and folded into `memory.md` after the merge, so parallel lanes never
+conflict on it. An unattended run still builds its lanes in one conversation, since
+nobody is there to open sessions. Say "in separate sessions" or "in this session" to
+choose either way.
+
 ```
 ## Feature: expose both helpers on a CLI     slug: cli
 
@@ -587,7 +605,7 @@ a list at invocation instead and that wins; but a bare feature name has no accep
 criteria, so `tiny-spec-create` will interview you in full when it reaches it, even in an
 unattended run.
 
-**Every run ends in exactly one of six states, and it says which:**
+**Every run ends in exactly one of seven states, and it says which:**
 
 | | |
 |---|---|
@@ -597,6 +615,7 @@ unattended run.
 | `paused` | it reached a `pause:` point |
 | `fork` | a real either/or the plan doesn't answer |
 | `conflict` | a feature's branch wouldn't merge cleanly |
+| `handoff` | a batch is out in lane sessions — finish them, then run it again to merge |
 
 **Only `done` means the work is built** — and in a feature run, that means *all* of them.
 Stopping at feature 2 of 7 and reporting "done" is what autonomous loops get wrong most

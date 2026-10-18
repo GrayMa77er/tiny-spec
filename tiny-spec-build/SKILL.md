@@ -22,6 +22,9 @@ for a missing one — say it isn't installed and stop.
 
 ## Inputs
 
+A brief to **fold lane lessons** skips everything below and goes straight to
+**Folding lane lessons**.
+
 1. **Resolve the active ticket dir** (call it `<active>`), in order: the `.spec/<slug>/`
    whose slug matches the current git branch (one branch per ticket); else the sole
    ticket dir if exactly one exists; else ask. **Ask instead** when more than one dir
@@ -99,10 +102,13 @@ against it. An executor or reviewer must never read or write another lane's work
 lanes appending to their own copy in their own worktree would conflict on *every* parallel
 batch — a guaranteed merge failure that has nothing to do with the code.
 
-So: **in multi-lane mode, lanes do not write `memory.md` at all.** Collect each lane's
-distilled lessons as it goes, and write them **once, in the main checkout on the
-integration branch, after the batch has merged** — pruning superseded entries there, as
-step 6 describes. Single-lane runs are unaffected and write it in place as before.
+So: **a lane never writes `memory.md`.** That covers multi-lane mode, and a single-lane
+run whose caller says *this is a lane session* (`tiny-spec-run` says so when it is
+running inside one of its worktrees). The lane logs each distilled lesson to its own
+feature's `decisions.md` as a `type: lesson` entry (step 6). That file is per-feature,
+so it never conflicts and the lesson survives the session ending. After the batch merges,
+`tiny-spec-run` asks you to fold those entries into `memory.md` (see **Folding lane
+lessons**). Other single-lane runs are unaffected and write `memory.md` in place.
 
 The other artifacts are safe and need no special handling: `PLAN.md` and `decisions.md`
 are per-feature, and `constitution.md` is read-only for the whole build.
@@ -270,8 +276,24 @@ entry to the **shared** `.spec/memory.md` (the root — lessons are project-wide
 pruning any entry the new one supersedes. Skip code-style rules (→ shared
 `constitution.md`) and one-off history (→ the ticket's `decisions.md`). Keep it lean.
 
-**In multi-lane mode, do not write the file here.** Hold the entry and write it once
-after the batch merges — see **Multi-lane mode** above for why.
+**Keep it short enough to be worth reading.** Every executor and reviewer reads the
+whole file on every task, so each stale line is paid for again and again. Before
+appending, if the file has more than about **30 entries**, prune first: drop entries
+the constitution or the code now makes obvious, drop workarounds for problems that no
+longer exist, and merge near-duplicates. A lesson nobody would miss is costing you money.
+
+**In a lane, do not write the file** (see **Multi-lane mode** above for why). Append the
+lesson to the feature's `.spec/<slug>/decisions.md` instead, in the bookkeeping commit,
+using the same fields:
+
+```
+## D-NNN — <short title>
+- type: lesson
+- date: <ISO date>
+- kind: environment | pitfall | tried-rejected | hotspot
+- lesson: <one line — the operational fact>
+- apply: <one line — why it matters / what to do about it>
+```
 
 On first use, create the file with this structure:
 
@@ -312,6 +334,24 @@ per passed task, always, on the current branch. (If the user wants a feature
 branch, create it once up front — that's their call, not a knob here.) Running
 through is a caller's instruction, not a mode — every step above is identical either
 way, which is why a loop and a hand-driven build can't drift apart.
+
+## Folding lane lessons
+
+When the brief is *fold the lane lessons from `<slugs>` into memory*, do only this, in
+the current checkout (the integration branch, after the merge). It runs no task loop
+and dispatches no agents.
+
+1. Read every `type: lesson` entry in `.spec/<slug>/decisions.md` for each named slug.
+   A slug with no `decisions.md` has no lessons.
+2. Apply them to `.spec/memory.md` exactly as step 6 does. Reshape each entry into the
+   memory format (`kind:` becomes the entry's `type:`, with `lesson:`/`apply:` under
+   it), skip any lesson the file already says in substance, prune entries the new ones
+   supersede, and apply the ~30-entry pruning rule. If the file is absent, create it
+   from step 6's skeleton without the example entry.
+3. If nothing changed, stop: no commit. Otherwise commit `.spec/memory.md` alone:
+   `chore(spec): fold lane lessons from <slugs>`, with step 5's trailer (no `Refs:`).
+   Leave the `decisions.md` entries in place, since that file is append-only. Folding
+   twice is harmless, because the second pass finds every lesson already there.
 
 ## Halting
 
