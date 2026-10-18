@@ -7,7 +7,13 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [Unreleased]
+## [2.3.0] — 2026-10-18
+
+Parallel builds stop eating the main conversation. A supervised batch now hands each
+feature to its own session. The main checkout only cuts the worktrees and later merges
+the results, so each lane's interview, plan approval and build stay in that lane's
+context. Executors also stop grinding on full simulator test runs. Re-install to pick up
+the new agents.
 
 ### Changed
 
