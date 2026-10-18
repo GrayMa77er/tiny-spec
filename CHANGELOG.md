@@ -7,7 +7,12 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [Unreleased]
+## [2.4.0] — 2026-10-18
+
+Planning gets its own subagents. `tiny-spec-plan` reads the code through read-only
+research agents instead of in the main conversation. It also sends its draft past one
+independent critic before you see it, so over-sliced task lists and coverage gaps get
+caught before approval. Re-install to pick up the updated skill.
 
 ### Changed
 
