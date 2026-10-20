@@ -7,6 +7,26 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
+## [Unreleased]
+
+### Added
+
+- **Unattended parallel batches can build each lane in an agent-team teammate
+  (experimental, opt-in).** When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and the
+  session is interactive, `tiny-spec-run` spawns one teammate per lane. Each runs
+  `tiny-spec-build` on its one worktree, so per-task agent reports stay out of the main
+  conversation. The lead still walks each feature's spec and plan. It merges batch by
+  batch once every teammate is idle, and only lanes that report `done` and that git
+  shows built. Teammates never merge, switch branches, or write `memory.md`. Their
+  lessons go to the lane's `decisions.md` and are folded after the merge. Supervised
+  runs keep their user-opened lane sessions, because a teammate's plan approval is
+  automatic. Without the env var, or in a `-p` run, unattended batches build in one
+  conversation as before. Teammates use noticeably more tokens than one conversation,
+  so leave the env var off unless the context savings matter to you.
+- **`tiny-spec-build` honors a single lane handed explicitly.** It resolves paths,
+  agent working directories and commits against that worktree, and logs lessons to
+  `decisions.md` instead of `memory.md`.
+
 ## [2.4.0] — 2026-10-18
 
 Planning gets its own subagents. `tiny-spec-plan` reads the code through read-only

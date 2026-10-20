@@ -96,6 +96,24 @@ the user's.
 > lane is cut, the constitution must be committed on the integration branch. Otherwise
 > every greenfield lane seeds its own copy, and the merges conflict.
 
+> **Amendment (teammate lanes).** Session lanes left unattended runs where they were:
+> nobody is there to open the sessions, so every lane's build still piled its per-task
+> agent reports into one conversation. When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is on
+> and the session is interactive, an **unattended** batch hands each lane's build to a
+> Claude Code agent-team teammate instead. This relaxes "do not grow this into the router
+> spawning processes", for unattended runs only, and for three reasons. The harness owns
+> the teammates, not the router. Nothing new is recorded: no team config, no state file,
+> and progress is still derived from each `<slug>` branch. And the env var is the only
+> knob. The relaxation stops at **supervised** runs, deliberately. The lead's session
+> approves a teammate's plan automatically, without review, and asking questions or
+> plan mode aren't documented for teammates, so the approval invariant would hold in name
+> only. A teammate builds exactly one lane, through `tiny-spec-build` handed that one
+> worktree path. It never merges, switches branches, or writes `memory.md`. The lead
+> walks the ladder, merges batch by batch once every teammate has gone idle, and checks
+> each `done` against git first. Headless (`-p`) runs can't spawn teammates, and a gate
+> that's off or unclear falls back to the one-conversation build unchanged. Do not
+> extend teammates to supervised runs, to the ladder, or to anything that merges.
+
 Three structural choices are **intended**, not drift — don't "simplify" them away:
 
 - **Per-spec namespacing** under `.spec/<slug>/` with a shared
@@ -190,7 +208,9 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      next one. A halted lane must never be rounded up into a sibling's `done`;
    - **lanes stay isolated:** every executor and reviewer is given a working directory
      and must never read, write, or run a gate outside it. A `memory.md` write from
-     inside a lane is a bug. That covers multi-lane mode and a lane session alike: the
+     inside a lane is a bug. That covers multi-lane mode, a lane session and a teammate
+     lane alike (a teammate starts in the main checkout, so its brief names the lane's
+     absolute worktree path): the
      lane logs `type: lesson` entries in its own `decisions.md`, and `tiny-spec-run`
      has `tiny-spec-build` fold them into `memory.md` once the batch merges. Otherwise
      every parallel batch ends in a merge conflict on that file;
@@ -200,6 +220,12 @@ Editing a `SKILL.md` or agent file is editing a **prompt**, not code — bugs ar
      checkout's job. A supervised batch wider than one feature must hand off with
      `handoff` (worktrees cut, one line per lane printed), not build in the main
      conversation;
+   - **teammates stay unattended, gated and merge-free:** with
+     `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` unset, in a `-p` run, or in a supervised
+     run, no teammate is spawned and the batch builds exactly as before. With it on,
+     each teammate builds one lane and never merges. A teammate's `done` is merged
+     only once git shows the lane built, and a halted teammate lane stays unmerged
+     while its siblings merge;
    - **the executor's self-check stays narrow:** it iterates on the smallest covering
      test, never the gate's full `test:` or a whole simulator suite. It doesn't verify
      visually, and it reports `blocked` after three failed self-checks on the same

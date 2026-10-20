@@ -579,7 +579,9 @@ its own branch, and stops. It never merges. When the lanes are built, run
 and hands off the next batch. Lessons each lane learns are logged in its own
 `decisions.md` and folded into `memory.md` after the merge, so parallel lanes never
 conflict on it. An unattended run still builds its lanes in one conversation, since
-nobody is there to open sessions. Say "in separate sessions" or "in this session" to
+nobody is there to open sessions. The exception is an interactive session with
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` set (experimental). There, each lane's build
+goes to its own agent-team teammate, and the main conversation still merges. Say "in separate sessions" or "in this session" to
 choose either way.
 
 ```

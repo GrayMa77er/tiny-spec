@@ -31,8 +31,8 @@ A brief to **fold lane lessons** skips everything below and goes straight to
    matches the branch, or when ticket dirs exist while you are on `main`/`master` with no
    name match — neither has a safe tie-break. Detached HEAD or no git repo is
    **degraded**, not an ask: fall through to sole-dir and ask as written.
-   In **multi-lane mode** (below) this step does not run: each lane is handed its
-   worktree and slug explicitly.
+   When handed **lanes** (below), even just one, this step does not run: each lane is
+   handed its worktree and slug explicitly.
 2. Read `.spec/constitution.md` (**the shared constitution**), `.spec/memory.md` if
    it exists (**shared**), and the `## Tasks` section of `.spec/<active>/PLAN.md`. Every
    executor and reviewer reads the constitution + memory **whole**, but by **path**, from
@@ -69,8 +69,12 @@ A brief to **fold lane lessons** skips everything below and goes straight to
 A caller may hand you **lanes** instead of a single active dir: one or more
 `(worktree path, slug)` pairs, each an independent feature in its own git worktree.
 `tiny-spec-run` does this for a batch of features whose `needs:` say they don't depend on
-each other. **With one lane, or none, everything below is inert and this skill behaves
-exactly as it always has** — that is the common case and it must not drift.
+each other. **With one lane, or none, the rounds below are inert and this skill behaves
+exactly as it always has** — that is the common case and it must not drift. One lane
+handed explicitly still counts as a lane, though: it skips **Inputs** step 1, every
+path and every agent's working directory resolve against that worktree, the commits land
+there, and it never writes `memory.md`. That is how `tiny-spec-run` hands one lane to an
+agent-team teammate, whose own directory is the main checkout.
 
 Given lanes, run them **in rounds**:
 
@@ -102,8 +106,8 @@ against it. An executor or reviewer must never read or write another lane's work
 lanes appending to their own copy in their own worktree would conflict on *every* parallel
 batch — a guaranteed merge failure that has nothing to do with the code.
 
-So: **a lane never writes `memory.md`.** That covers multi-lane mode, and a single-lane
-run whose caller says *this is a lane session* (`tiny-spec-run` says so when it is
+So: **a lane never writes `memory.md`.** That covers multi-lane mode, a single lane
+handed explicitly, and a single-lane run whose caller says *this is a lane session* (`tiny-spec-run` says so when it is
 running inside one of its worktrees). The lane logs each distilled lesson to its own
 feature's `decisions.md` as a `type: lesson` entry (step 6). That file is per-feature,
 so it never conflicts and the lesson survives the session ending. After the batch merges,

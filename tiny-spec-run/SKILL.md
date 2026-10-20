@@ -1,6 +1,6 @@
 ---
 name: tiny-spec-run
-description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → spec → plan → build → merge until the list ends or something halts it. With a PRD and no BREAKDOWN.md it runs tiny-spec-scope first. Build-through is supervised by default — each feature's open questions are asked and its plan is approved in plan mode before it builds — and unattended only when asked. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch — a supervised batch hands each lane to its own session (run inside that worktree, this skill builds the one feature and leaves the merge to the main checkout). Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
+description: The one router — read each artifact's status flag to work out where work stands, then invoke the skill that moves it forward. Two stop points, chosen once at the start: by default it walks tiny-spec-adopt/create → design → plan and STOPS before tiny-spec-build; asked to build ("spec it out and build it") or handed a feature list, it drives each feature branch → spec → plan → build → merge until the list ends or something halts it. With a PRD and no BREAKDOWN.md it runs tiny-spec-scope first. Build-through is supervised by default — each feature's open questions are asked and its plan is approved in plan mode before it builds — and unattended only when asked. Independent features — grouped by their BREAKDOWN.md needs: field, or named by the user — build concurrently, one git worktree per lane, merging batch by batch — a supervised batch hands each lane to its own session (run inside that worktree, this skill builds the one feature and leaves the merge to the main checkout); an unattended batch can hand each lane's build to an agent-team teammate when CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is on. Use for "run the spec flow", "pick the chain back up", "build the backlog", "work through the breakdown". NOT for a single stage — for that invoke tiny-spec-create, tiny-spec-plan, or tiny-spec-design directly.
 ---
 
 # tiny-spec-run
@@ -98,11 +98,25 @@ waive the remaining approvals — that is a new invocation.
      user has to be present for the approvals anyway, so opening the sessions costs
      nothing extra.
    - **Unattended** → **conversation lanes** (Step 4), as before. Nobody is there to open
-     sessions, and the run carries on across batches by itself.
+     sessions, and the run carries on across batches by itself. **Or teammate lanes**,
+     when all three of these hold: `printenv CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
+     prints `1`; this is an interactive session, not `claude -p`, the Agent SDK or any
+     other headless run, where teammates don't spawn; and your Agent tool takes a
+     `name`. Then each lane's **build** goes to its own agent-team teammate (Step 4,
+     step 3), so its per-task agent reports stay out of this context. The ladder, the
+     merges and the batch rules stay here. If any of the three fails, or you can't tell,
+     it's conversation lanes.
+
+   **Supervised runs never use teammates.** The lead's session approves a teammate's
+   plan automatically, without review, and asking questions or plan mode aren't
+   documented for teammates. "Approval holds" would hold in name only.
 
    An explicit ask wins either way: "in separate sessions" picks session lanes, and "in
-   this session" or "in one conversation" picks conversation lanes. A batch of one always
-   builds here, sequentially. Like the stop point, this is read once and never revised.
+   this session" or "in one conversation" picks conversation lanes. "With teammates" in a
+   supervised run, or with the gate failing, gets told why not and falls back. A batch of
+   one always builds here, sequentially. Like the stop point, this is read once and never
+   revised. The one exception runs one way only: a teammate spawn that turns out not to
+   be a teammate (Step 4, step 3) drops the run to conversation lanes for good.
 
    **Before the first parallel lane is cut, in either mode, the constitution must
    already be committed** on the integration branch (`git show
@@ -409,6 +423,46 @@ feature in the current batch that isn't already built and merged:
    Do not invoke it a second time for a lane that halted: it resumes from the checkbox
    state, so it lands on the very task that just halted and halts there again.
 
+   **With teammate lanes** (Step 0, item 5), don't invoke `tiny-spec-build` here at
+   all. Spawn **one teammate per live lane, all in one message**: an Agent call with
+   `name: lane-<slug>` and no `isolation` (a call with `isolation` is not a teammate).
+   Teammates share this filesystem and start in the main checkout, not in a worktree of
+   their own, so every brief names the lane's **absolute** worktree path. Send this
+   brief, filled in, and nothing more:
+
+   > You are lane `<slug>` of an unattended tiny-spec batch. Your lane is the git
+   > worktree `<absolute path>`, on branch `<slug>`. Start every shell command with
+   > `cd <absolute path> &&`. Invoke `tiny-spec-build` with exactly one lane,
+   > (`<absolute path>`, `<slug>`), briefed to run through. *This is a lane session — log
+   > lessons to decisions.md, do not write `.spec/memory.md`.* `<model phrase, if any>`
+   > Every executor and reviewer gets that path as its working directory, and none of
+   > them reads, writes or runs a gate outside it. Dispatch them as plain subagents,
+   > with no `name`. Never merge, switch or create branches, add or remove worktrees,
+   > or push. Ask nothing and don't use plan mode. Anything that needs a human is a
+   > halt, so name it. If you can't dispatch the executor or reviewer agents, stop
+   > before changing anything and say so. End with one line:
+   > `lane <slug>: <done | blocked | exhausted | paused | fork> — <task id, if halted>`.
+
+   Then wait. Each teammate's **idle notification** carries its final answer, and that
+   line is the lane's result. A teammate whose turn ended on an API error, or whose
+   answer names no terminal state, is that lane halted `blocked`. Report it and never
+   spawn a second teammate for it in this batch, for the reason above. **Before merging
+   a `done`, check it against git:** Step 1 must find `<slug>` *built, not merged*.
+   Otherwise the lane is `blocked` and its claim is reported, not merged. Merge only once
+   every teammate in the batch has gone idle, so merges keep batch order. After the
+   merges and the lesson fold, ask each of the batch's teammates to shut down. Their
+   work is on their branches, and the next batch spawns fresh ones.
+
+   **If a spawn doesn't launch a teammate** — the call runs inline and comes back with
+   a finished answer instead of starting a teammate you later hear from — this session
+   can't make them (a headless run, usually). Any lane it touched changed nothing,
+   because the brief stops a lane that can't dispatch agents. Build the batch as
+   conversation lanes, as above, and stay on them for the rest of the run.
+
+   A resumed run has no teammates; resume doesn't bring them back. That costs nothing:
+   Step 1 reads each lane's state from git, and a lane still in progress gets a fresh
+   teammate, which resumes from the checkboxes.
+
 4. **Merge — only the lanes that returned `done`, one at a time, in batch order.**
    For each, in the main checkout:
    - `git switch <integration>`
@@ -562,6 +616,10 @@ ticket that legitimately has no visual surface.
 - **A lane session never merges.** Inside a linked worktree, a build-through run builds
   its one feature and stops. It never switches to the integration branch, merges, or
   adds a worktree. Merging is the main checkout's job.
+- **A teammate builds one lane and never merges.** Teammate lanes are for unattended
+  runs only, gated on `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` and an interactive session.
+  A teammate never switches branches, merges, or writes `memory.md`. The lead merges only
+  a lane whose teammate said `done` and whose branch git shows built.
 - **Never build an unapproved plan in a supervised run.** The approval is the plan
   existing: `tiny-spec-plan` writes `PLAN.md` only once the user approves it. Never write
   it for them, and never build from a draft.
