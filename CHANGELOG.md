@@ -7,7 +7,13 @@ All notable changes to tiny-spec are recorded here. Format follows
 Every release upgrades the same way: re-run `uvx tiny-spec install` and restart
 Claude Code.
 
-## [Unreleased]
+## [2.5.0] — 2026-10-22
+
+Unattended parallel builds can stop sharing one conversation. With Claude Code's
+experimental agent teams switched on, each lane of an unattended batch builds in its own
+teammate, and the main conversation only specs, plans and merges. Off by default, and
+untested end-to-end so far, so treat it as a preview. Re-install to pick up the updated
+skills.
 
 ### Added
 
